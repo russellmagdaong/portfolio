@@ -1,0 +1,178 @@
+---
+import Shape from './Shape.astro';
+import { rotatingWords, site } from '../data/site';
+import { url } from '../lib/url';
+
+const firstName = site.name.split(' ')[0];
+---
+
+<section class="container-page relative pt-14 pb-20 sm:pt-20 sm:pb-28">
+  <Shape kind="spark" class="absolute top-6 right-[8%] hidden size-14 animate-float fill-sun sm:block" />
+  <Shape
+    kind="ring"
+    class="absolute bottom-10 left-[44%] hidden size-12 animate-float stroke-mint [animation-delay:-2s] lg:block"
+  />
+  <Shape
+    kind="squiggle"
+    class="absolute top-8 left-[40%] hidden size-20 animate-float stroke-grape [animation-delay:-4s] lg:block"
+  />
+
+  <!-- min-w-0 lets the code card shrink below its longest line on small screens -->
+  <div class="grid items-center gap-14 lg:grid-cols-[1.15fr_0.85fr]">
+    <div class="min-w-0">
+      {
+        site.available && (
+          <p class="inline-flex items-center gap-2 rounded-full border-2 border-line bg-card px-4 py-1.5 text-sm font-bold shadow-pop-sm">
+            <span class="relative flex size-2.5">
+              <span class="absolute inline-flex size-full animate-ping rounded-full bg-mint" />
+              <span class="relative inline-flex size-2.5 rounded-full border border-line bg-mint" />
+            </span>
+            Available for new projects
+          </p>
+        )
+      }
+
+      <h1 class="mt-6 text-6xl leading-[0.95] font-extrabold sm:text-7xl lg:text-8xl">
+        <span class="block">Hi, I'm</span>
+        <span class="relative isolate inline-block whitespace-nowrap">
+          <span class="absolute inset-x-0 bottom-1 -z-10 h-[0.42em] -rotate-1 rounded-md bg-pink"></span>
+          {firstName}
+        </span>
+        <span class="ml-2 inline-block origin-[70%_70%] animate-wave" aria-hidden="true">👋</span>
+      </h1>
+
+      <p class="mt-7 font-display text-2xl leading-snug font-semibold sm:text-3xl">
+        A {site.role.toLowerCase()} who builds{' '}
+        <span
+          data-rotate={JSON.stringify(rotatingWords)}
+          class="mt-2 inline-block -rotate-2 rounded-xl border-2 border-line bg-sun px-3 py-0.5 whitespace-nowrap text-night shadow-pop-sm"
+        >
+          {rotatingWords[0]}
+        </span>
+      </p>
+
+      <p class="mt-6 max-w-xl text-lg text-muted sm:text-xl">{site.tagline}</p>
+
+      <div class="mt-9 flex flex-wrap gap-4">
+        <a href={url('/#projects')} class="btn bg-pink">See my work →</a>
+        <a href={url('/#contact')} class="btn bg-card text-ink">Say hello</a>
+        {
+          site.resumeUrl && (
+            <a href={url(site.resumeUrl)} class="btn bg-sky">
+              Résumé
+            </a>
+          )
+        }
+      </div>
+    </div>
+
+    <div class="relative mx-auto w-full max-w-md min-w-0 lg:max-w-none">
+      <!-- A little "about me" object, straight from src/data/site.ts -->
+      <div class="card rotate-2 overflow-hidden transition-transform duration-300 hover:rotate-0">
+        <div class="flex items-center gap-2 border-b-2 border-line bg-grape px-4 py-3">
+          <span class="size-3.5 rounded-full border-2 border-line bg-pink"></span>
+          <span class="size-3.5 rounded-full border-2 border-line bg-sun"></span>
+          <span class="size-3.5 rounded-full border-2 border-line bg-mint"></span>
+          <span class="ml-2 font-mono text-sm font-bold text-night">{firstName.toLowerCase()}.ts</span>
+        </div>
+        <pre
+          class="overflow-x-auto p-4 pb-8 font-mono text-xs leading-7 sm:p-5 sm:pb-8 sm:text-sm xl:text-base"><code><span class="text-muted">const</span> <span class="font-bold">{firstName.toLowerCase()}</span> = &#123;
+  role: <span class="rounded bg-sun px-1 text-night">'{site.role}'</span>,
+  location: <span class="rounded bg-sky px-1 text-night">'{site.location}'</span>,
+  loves: [<span class="rounded bg-pink px-1 text-night">'clean code'</span>, <span class="rounded bg-mint px-1 text-night">'good coffee'</span>],
+  available: <span class="font-bold">{String(site.available)}</span>,
+&#125;;</code></pre>
+      </div>
+
+      <button
+        type="button"
+        data-confetti
+        aria-label="Throw confetti"
+        class="absolute -right-3 -bottom-16 grid size-28 place-items-center transition-transform hover:scale-110 active:scale-95 sm:-right-8 sm:-bottom-20 sm:size-32"
+      >
+        <Shape kind="burst" class="absolute inset-0 size-full animate-spin-slow fill-tang" />
+        <span class="relative -rotate-12 font-display text-base leading-none font-extrabold text-night sm:text-lg">
+          Click<br />me!
+        </span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Rotating "who builds ___" word.
+  const word = document.querySelector<HTMLElement>('[data-rotate]');
+  if (word && !reducedMotion) {
+    const words: string[] = JSON.parse(word.dataset.rotate ?? '[]');
+    let index = 0;
+
+    if (words.length > 1) {
+      setInterval(async () => {
+        index = (index + 1) % words.length;
+        await word.animate(
+          [
+            { translate: '0 0', opacity: 1 },
+            { translate: '0 -40%', opacity: 0 },
+          ],
+          { duration: 180, easing: 'ease-in' },
+        ).finished;
+        word.textContent = words[index];
+        word.animate(
+          [
+            { translate: '0 40%', opacity: 0 },
+            { translate: '0 0', opacity: 1 },
+          ],
+          { duration: 320, easing: 'cubic-bezier(.34,1.56,.64,1)' },
+        );
+      }, 2400);
+    }
+  }
+
+  // Confetti burst from the "Click me!" sticker.
+  const confettiColors = ['pink', 'sun', 'mint', 'sky', 'grape', 'tang'];
+
+  function throwConfetti(x: number, y: number) {
+    for (let i = 0; i < 40; i++) {
+      const piece = document.createElement('span');
+      const size = 7 + Math.random() * 9;
+      Object.assign(piece.style, {
+        position: 'fixed',
+        left: `${x}px`,
+        top: `${y}px`,
+        width: `${size}px`,
+        height: `${size}px`,
+        background: `var(--color-${confettiColors[i % confettiColors.length]})`,
+        border: '1.5px solid var(--color-night)',
+        borderRadius: Math.random() > 0.5 ? '50%' : '3px',
+        pointerEvents: 'none',
+        zIndex: '60',
+      });
+      document.body.append(piece);
+
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 90 + Math.random() * 190;
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+
+      piece
+        .animate(
+          [
+            { translate: '0 0', rotate: '0deg', opacity: 1 },
+            { translate: `${dx}px ${dy - 60}px`, rotate: `${Math.random() * 540}deg`, opacity: 1, offset: 0.55 },
+            { translate: `${dx * 1.2}px ${dy + 220}px`, rotate: `${Math.random() * 900}deg`, opacity: 0 },
+          ],
+          { duration: 1000 + Math.random() * 600, easing: 'cubic-bezier(.2,.7,.3,1)' },
+        )
+        .finished.then(() => piece.remove());
+    }
+  }
+
+  document.querySelector<HTMLButtonElement>('[data-confetti]')?.addEventListener('click', (event) => {
+    if (reducedMotion) return;
+    const button = event.currentTarget as HTMLElement;
+    const box = button.getBoundingClientRect();
+    throwConfetti(box.left + box.width / 2, box.top + box.height / 2);
+  });
+</script>

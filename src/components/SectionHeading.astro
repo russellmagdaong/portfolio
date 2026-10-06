@@ -1,0 +1,23 @@
+---
+import { accentBg, type Accent } from '../lib/accent';
+
+interface Props {
+  kicker: string;
+  title: string;
+  accent?: Accent;
+}
+
+const { kicker, title, accent = 'sun' } = Astro.props;
+---
+
+<header class="mb-10 sm:mb-14">
+  <p
+    class:list={[
+      'inline-block -rotate-2 rounded-full border-2 border-line px-4 py-1 font-mono text-sm font-bold text-night shadow-pop-sm',
+      accentBg[accent],
+    ]}
+  >
+    {kicker}
+  </p>
+  <h2 class="mt-4 text-4xl font-extrabold sm:text-6xl">{title}</h2>
+</header>

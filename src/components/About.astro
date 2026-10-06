@@ -1,0 +1,43 @@
+---
+import SectionHeading from './SectionHeading.astro';
+import Shape from './Shape.astro';
+import { about, site } from '../data/site';
+import { accentAt, accentBg } from '../lib/accent';
+---
+
+<section id="about" class="container-page py-20 sm:py-28">
+  <SectionHeading kicker="01 / about" title="Nice to meet you" accent="mint" />
+
+  <div class="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+    <div class="relative mx-auto w-full max-w-sm">
+      <!-- TODO: replace this block with <img src="/me.jpg" alt="…" class="size-full object-cover" /> once you have a photo in public/ -->
+      <div class="card relative grid aspect-square -rotate-3 place-items-center overflow-hidden bg-mint">
+        <Shape kind="blob" class="absolute inset-[12%] size-[76%] fill-sun stroke-night" />
+        <span class="relative font-display text-8xl font-extrabold text-night">{site.initials}</span>
+      </div>
+      <Shape kind="flower" class="absolute -top-8 -right-2 size-20 animate-float fill-pink sm:-right-6" />
+      <p
+        class="absolute -bottom-5 left-4 rotate-3 rounded-full border-2 border-line bg-sky px-4 py-1.5 font-display font-bold text-night shadow-pop-sm"
+      >
+        that's me!
+      </p>
+    </div>
+
+    <div>
+      <div class="space-y-5 text-lg leading-relaxed sm:text-xl">
+        {about.paragraphs.map((paragraph, i) => <p class:list={{ 'text-muted': i > 0 }}>{paragraph}</p>)}
+      </div>
+
+      <dl class="mt-10 grid gap-4 sm:grid-cols-3">
+        {
+          about.facts.map((fact, i) => (
+            <div class:list={['rounded-2xl border-2 border-line p-4 text-night shadow-pop-sm', accentBg[accentAt(i + 1)]]}>
+              <dt class="font-mono text-xs font-bold tracking-wide uppercase">{fact.label}</dt>
+              <dd class="mt-1 font-display text-lg leading-tight font-extrabold">{fact.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+</section>

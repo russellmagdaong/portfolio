@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Theme-swapping colours. Everything else is derived from these. */
+:root {
+  --paper: #fff7e6;
+  --card: #ffffff;
+  --ink: #1a1523;
+  --muted: #5b5266;
+  --line: #1a1523;
+  --dot: rgb(26 21 35 / 0.09);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --paper: #16121d;
+  --card: #231c2e;
+  --ink: #fff7e6;
+  --muted: #b9afc7;
+  --line: #fff7e6;
+  --dot: rgb(255 247 230 / 0.07);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+
+  --shadow-pop-sm: 3px 3px 0 0 var(--line);
+  --shadow-pop: 5px 5px 0 0 var(--line);
+  --shadow-pop-lg: 8px 8px 0 0 var(--line);
+}
+
+@theme {
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+
+  /* Accents. `night` is the fixed dark used for text sitting on an accent. */
+  --color-night: #1a1523;
+  --color-pink: #ff6fae;
+  --color-sun: #ffd23f;
+  --color-mint: #3ddc97;
+  --color-sky: #5cc8ff;
+  --color-grape: #a78bfa;
+  --color-tang: #ff9f45;
+
+  --animate-wiggle: wiggle 0.5s ease-in-out;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-wave: wave 2.4s ease-in-out infinite;
+  --animate-marquee: marquee 30s linear infinite;
+  --animate-spin-slow: spin 16s linear infinite;
+
+  @keyframes wiggle {
+    0%,
+    100% {
+      rotate: 0deg;
+    }
+    25% {
+      rotate: -4deg;
+    }
+    75% {
+      rotate: 4deg;
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 0 -14px;
+    }
+  }
+
+  @keyframes wave {
+    0%,
+    60%,
+    100% {
+      rotate: 0deg;
+    }
+    10%,
+    30% {
+      rotate: 16deg;
+    }
+    20%,
+    40% {
+      rotate: -8deg;
+    }
+  }
+
+  @keyframes marquee {
+    to {
+      translate: -50% 0;
+    }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6.5rem;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    background-image: radial-gradient(var(--dot) 1.5px, transparent 1.5px);
+    background-size: 26px 26px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Default outline for <Shape>; a stroke-* class overrides it. */
+  [data-shape] {
+    stroke: var(--line);
+  }
+
+  ::selection {
+    background: var(--color-sun);
+    color: var(--color-night);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-grape);
+    outline-offset: 3px;
+  }
+}
+
+/* Lifts on hover, squashes into its shadow on press. */
+@utility pressable {
+  @apply transition-[translate,box-shadow] duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-pop-lg active:translate-x-1 active:translate-y-1 active:shadow-none;
+}
+
+@utility link-underline {
+  @apply underline decoration-pink decoration-[3px] underline-offset-4 hover:decoration-sun;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  .card {
+    @apply rounded-3xl border-2 border-line bg-card shadow-pop;
+  }
+
+  .btn {
+    @apply pressable inline-flex items-center justify-center gap-2 rounded-full border-2 border-line px-6 py-3 font-display text-lg font-bold text-night shadow-pop;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border-2 border-line bg-card px-3 py-1 text-sm font-semibold;
+  }
+
+  /* Rendered Markdown on project pages. */
+  .prose-fun {
+    @apply text-lg leading-relaxed;
+
+    & > * + * {
+      @apply mt-5;
+    }
+
+    & h2 {
+      @apply mt-12 text-3xl font-extrabold;
+    }
+
+    & h3 {
+      @apply mt-8 text-2xl font-bold;
+    }
+
+    & a {
+      @apply link-underline font-semibold;
+    }
+
+    & ul {
+      @apply list-disc space-y-2 pl-6 marker:text-pink;
+    }
+
+    & ol {
+      @apply list-decimal space-y-2 pl-6 marker:font-bold;
+    }
+
+    & blockquote {
+      @apply rounded-2xl border-2 border-line bg-sun px-5 py-4 font-display text-xl font-semibold text-night;
+    }
+
+    & :not(pre) > code {
+      @apply rounded-md border border-line bg-card px-1.5 py-0.5 font-mono text-[0.9em];
+    }
+
+    & pre {
+      @apply overflow-x-auto rounded-2xl border-2 border-line p-5 font-mono text-sm shadow-pop-sm;
+    }
+
+    & img {
+      @apply rounded-2xl border-2 border-line shadow-pop;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
