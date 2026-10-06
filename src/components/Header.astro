@@ -1,0 +1,104 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import { site } from '../data/site';
+import { url } from '../lib/url';
+
+const links = [
+  { label: 'About', href: url('/#about') },
+  { label: 'Skills', href: url('/#skills') },
+  { label: 'Projects', href: url('/#projects') },
+  { label: 'Experience', href: url('/#experience') },
+  { label: 'Contact', href: url('/#contact') },
+];
+---
+
+<header class="sticky top-4 z-40 px-4">
+  <div class="relative mx-auto max-w-4xl">
+    <nav
+      aria-label="Main"
+      class="flex items-center justify-between gap-3 rounded-full border-2 border-line bg-card py-2 pr-2 pl-3 shadow-pop"
+    >
+      <a href={url('/')} class="group flex items-center gap-2 font-display text-lg font-extrabold">
+        <span
+          class="grid size-10 place-items-center rounded-full border-2 border-line bg-pink text-sm text-night group-hover:animate-wiggle"
+        >
+          {site.initials}
+        </span>
+        <span class="hidden sm:inline">{site.name.split(' ')[0]}</span>
+      </a>
+
+      <ul class="hidden items-center gap-1 md:flex">
+        {
+          links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="rounded-full px-3 py-2 font-semibold transition-colors hover:bg-sun hover:text-night"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="flex items-center gap-2">
+        <ThemeToggle />
+        <button
+          type="button"
+          data-menu-button
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+          class="pressable rounded-full border-2 border-line bg-mint px-4 py-2 font-display font-bold text-night shadow-pop-sm md:hidden"
+        >
+          Menu
+        </button>
+      </div>
+    </nav>
+
+    <ul
+      id="mobile-menu"
+      hidden
+      class="absolute inset-x-0 top-full mt-3 space-y-1 rounded-3xl border-2 border-line bg-card p-3 shadow-pop md:hidden"
+    >
+      {
+        links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              class="block rounded-2xl px-4 py-3 font-display text-xl font-bold hover:bg-sun hover:text-night"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</header>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('[data-menu-button]');
+  const menu = document.getElementById('mobile-menu');
+
+  if (button && menu) {
+    const setOpen = (open: boolean) => {
+      menu.hidden = !open;
+      button.setAttribute('aria-expanded', String(open));
+      button.textContent = open ? 'Close' : 'Menu';
+    };
+
+    const isOpen = () => button.getAttribute('aria-expanded') === 'true';
+
+    button.addEventListener('click', () => setOpen(!isOpen()));
+    menu.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLAnchorElement) setOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && isOpen()) {
+        setOpen(false);
+        button.focus();
+      }
+    });
+  }
+</script>

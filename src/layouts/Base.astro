@@ -1,0 +1,63 @@
+---
+import '@fontsource-variable/bricolage-grotesque';
+import '@fontsource-variable/dm-sans';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+import { url } from '../lib/url';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = site.description } = Astro.props;
+const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.role}`;
+// Only known once `site` is set in astro.config.mjs.
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
+---
+
+<!doctype html>
+<html lang="en" id="top">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+
+    <!-- Runs before paint so the saved theme never flashes. -->
+    <script is:inline>
+      (() => {
+        let theme;
+        try {
+          theme = localStorage.getItem('theme');
+        } catch {}
+        theme ??= matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body class="min-h-dvh">
+    <a
+      href="#main"
+      class="sr-only rounded-full border-2 border-line bg-sun px-4 py-2 font-bold text-night focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50"
+    >
+      Skip to content
+    </a>
+    <Header />
+    <!-- Clip here, not on body: decorative shapes poke past the edge and must not add sideways scroll. -->
+    <main id="main" class="overflow-x-clip">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

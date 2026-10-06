@@ -1,0 +1,42 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Shape from './Shape.astro';
+import { accentBg } from '../lib/accent';
+import { url } from '../lib/url';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  index: number;
+}
+
+const { project, index } = Astro.props;
+const { title, summary, year, tags, accent } = project.data;
+const shapes = ['burst', 'flower', 'blob', 'spark'] as const;
+---
+
+<article class="card pressable group relative flex flex-col overflow-hidden">
+  <!-- TODO: swap this patterned cover for a real screenshot when you have one -->
+  <div class:list={['relative grid aspect-[16/10] place-items-center overflow-hidden border-b-2 border-line', accentBg[accent]]}>
+    <Shape
+      kind={shapes[index % shapes.length]}
+      class="size-28 fill-white stroke-night transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12"
+    />
+    <span
+      class="absolute top-3 right-3 rounded-full border-2 border-line bg-card px-3 py-0.5 font-mono text-sm font-bold text-ink"
+    >
+      {year}
+    </span>
+  </div>
+
+  <div class="flex flex-1 flex-col p-6">
+    <h3 class="text-2xl font-extrabold">
+      <a href={url(`/projects/${project.id}/`)} class="after:absolute after:inset-0">
+        {title}
+      </a>
+    </h3>
+    <p class="mt-2 flex-1 text-muted">{summary}</p>
+    <ul class="mt-5 flex flex-wrap gap-2">
+      {tags.map((tag) => <li class="chip">{tag}</li>)}
+    </ul>
+  </div>
+</article>

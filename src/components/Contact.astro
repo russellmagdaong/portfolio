@@ -1,0 +1,36 @@
+---
+import Shape from './Shape.astro';
+import { site, socials } from '../data/site';
+---
+
+<section id="contact" class="container-page py-20 sm:py-28">
+  <div
+    class="relative overflow-hidden rounded-[2.5rem] border-2 border-line bg-grape px-6 py-16 text-center text-night shadow-pop-lg sm:px-12 sm:py-24"
+  >
+    <Shape kind="burst" class="absolute -top-10 -left-10 size-40 animate-spin-slow fill-sun stroke-night" />
+    <Shape kind="flower" class="absolute -right-8 -bottom-10 size-40 fill-pink stroke-night" />
+
+    <!-- Everything on the purple card outlines in the fixed dark, whatever the theme. -->
+    <div class="relative [--line:var(--color-night)]">
+      <p class="font-mono text-sm font-bold tracking-wide uppercase">05 / contact</p>
+      <h2 class="mx-auto mt-4 max-w-3xl text-5xl leading-[0.95] font-extrabold sm:text-7xl">
+        Let's build something fun together
+      </h2>
+      <p class="mx-auto mt-6 max-w-xl text-lg font-medium sm:text-xl">
+        {site.available ? "I'm open to new projects and roles." : "I'm heads-down right now, but always happy to chat."}{' '}
+        Got an idea, a question, or a good meme? My inbox is open.
+      </p>
+
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href={`mailto:${site.email}`} class="btn bg-sun">{site.email}</a>
+        {
+          socials.map((social) => (
+            <a href={social.href} target="_blank" rel="noopener noreferrer" class="btn bg-white">
+              {social.label} ↗
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
