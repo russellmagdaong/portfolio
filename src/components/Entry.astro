@@ -1,0 +1,135 @@
+---
+import Icon from './Icon.astro';
+import player from '../assets/hero/player.png';
+import { site } from '../data/site';
+
+---
+
+<!--
+  The entry screen: a game-style title screen laid over the whole page, which the visitor has to
+  press start on to get in. It is a modal <dialog>, so everything behind it is out of reach of the
+  pointer, the keyboard and screen readers until it closes. Only the script below opens it, which
+  means that without JavaScript there is no entry screen and the page is simply there.
+  Styles: .entry and .gated in global.css.
+-->
+<dialog data-entry class="entry" aria-labelledby="entry-title">
+  <!-- Backdrop: the hero's moving floor under CRT lines and a slow scan bar, framed by viewfinder corners. -->
+  <div class="absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div class="horizon"><div><div></div></div></div>
+    <div class="scanlines absolute inset-0"></div>
+    <div class="absolute inset-x-0 top-0 h-[10%] animate-scan bg-gradient-to-b from-transparent via-cyan/10 to-transparent"></div>
+
+    <span class="absolute top-4 left-4 size-5 border-t border-l border-cyan/60 sm:top-6 sm:left-6"></span>
+    <span class="absolute top-4 right-4 size-5 border-t border-r border-cyan/60 sm:top-6 sm:right-6"></span>
+    <span class="absolute bottom-4 left-4 size-5 border-b border-l border-cyan/60 sm:bottom-6 sm:left-6"></span>
+    <span class="absolute right-4 bottom-4 size-5 border-r border-b border-cyan/60 sm:right-6 sm:bottom-6"></span>
+
+    <p class="absolute top-7 left-8 font-mono text-[0.65rem] tracking-[0.22em] text-cyan uppercase sm:top-9 sm:left-10">
+      ID {site.handle}
+    </p>
+    <p class="absolute top-7 right-8 flex items-center gap-2 font-mono text-[0.65rem] tracking-[0.22em] text-muted uppercase sm:top-9 sm:right-10">
+      <span class="size-1.5 animate-flicker bg-acid shadow-[0_0_8px_var(--color-acid)]"></span>
+      Ready
+    </p>
+  </div>
+
+  <!-- Scrolls on its own if the window is too short to show everything, so the button is always reachable. -->
+  <div class="absolute inset-0 flex overflow-y-auto">
+    <div class="m-auto flex flex-col items-center px-5 py-16 text-center">
+      <!-- The sprite file is 4x, so it is shown at exactly half or three quarters to keep its pixels square. -->
+      <img
+        src={player.src}
+        width={player.width}
+        height={player.height}
+        alt=""
+        draggable="false"
+        class="holo-sprite pixelated h-auto w-[88px] max-w-none animate-bob [@media(max-height:480px)]:hidden [@media(min-height:760px)]:w-[132px]"
+      />
+
+      <p id="entry-title" class="title-chrome mt-8 text-base sm:text-[2rem] lg:text-[2.5rem]">{site.name}</p>
+      <p class="mt-4 font-mono text-[0.65rem] tracking-[0.2em] text-muted uppercase sm:text-xs">{site.role}</p>
+
+      <button type="button" data-entry-start autofocus class="btn btn-solid mt-10 h-14 cursor-pointer px-8 text-sm" data-accent="acid">
+        <Icon name="play" />
+        Press start
+        <span class="sr-only">to enter the site</span>
+      </button>
+      <p class="mt-4 animate-flicker font-mono text-[0.65rem] tracking-[0.22em] text-muted uppercase" aria-hidden="true">
+        Click, tap, or press Enter
+      </p>
+    </div>
+  </div>
+</dialog>
+
+<!--
+  Inline and straight after the dialog, so the screen is up before anything behind it is drawn.
+  When start is pressed it fires `site:enter` on the document; the hero's typing (Hero.astro) and
+  the scroll-in reveals (effects.ts) wait for that, so they play in front of the visitor.
+-->
+<script is:inline>
+  (() => {
+    const gate = document.querySelector('[data-entry]');
+    const start = gate && gate.querySelector('[data-entry-start]');
+    const root = document.documentElement;
+    if (!gate || !start || typeof gate.showModal !== 'function') return;
+
+    gate.showModal();
+    // Stops the page scrolling underneath and holds the hero's entrance (see global.css).
+    root.classList.add('gated');
+
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      root.classList.remove('gated');
+      document.dispatchEvent(new Event('site:enter'));
+    };
+
+    const finish = () => {
+      release();
+      document.removeEventListener('keydown', onKey);
+      if (gate.open) gate.close();
+      gate.remove();
+    };
+
+    // Hands the page over straight away, then lets the switch-off animation run before closing.
+    let leaving = false;
+    const enter = () => {
+      if (leaving) return;
+      leaving = true;
+      release();
+      gate.classList.add('is-leaving');
+      gate.addEventListener('animationend', (event) => {
+        if (event.animationName === 'entry-off') finish();
+      });
+      // In case the animation never reports back.
+      setTimeout(finish, 1200);
+    };
+
+    // Arriving on a link to a section (/#projects) makes the browser take focus off the button
+    // once that section has loaded. The keys are listened for on the whole document so that they
+    // work all the same, and focus is put back when the page has finished loading.
+    function onKey(event) {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      enter();
+    }
+    document.addEventListener('keydown', onKey);
+    addEventListener(
+      'load',
+      () => {
+        if (!leaving && !gate.contains(document.activeElement)) start.focus({ preventScroll: true });
+      },
+      { once: true },
+    );
+
+    start.addEventListener('click', enter);
+    // Escape is a dialog's built-in way out. It gets the same exit as the button.
+    gate.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      enter();
+    });
+    // If the browser closes the dialog by itself all the same, leave nothing locked behind it.
+    gate.addEventListener('close', finish);
+  })();
+</script>

@@ -35,7 +35,7 @@ const photos = site.photos.map((name) => {
       }
 
       <h1
-        class="rise mt-6 font-display text-[clamp(2.75rem,13vw,6.5rem)] leading-[0.86] font-extrabold text-white uppercase"
+        class="rise mt-6 font-display text-[2rem] leading-[1.15] text-white uppercase sm:text-5xl lg:text-[3.5rem] xl:text-[4rem]"
         style="--i:1"
       >
         <span class="glitch block" data-text={firstName}>{firstName}</span>
@@ -59,7 +59,7 @@ const photos = site.photos.map((name) => {
           socials.map((social) => (
             <a
               href={social.href}
-              class="btn btn-line neon-box"
+              class="btn btn-line panel"
               target={social.href.startsWith('http') ? '_blank' : undefined}
               rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
             >
@@ -70,7 +70,7 @@ const photos = site.photos.map((name) => {
         }
         {
           site.resumeUrl && (
-            <a href={url(site.resumeUrl)} class="btn btn-line neon-box">
+            <a href={url(site.resumeUrl)} class="btn btn-line panel">
               <Icon name="resume" />
               Résumé
             </a>
@@ -81,7 +81,8 @@ const photos = site.photos.map((name) => {
 
     <!--
       Inline, and placed after the terminal line it drives, so the first line starts typing
-      before first paint. Without JavaScript the first line just stays on screen.
+      before first paint, or as soon as the entry screen (Entry.astro) is dismissed if that is up.
+      Without JavaScript the first line just stays on screen.
     -->
     <script is:inline>
       (() => {
@@ -109,7 +110,11 @@ const photos = site.photos.map((name) => {
           }
         };
 
-        tick();
+        if (document.documentElement.classList.contains('gated')) {
+          document.addEventListener('site:enter', tick, { once: true });
+        } else {
+          tick();
+        }
       })();
     </script>
 
@@ -120,11 +125,12 @@ const photos = site.photos.map((name) => {
     <div
       data-avatar
       style="--i:3"
-      class="rise neon-box neon-run mx-auto w-full max-w-xs [--accent-2:var(--color-magenta)] [--cut:26px] [--fill:#090814] lg:max-w-none"
+      class="rise panel panel-run mx-auto w-full max-w-xs [--px:6px] lg:max-w-none"
     >
-      <div class="holo cut-inner scanlines relative m-px h-80 overflow-hidden lg:h-[27rem]">
+      <div class="holo panel-inner scanlines relative h-80 overflow-hidden lg:h-[27rem]">
         <div data-avatar-stage class="absolute inset-0">
           <div data-avatar-view="game" class="absolute inset-0 animate-bob">
+            <div class="holo-beam" aria-hidden="true"></div>
             <img
               src={player.src}
               width={player.width}
@@ -167,8 +173,8 @@ const photos = site.photos.map((name) => {
         </div>
 
         <div class="absolute inset-x-0 top-0 h-[10%] animate-scan bg-gradient-to-b from-transparent via-cyan/25 to-transparent" aria-hidden="true"></div>
-        <p class="absolute top-3 left-4 font-mono text-[0.65rem] tracking-[0.22em] text-cyan uppercase" aria-hidden="true">
-          ID // {site.handle}
+        <p class="absolute top-4 left-5 font-mono text-[0.65rem] tracking-[0.22em] text-cyan uppercase" aria-hidden="true">
+          ID {site.handle}
         </p>
 
         <!-- Sits above the scanlines so the label stays crisp. One button flips between the two views. -->
@@ -176,7 +182,7 @@ const photos = site.photos.map((name) => {
           <button
             type="button"
             data-avatar-toggle
-            class="group flex cursor-pointer items-center gap-2 border border-cyan/60 bg-void/85 px-4 py-2 font-mono text-[0.7rem] tracking-[0.2em] text-cyan uppercase transition-colors hover:bg-cyan hover:text-void"
+            class="group flex cursor-pointer items-center gap-2 border-2 border-cyan bg-void px-4 py-2 font-mono text-[0.7rem] tracking-[0.2em] text-cyan uppercase transition-colors hover:bg-cyan hover:text-void"
           >
             <Icon name="swap" class="size-4 transition-transform duration-500 group-hover:rotate-180" />
             <span data-avatar-label>De-pixelate</span>

@@ -15,17 +15,17 @@ const links = [
 const upcoming = ['Videos'];
 ---
 
-<header class="sticky top-0 z-40 bg-void/80 backdrop-blur-md">
+<header class="sticky top-0 z-40 bg-void">
   <div class="container-page relative flex h-16 items-center justify-between gap-6">
     <!-- Wordmark styled as a terminal prompt: > russm_ -->
     <a
       href={url('/')}
-      class="flex items-center gap-2 font-display text-2xl leading-none font-extrabold tracking-[0.08em] text-white"
+      class="flex items-center gap-2 font-display text-base leading-none text-white"
       aria-label={`${site.name}, home`}
     >
       <span class="text-magenta" aria-hidden="true">&gt;</span>
       <span class="glitch" data-text={site.handle}>{site.handle}</span>
-      <span class="h-[0.8em] w-[0.45em] animate-blink bg-cyan" aria-hidden="true"></span>
+      <span class="h-[1em] w-[0.5em] animate-blink bg-cyan" aria-hidden="true"></span>
     </a>
 
     <nav aria-label="Main" class="relative hidden lg:block">
@@ -71,12 +71,12 @@ const upcoming = ['Videos'];
       data-menu-button
       aria-expanded="false"
       aria-controls="mobile-menu"
-      class="btn btn-line neon-box h-10 cursor-pointer px-4 text-xs lg:hidden"
+      class="btn btn-line panel h-10 cursor-pointer px-4 text-[0.65rem] lg:hidden"
     >
       Menu
     </button>
 
-    <ul id="mobile-menu" hidden class="neon-box absolute inset-x-5 top-full mt-3 px-5 py-2 sm:inset-x-8 lg:hidden">
+    <ul id="mobile-menu" hidden class="panel absolute inset-x-5 top-full mt-3 px-5 py-2 sm:inset-x-8 lg:hidden">
       {
         links.map((link, i) => (
           <li class="border-b border-line last:border-b-0">
@@ -101,13 +101,10 @@ const upcoming = ['Videos'];
     </ul>
   </div>
 
-  <!-- The neon strip fills from the left as the page scrolls. -->
-  <div class="relative h-0.5 bg-line/70">
-    <div
-      data-scroll-progress
-      class="absolute inset-0 origin-left scale-x-0 bg-gradient-to-r from-cyan via-magenta to-acid shadow-[0_0_12px_var(--color-magenta)]"
-    >
-    </div>
+  <!-- An energy bar that fills from the left as the page scrolls. The mask cuts it into segments;
+       it sits on the track, not the fill, so the segments stay put while the fill grows. -->
+  <div class="relative h-1 bg-line [mask-image:repeating-linear-gradient(90deg,#000_0_10px,transparent_10px_12px)]">
+    <div data-scroll-progress class="absolute inset-0 origin-left scale-x-0 bg-cyan"></div>
   </div>
 </header>
 

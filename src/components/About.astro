@@ -17,18 +17,14 @@ import { about } from '../data/site';
       }
     </div>
 
-    <!-- Read-out panel. -->
-    <div
-      class="neon-box neon-run self-start [--accent-2:var(--color-magenta)]"
-      data-spotlight
-      data-reveal="right"
-      style="--i:2"
-    >
-      <p class="border-b border-line px-5 py-3 font-mono text-xs tracking-[0.22em] text-accent uppercase">
-        <span class="text-muted">//</span>{' '}Profile
-        <span class="ml-1 inline-block h-[0.9em] w-[0.5em] animate-blink bg-cyan align-text-bottom" aria-hidden="true"></span>
+    <!-- Read-out panel, with the heavy frame of a profile card. -->
+    <div class="panel panel-run self-start [--bw:4px] [--line:var(--accent)] [--px:6px]" data-spotlight data-reveal="right" style="--i:2">
+      <p class="flex items-center gap-2 border-b-2 border-line px-6 py-4 font-display text-xs text-accent uppercase">
+        Profile
+        <span class="inline-block h-[1em] w-[0.5em] animate-blink bg-cyan" aria-hidden="true"></span>
+        <span class="hatch ml-auto h-2.5 w-16 opacity-60" aria-hidden="true"></span>
       </p>
-      <dl class="px-5 py-2" data-stagger>
+      <dl class="px-6 py-2" data-stagger>
         {
           about.stats.map((stat, i) => (
             <div

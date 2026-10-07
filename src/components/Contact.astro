@@ -7,10 +7,10 @@ import { contact, socials } from '../data/site';
 <section id="contact" class="container-page py-16 sm:py-24" data-accent="cyan">
   <SectionHeading index="05" kicker="Contact" title="Get in touch" />
 
-  <div class="neon-box neon-run [--accent-2:var(--color-magenta)] [--cut:26px]" data-spotlight data-reveal>
+  <div class="panel panel-run [--bw:4px] [--line:var(--accent)] [--px:6px]" data-spotlight data-reveal>
     <!-- Links are buttons only: the addresses themselves are never printed on the page. -->
     <div class="p-6 text-center sm:p-12" data-stagger>
-      <p class="mx-auto max-w-2xl font-display text-3xl leading-tight font-bold text-white sm:text-4xl" style="--i:2">
+      <p class="mx-auto max-w-2xl font-display text-sm leading-[2] text-white sm:text-xl sm:leading-[1.9]" style="--i:2">
         {contact.heading}
       </p>
       <div class="mt-8 flex flex-wrap justify-center gap-3" style="--i:4">
@@ -20,7 +20,7 @@ import { contact, socials } from '../data/site';
               href={social.href}
               target={social.href.startsWith('http') ? '_blank' : undefined}
               rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-              class:list={['btn', i === 0 ? 'btn-solid' : 'btn-line neon-box']}
+              class:list={['btn', i === 0 ? 'btn-solid' : 'btn-line panel']}
               data-accent={i === 0 ? 'acid' : undefined}
             >
               <Icon name={social.icon} />

@@ -1,0 +1,439 @@
+---
+import sheet from '../assets/runner/man.png';
+import sprite from '../assets/runner/man.json';
+
+// A small runner in the spirit of the browser's offline dinosaur: a little pixel man runs along
+// a strip, jumping over some things and sliding under others. It sits between sections as a
+// divider. The obstacles themselves are in src/scripts/runner-obstacles.ts.
+//
+// His animations are the rows of one sprite sheet (idle, run, jump, slide, death), a frame per
+// column. scripts/runner-sprites.mjs builds the sheet from the original GIFs and writes
+// man.json, which says how big a frame is, where he stands in it, and how long each row runs.
+//
+// How many screen pixels each pixel of the artwork takes. Keep it whole, so the pixels stay square.
+const SCALE = 2;
+const px = (artPixels: number) => `${artPixels * SCALE}px`;
+// Where he stands: the distance from the strip's left edge to the middle of his artwork.
+const PLAYER_X = 76;
+---
+
+<div class="border-y border-line bg-deck/60" data-accent="magenta">
+  <div class="container-page">
+    <!-- No focus outline: a box round the whole strip is distracting mid-game. The prompt lights up instead. -->
+    <div
+      data-runner
+      tabindex="0"
+      role="button"
+      aria-label="Minigame. Jump with space, W or the up arrow, or by clicking. Slide with S or the down arrow."
+      class="group relative h-48 cursor-pointer touch-manipulation overflow-hidden outline-none select-none"
+    >
+      <!-- The ground and the obstacles. -->
+      <canvas data-runner-canvas class="absolute inset-0 size-full" aria-hidden="true"></canvas>
+
+      <!-- One frame of the sheet shows through at a time; the script moves the sheet behind this window. -->
+      <div
+        data-runner-player
+        class="holo-sprite pixelated absolute bottom-6 bg-no-repeat"
+        style={`left:${PLAYER_X - sprite.anchor * SCALE}px;width:${px(sprite.width)};height:${px(sprite.height)};background-image:url('${sheet.src}');background-size:${px(sheet.width)} ${px(sheet.height)}`}
+      >
+      </div>
+
+      <p
+        data-runner-score
+        class="absolute top-3 right-0 font-mono text-[0.7rem] tracking-[0.2em] text-muted uppercase"
+        aria-hidden="true"
+      >
+      </p>
+      <!-- Both lines are filled in by the script, so that nothing invites a click when the game cannot run. -->
+      <div data-runner-prompt class="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-mono uppercase">
+        <p data-runner-hint class="text-accent text-xs tracking-[0.22em] group-focus-visible:text-white sm:text-sm" aria-live="polite"></p>
+        <p data-runner-keys class="mt-2 text-[0.65rem] tracking-[0.18em] text-muted"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import sprite from '../assets/runner/man.json';
+  import { draw as drawObstacle, hits, spawn, type Obstacle, type Theme } from '../scripts/runner-obstacles';
+
+  // Matches bottom-6 on the sprite: how far the ground line sits above the strip's bottom edge.
+  const GROUND_PX = 24;
+  // The part of him that can hit something, as a box: how far it reaches behind and in front of
+  // the middle of his artwork, and how tall it is from his feet. It is about where his body is,
+  // so a trailing arm or leg does not count. Sliding, he is longer and much lower.
+  const BODY = { back: 12, front: 18, height: 60 };
+  const SLIDING_BODY = { back: 30, front: 26, height: 34 };
+
+  // Pixels per second, and per second squared. A tap is the plain jump these two give.
+  const GRAVITY = 2400;
+  const JUMP = 600;
+  // Keeping the jump held makes him lighter for the first moments of it, which carries him a
+  // little higher and further than a tap does.
+  const HOLD_S = 0.14;
+  const HOLD_GRAVITY = 0.7;
+  // A slide lasts at least SLIDE_MIN_S, then for as long as the key stays down, up to
+  // SLIDE_MAX_S. Getting back up takes GET_UP_S.
+  const SLIDE_MIN_S = 0.5;
+  const SLIDE_MAX_S = 1.1;
+  const GET_UP_S = 0.12;
+
+  // The pace is set by the score. Every HALFWAY_SCORE points close half of what is left of the
+  // gap between his speed and TOP_SPEED, so it builds briskly at first, then ever more gently,
+  // and never quite stops building.
+  const START_SPEED = 300;
+  const TOP_SPEED = 900;
+  const HALFWAY_SCORE = 1500;
+  const speedAt = (points: number) => TOP_SPEED - (TOP_SPEED - START_SPEED) * 0.5 ** (points / HALFWAY_SCORE);
+  // How much ground goes by before the first obstacle reaches him, whatever the width of the strip.
+  const FIRST_OBSTACLE_PX = 1000;
+
+  // The jump animation opens with a crouch. The game skips it, so that he leaves the ground the
+  // moment the key goes down.
+  const JUMP_FIRST_FRAME = 3;
+  // The slide animation is one frame of going down, a run of frames that loop while he slides,
+  // and the frames of getting up. These are the first and last frame of the last two.
+  const SLIDE_LOOP = [1, 5];
+  const SLIDE_UP = [6, 7];
+  const SLIDE_FPS = 12;
+  // The death animation plays once, a little quicker than it was drawn. After it there is
+  // nothing left of him until the next game starts.
+  const DEATH_PACE = 1.4;
+
+  // Matched on where a key is, not what it types, so W and S work on any keyboard layout.
+  const JUMP_KEYS = new Set(['KeyW', 'Space', 'ArrowUp', 'Enter']);
+  const SLIDE_KEYS = new Set(['KeyS', 'ArrowDown']);
+  // A phone or tablet has nothing to slide with. There it is a one-button game, and the
+  // obstacles that can only be slid under are left out.
+  const canSlide = !matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+  // After a crash, ignore input briefly so a late jump does not restart the game at once.
+  const RETRY_MS = 450;
+  const BEST_KEY = 'runner-best';
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const stage = document.querySelector<HTMLElement>('[data-runner]');
+  const canvas = stage?.querySelector<HTMLCanvasElement>('[data-runner-canvas]');
+  const player = stage?.querySelector<HTMLElement>('[data-runner-player]');
+  const scoreEl = stage?.querySelector<HTMLElement>('[data-runner-score]');
+  const prompt = stage?.querySelector<HTMLElement>('[data-runner-prompt]');
+  const hint = stage?.querySelector<HTMLElement>('[data-runner-hint]');
+  const keys = stage?.querySelector<HTMLElement>('[data-runner-keys]');
+  const ctx = canvas?.getContext('2d');
+
+  if (stage && canvas && player && scoreEl && prompt && hint && keys && ctx) {
+    const styles = getComputedStyle(stage);
+    const color = (name: string) => styles.getPropertyValue(`--color-${name}`).trim();
+    const lineColor = color('line');
+    const theme: Theme = {
+      cyan: color('cyan'),
+      magenta: color('magenta'),
+      acid: color('acid'),
+      violet: color('violet'),
+      deck: color('deck'),
+    };
+    // One frame of the sprite sheet, in screen pixels, and where the middle of his artwork is
+    // in the strip. Both follow from how the markup sized and placed the sprite.
+    const frameWidth = player.offsetWidth;
+    const frameHeight = player.offsetHeight;
+    const playerX = player.offsetLeft + (sprite.anchor * frameWidth) / sprite.width;
+
+    type Clip = keyof typeof sprite.clips;
+
+    let state: 'idle' | 'running' | 'over' = 'idle';
+    let visible = false;
+    let looping = false;
+    let last = 0;
+    let crashedAt = 0;
+
+    let speed = START_SPEED;
+    let distance = 0;
+    let obstacles: Obstacle[] = [];
+    let nextObstacleIn = 0;
+
+    // His height above the ground and upward speed, how long the current jump has lasted,
+    // and the highest it has taken him.
+    let lift = 0;
+    let rise = 0;
+    let airborne = false;
+    let airTime = 0;
+    let apex = 0;
+    let jumpHeld = false;
+
+    // How far into a slide he is, in seconds (-1: not sliding), and how much getting up is left.
+    // A slide held to its limit locks until the key comes up, or it would just start again.
+    let slideTime = -1;
+    let getUp = 0;
+    let slideHeld = false;
+    let slideLocked = false;
+
+    // How far into dying he is, in seconds (-1: not dying).
+    let deathTime = -1;
+
+    // Which animation is playing, and how far through it he is, in frames.
+    let clip: Clip = 'idle';
+    let clipAt = 0;
+
+    // Storage can be unavailable (private windows, blocked site data); the game works without it.
+    let best = 0;
+    try {
+      best = Number(localStorage.getItem(BEST_KEY)) || 0;
+    } catch {}
+
+    const pad = (n: number) => String(n).padStart(5, '0');
+    const score = () => Math.floor(distance / 10);
+    const invite = (to: string) => (canSlide ? `Click or press space to ${to}` : `Tap to ${to}`);
+
+    const draw = () => {
+      const { clientWidth: width, clientHeight: height } = stage;
+      const ground = height - GROUND_PX;
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.fillStyle = lineColor;
+      ctx.fillRect(0, ground, width, 1);
+      // Dashes under the line that slide past, so the ground reads as moving.
+      for (let x = -(distance % 48); x < width; x += 48) ctx.fillRect(x, ground + 8, 14, 1);
+
+      const seconds = performance.now() / 1000;
+      for (const obstacle of obstacles) drawObstacle(ctx, obstacle, ground, seconds, theme);
+
+      scoreEl.textContent = `${pad(score())} // Hi ${pad(Math.max(best, score()))}`;
+    };
+
+    // The canvas is drawn in screen pixels, at the display's own density so edges stay sharp.
+    const resize = () => {
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.round(stage.clientWidth * ratio);
+      canvas.height = Math.round(stage.clientHeight * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      draw();
+    };
+
+    // Picks his animation from what he is doing, moves it on, and puts him at his height.
+    const animate = (dt: number) => {
+      if (deathTime >= 0) {
+        deathTime += dt;
+        const { frames, fps } = sprite.clips.death;
+        if (deathTime * fps * DEATH_PACE >= frames) deathTime = -1;
+      }
+      // Dead and done dying: he is gone, and stays gone until another game brings him back.
+      const gone = state === 'over' && deathTime < 0;
+      player.hidden = gone;
+      if (gone) return;
+
+      let next: Clip = 'idle';
+      if (deathTime >= 0) next = 'death';
+      else if (airborne) next = 'jump';
+      else if (state === 'running') next = slideTime >= 0 || getUp > 0 ? 'slide' : 'run';
+      if (next !== clip) {
+        clip = next;
+        clipAt = 0;
+      }
+      const { row, frames, fps } = sprite.clips[clip];
+
+      if (clip === 'death') {
+        clipAt = deathTime * fps * DEATH_PACE;
+      } else if (clip === 'jump') {
+        // Tied to the jump rather than the clock: half the frames are spread over the climb and
+        // half over the fall, however long the jump was held, so he is always stretching on the
+        // way up and reaching for the ground on the way down.
+        const shown = frames - JUMP_FIRST_FRAME;
+        const landingSpeed = Math.sqrt(2 * GRAVITY * Math.max(apex, 1));
+        const through = rise > 0 ? 0.5 * (1 - rise / JUMP) : 0.5 + 0.5 * Math.min(1, -rise / landingSpeed);
+        clipAt = JUMP_FIRST_FRAME + Math.min(shown - 1, Math.floor(through * shown));
+      } else if (clip === 'slide' && slideTime >= 0) {
+        const [first, lastFrame] = SLIDE_LOOP;
+        const step = Math.floor(slideTime * SLIDE_FPS);
+        clipAt = step === 0 ? 0 : first + ((step - 1) % (lastFrame - first + 1));
+      } else if (clip === 'slide') {
+        const [first, lastFrame] = SLIDE_UP;
+        const count = lastFrame - first + 1;
+        clipAt = first + Math.min(count - 1, Math.floor((1 - getUp / GET_UP_S) * count));
+      } else {
+        // His legs turn over faster as the ground does, though only half as much.
+        const pace = clip === 'run' ? 1.3 + 0.65 * (speed / START_SPEED - 1) : 1;
+        clipAt = (clipAt + fps * pace * dt) % frames;
+      }
+
+      player.style.backgroundPosition = `${-Math.floor(clipAt) * frameWidth}px ${-row * frameHeight}px`;
+      player.style.translate = `0 ${-Math.round(lift)}px`;
+    };
+
+    const crash = () => {
+      state = 'over';
+      crashedAt = performance.now();
+      deathTime = 0;
+      slideTime = -1;
+      getUp = 0;
+      if (score() > best) {
+        best = score();
+        try {
+          localStorage.setItem(BEST_KEY, String(best));
+        } catch {}
+      }
+      hint.textContent = `Crashed at ${score()} // ${invite('retry').toLowerCase()}`;
+      prompt.hidden = false;
+    };
+
+    // Carries a jump through. It runs on after a crash too, so that he comes back down.
+    const fall = (dt: number) => {
+      if (!airborne) return;
+      airTime += dt;
+      const lighter = jumpHeld && state === 'running' && rise > 0 && airTime <= HOLD_S;
+      rise -= GRAVITY * (lighter ? HOLD_GRAVITY : 1) * dt;
+      lift += rise * dt;
+      apex = Math.max(apex, lift);
+      if (lift > 0) return;
+      lift = 0;
+      rise = 0;
+      airborne = false;
+    };
+
+    const jump = () => {
+      airborne = true;
+      airTime = 0;
+      apex = 0;
+      rise = JUMP;
+      // A jump cuts a slide short.
+      slideTime = -1;
+      getUp = 0;
+    };
+
+    // Moves a slide on, ends it, or starts one if the key is down and he is on his feet.
+    // A key held through a jump therefore turns into a slide the moment he lands.
+    const slide = (dt: number) => {
+      if (slideTime >= 0) {
+        slideTime += dt;
+        if (slideTime < SLIDE_MIN_S || (slideHeld && slideTime < SLIDE_MAX_S)) return;
+        slideTime = -1;
+        getUp = GET_UP_S;
+        slideLocked = slideHeld;
+      } else {
+        getUp = Math.max(0, getUp - dt);
+        if (slideHeld && !slideLocked && !airborne) slideTime = 0;
+      }
+    };
+
+    const update = (dt: number) => {
+      speed = speedAt(score());
+      distance += speed * dt;
+      slide(dt);
+
+      for (const obstacle of obstacles) obstacle.x -= speed * dt;
+      obstacles = obstacles.filter((obstacle) => obstacle.x + obstacle.width > 0);
+
+      // Obstacles arrive at least a jump and a breath apart. The gap is counted in time, from
+      // the back of one to the front of the next, so it stretches as the pace picks up.
+      nextObstacleIn -= speed * dt;
+      if (nextObstacleIn <= 0) {
+        const group = spawn(score(), stage.clientWidth, canSlide);
+        obstacles.push(...group);
+        const back = group[group.length - 1];
+        nextObstacleIn = back.x + back.width - stage.clientWidth + speed * (0.85 + Math.random() * 0.9);
+      }
+
+      const body = slideTime >= 0 ? SLIDING_BODY : BODY;
+      const left = playerX - body.back;
+      const right = playerX + body.front;
+      if (obstacles.some((obstacle) => hits(obstacle, left, right, lift, body.height))) crash();
+    };
+
+    // There is something to animate while a game is on, while he is still in the air or dying,
+    // and, unless the visitor has asked for less motion, while he stands waiting for the first game.
+    const busy = () =>
+      visible && (state === 'running' || airborne || deathTime >= 0 || (state === 'idle' && !reducedMotion));
+
+    const tick = (now: number) => {
+      if (!busy()) {
+        looping = false;
+        return;
+      }
+      // A long gap means the tab was in the background; do not let the game leap ahead.
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      fall(dt);
+      if (state === 'running') {
+        update(dt);
+        draw();
+      }
+      animate(dt);
+      requestAnimationFrame(tick);
+    };
+
+    const loop = () => {
+      if (looping || !busy()) return;
+      looping = true;
+      last = performance.now();
+      requestAnimationFrame(tick);
+    };
+
+    const start = () => {
+      state = 'running';
+      speed = START_SPEED;
+      distance = 0;
+      lift = 0;
+      rise = 0;
+      airborne = false;
+      slideTime = -1;
+      getUp = 0;
+      deathTime = -1;
+      obstacles = [];
+      nextObstacleIn = Math.max(0, FIRST_OBSTACLE_PX - stage.clientWidth);
+      prompt.hidden = true;
+      loop();
+    };
+
+    // Jump, or if no game is on, start one.
+    const pressJump = () => {
+      jumpHeld = true;
+      if (state === 'running') {
+        if (!airborne) jump();
+      } else if (state === 'idle' || performance.now() - crashedAt > RETRY_MS) {
+        start();
+      }
+    };
+
+    const letGo = () => {
+      jumpHeld = false;
+      slideHeld = false;
+      slideLocked = false;
+    };
+
+    stage.addEventListener('pointerdown', pressJump);
+    for (const type of ['pointerup', 'pointercancel', 'pointerleave']) {
+      stage.addEventListener(type, () => (jumpHeld = false));
+    }
+
+    stage.addEventListener('keydown', (event) => {
+      const jumps = JUMP_KEYS.has(event.code);
+      const slides = canSlide && SLIDE_KEYS.has(event.code);
+      // The slide keys are only taken during a game: before one, the down arrow still scrolls the page.
+      if (!jumps && !(slides && state === 'running')) return;
+      // Space and the arrows would otherwise scroll the page.
+      event.preventDefault();
+      if (event.repeat) return;
+      if (jumps) pressJump();
+      else slideHeld = true;
+    });
+    stage.addEventListener('keyup', (event) => {
+      if (JUMP_KEYS.has(event.code)) jumpHeld = false;
+      if (SLIDE_KEYS.has(event.code)) {
+        slideHeld = false;
+        slideLocked = false;
+      }
+    });
+    // A key let go after the strip has lost focus would never be heard of here.
+    stage.addEventListener('blur', letGo);
+
+    // The game stands still while it is off screen and picks up where it was.
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      loop();
+    }).observe(stage);
+
+    hint.textContent = invite('run');
+    keys.textContent = canSlide ? 'W / Space / ↑ jump, hold to go further · S / ↓ slide' : 'Hold to jump further';
+    new ResizeObserver(resize).observe(stage);
+    resize();
+  }
+</script>

@@ -1,7 +1,7 @@
 # Portfolio
 
-Personal portfolio built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com), in a neon
-cyberpunk style: dark background, cut-corner panels, cyan / magenta / yellow highlights, and a lot of motion.
+Personal portfolio built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com), styled like
+an arcade machine: a black CRT face, pixel lettering, flat cyan / magenta / yellow, and a lot of motion.
 
 ## Commands
 
@@ -21,6 +21,7 @@ If projects or images go missing in the dev server after files are moved or rena
 | Projects (one Markdown file each)                       | `src/content/projects/`      |
 | Project images (one folder per project)                 | `src/assets/projects/`       |
 | Hero portrait: game sprite and real photo               | `src/assets/hero/`           |
+| Minigame character (sprite sheet, built from GIFs)      | `src/assets/runner/`         |
 | CTF and hackathon certificates (images)                 | `src/assets/certificates/`   |
 | Tool icons                                              | `public/icons/`              |
 | Colours, fonts, panel, button and animation styles      | `src/styles/global.css`      |
@@ -32,6 +33,21 @@ If projects or images go missing in the dev server after files are moved or rena
 The hero portrait flips between the game sprite and real photos. Put images in `src/assets/pics/` and list the file
 names to use under `photos` in `src/data/site.ts`. List more than one and they fade from one to the next. They are
 cropped to the frame from the top and resized at build time.
+
+### Minigame character
+
+The runner under the hero animates from one sprite sheet, `src/assets/runner/man.png`, with a row each for idle,
+run, jump, slide and death. It is built from five GIFs: `man_idle.gif`, `man_run.gif`, `man_jump.gif`,
+`man_slide.gif` and `man_death.gif`.
+After changing them, rebuild the sheet by pointing the script at their folder:
+
+```
+node scripts/runner-sprites.mjs path/to/the/gifs
+```
+
+The GIFs can be exported at any whole-number scale, as long as they all share it and have a transparent background.
+They do not have to be the same size: they are lined up by their bottom edge (the ground) and the middle of their width.
+The obstacles are not images: they are drawn in code, in `src/scripts/runner-obstacles.ts`.
 
 ### Certificates
 
@@ -66,12 +82,18 @@ Images narrower than 400px are treated as pixel-art logos: they get a margin and
 
 ### Styling notes
 
-- The neon colours are the `--color-*` values at the top of `src/styles/global.css`. Change them there and the whole
-  site follows.
-- Put `data-accent="cyan"` (or `magenta`, `acid`, `violet`) on any element to recolour the neon inside it.
-- `.neon-box` is the cut-corner panel. Its corner size is `--cut`, for example `class="neon-box [--cut:22px]"`.
-  Add `neon-run` for the lights that chase along its edges and `data-spotlight` for the glow that follows the pointer.
-- Tool icons must be single-colour SVGs: they are used as masks and take the colour of their row.
+- The colours are the `--color-*` values at the top of `src/styles/global.css`. Change them there and the whole
+  site follows. Each has one job: cyan is the interface (frames, titles, links), yellow is the thing to press,
+  magenta is for emphasis.
+- Put `data-accent="cyan"` (or `magenta`, `acid`, `violet`) on any element to recolour what is inside it.
+- The fonts are set in the same place: a pixel font for names and titles, a sans for reading, a mono for labels.
+  The pixel font is drawn on an 8px grid, so it is sharpest at 8, 16, 24, 32px and so on.
+- `.panel` is the framed box with pixel-stepped corners. `--bw` is its border width, `--px` the size of a corner
+  step and `--line` the border colour, for example `class="panel [--bw:4px] [--line:var(--accent)]"`.
+  Add `panel-run` for the dashes that chase along its edges and `data-spotlight` for the dots that light up under
+  the pointer.
+- `title-chrome` gives a title the three-band fill of the section headings; `chip` is the small bracketed label.
+- Tool icons must be single-colour SVGs: they are used as masks and take the section's colour.
 
 ### Animation notes
 
