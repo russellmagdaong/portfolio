@@ -1,23 +1,31 @@
 ---
-import { accentBg, type Accent } from '../lib/accent';
-
 interface Props {
+  // Two-digit section number, e.g. "02".
+  index: string;
   kicker: string;
   title: string;
-  accent?: Accent;
 }
 
-const { kicker, title, accent = 'sun' } = Astro.props;
+const { index, kicker, title } = Astro.props;
 ---
 
-<header class="mb-10 sm:mb-14">
-  <p
-    class:list={[
-      'inline-block -rotate-2 rounded-full border-2 border-line px-4 py-1 font-mono text-sm font-bold text-night shadow-pop-sm',
-      accentBg[accent],
-    ]}
+<header class="mb-10 flex items-end gap-6 sm:mb-12" data-reveal>
+  <div>
+    <p class="font-mono text-xs tracking-[0.22em] text-accent uppercase sm:text-sm">
+      {index} <span class="text-muted">//</span>{' '}
+      {kicker}
+    </p>
+    <!-- data-scramble: the letters decode into place when the heading scrolls in (see effects.ts). -->
+    <h2
+      data-scramble
+      class="mt-3 font-display text-4xl leading-[0.95] font-extrabold text-white uppercase sm:text-5xl lg:text-6xl"
+    >
+      {title}
+    </h2>
+  </div>
+  <!-- A rule that draws itself out to the right and fades. -->
+  <div
+    class="rule-draw bg-accent mb-2 hidden h-px flex-1 [mask-image:linear-gradient(to_right,#000,transparent)] sm:block"
   >
-    {kicker}
-  </p>
-  <h2 class="mt-4 text-4xl font-extrabold sm:text-6xl">{title}</h2>
+  </div>
 </header>

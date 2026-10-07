@@ -1,83 +1,172 @@
 ---
-import ThemeToggle from './ThemeToggle.astro';
 import { site } from '../data/site';
 import { url } from '../lib/url';
 
+// `id` is the section each link points at; the script below uses it to highlight the current one.
 const links = [
-  { label: 'About', href: url('/#about') },
-  { label: 'Skills', href: url('/#skills') },
-  { label: 'Projects', href: url('/#projects') },
-  { label: 'Experience', href: url('/#experience') },
-  { label: 'Contact', href: url('/#contact') },
+  { label: 'About', id: 'about' },
+  { label: 'Projects', id: 'projects' },
+  { label: 'Tools', id: 'tools' },
+  { label: 'Certificates', id: 'other' },
+  { label: 'Contact', id: 'contact' },
 ];
+
+// Pages that do not exist yet: listed in the nav, greyed out, with a "soon" tag.
+const upcoming = ['Videos'];
 ---
 
-<header class="sticky top-4 z-40 px-4">
-  <div class="relative mx-auto max-w-4xl">
-    <nav
-      aria-label="Main"
-      class="flex items-center justify-between gap-3 rounded-full border-2 border-line bg-card py-2 pr-2 pl-3 shadow-pop"
+<header class="sticky top-0 z-40 bg-void/80 backdrop-blur-md">
+  <div class="container-page relative flex h-16 items-center justify-between gap-6">
+    <!-- Wordmark styled as a terminal prompt: > russm_ -->
+    <a
+      href={url('/')}
+      class="flex items-center gap-2 font-display text-2xl leading-none font-extrabold tracking-[0.08em] text-white"
+      aria-label={`${site.name}, home`}
     >
-      <a href={url('/')} class="group flex items-center gap-2 font-display text-lg font-extrabold">
-        <span
-          class="grid size-10 place-items-center rounded-full border-2 border-line bg-pink text-sm text-night group-hover:animate-wiggle"
-        >
-          {site.initials}
-        </span>
-        <span class="hidden sm:inline">{site.name.split(' ')[0]}</span>
-      </a>
+      <span class="text-magenta" aria-hidden="true">&gt;</span>
+      <span class="glitch" data-text={site.handle}>{site.handle}</span>
+      <span class="h-[0.8em] w-[0.45em] animate-blink bg-cyan" aria-hidden="true"></span>
+    </a>
 
-      <ul class="hidden items-center gap-1 md:flex">
+    <nav aria-label="Main" class="relative hidden lg:block">
+      <ul class="flex items-center gap-6 xl:gap-8">
         {
-          links.map((link) => (
+          links.map((link, i) => (
             <li>
               <a
-                href={link.href}
-                class="rounded-full px-3 py-2 font-semibold transition-colors hover:bg-sun hover:text-night"
+                href={url(`/#${link.id}`)}
+                data-nav-link={link.id}
+                class="font-mono text-xs tracking-[0.18em] text-muted uppercase transition-colors hover:text-white aria-[current]:text-cyan"
               >
+                <span class="text-[0.65rem] text-magenta">0{i + 1}</span>{' '}
                 {link.label}
               </a>
             </li>
           ))
         }
+        {
+          upcoming.map((label) => (
+            <li class="font-mono text-xs tracking-[0.18em] text-muted/60 uppercase" title={`${label}: coming soon`}>
+              {label}{' '}
+              <span class="border border-line px-1 py-0.5 text-[0.6rem] tracking-[0.12em] text-acid/80">soon</span>
+            </li>
+          ))
+        }
       </ul>
-
-      <div class="flex items-center gap-2">
-        <ThemeToggle />
-        <button
-          type="button"
-          data-menu-button
-          aria-expanded="false"
-          aria-controls="mobile-menu"
-          class="pressable rounded-full border-2 border-line bg-mint px-4 py-2 font-display font-bold text-night shadow-pop-sm md:hidden"
-        >
-          Menu
-        </button>
-      </div>
+      <span class="nav-indicator" data-nav-indicator aria-hidden="true"></span>
     </nav>
 
-    <ul
-      id="mobile-menu"
-      hidden
-      class="absolute inset-x-0 top-full mt-3 space-y-1 rounded-3xl border-2 border-line bg-card p-3 shadow-pop md:hidden"
+    <!-- Live clock for where I am. -->
+    <p
+      class="hidden items-center gap-2 font-mono text-xs tracking-[0.18em] text-muted uppercase xl:flex"
+      title="Philippine time"
     >
+      <span class="size-1.5 animate-flicker bg-acid shadow-[0_0_8px_var(--color-acid)]" aria-hidden="true"></span>
+      PHT
+      <span data-clock class="text-fg tabular-nums">--:--:--</span>
+    </p>
+
+    <button
+      type="button"
+      data-menu-button
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+      class="btn btn-line neon-box h-10 cursor-pointer px-4 text-xs lg:hidden"
+    >
+      Menu
+    </button>
+
+    <ul id="mobile-menu" hidden class="neon-box absolute inset-x-5 top-full mt-3 px-5 py-2 sm:inset-x-8 lg:hidden">
       {
-        links.map((link) => (
-          <li>
+        links.map((link, i) => (
+          <li class="border-b border-line last:border-b-0">
             <a
-              href={link.href}
-              class="block rounded-2xl px-4 py-3 font-display text-xl font-bold hover:bg-sun hover:text-night"
+              href={url(`/#${link.id}`)}
+              class="block py-4 font-mono text-sm tracking-[0.2em] text-fg uppercase hover:text-cyan"
             >
+              <span class="text-magenta">0{i + 1}</span>{' '}
               {link.label}
             </a>
           </li>
         ))
       }
+      {
+        upcoming.map((label) => (
+          <li class="border-t border-line py-4 font-mono text-sm tracking-[0.2em] text-muted/60 uppercase">
+            {label}{' '}
+            <span class="border border-line px-1 py-0.5 text-[0.65rem] tracking-[0.12em] text-acid/80">soon</span>
+          </li>
+        ))
+      }
     </ul>
+  </div>
+
+  <!-- The neon strip fills from the left as the page scrolls. -->
+  <div class="relative h-0.5 bg-line/70">
+    <div
+      data-scroll-progress
+      class="absolute inset-0 origin-left scale-x-0 bg-gradient-to-r from-cyan via-magenta to-acid shadow-[0_0_12px_var(--color-magenta)]"
+    >
+    </div>
   </div>
 </header>
 
 <script>
+  // --- Clock ---
+  const clock = document.querySelector<HTMLElement>('[data-clock]');
+  if (clock) {
+    const format = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Manila',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const tick = () => (clock.textContent = format.format(new Date()));
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  // --- Scroll progress and current-section highlight ---
+  const progress = document.querySelector<HTMLElement>('[data-scroll-progress]');
+  const navLinks = [...document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]')];
+  const indicator = document.querySelector<HTMLElement>('[data-nav-indicator]');
+  const sections = navLinks.map((link) => document.getElementById(link.dataset.navLink ?? ''));
+
+  const update = () => {
+    const scrollable = document.documentElement.scrollHeight - innerHeight;
+    if (progress) progress.style.scale = `${scrollable > 0 ? Math.min(1, scrollY / scrollable) : 0} 1`;
+
+    // The current section is the last one whose top has passed 40% of the way down the window.
+    let current = -1;
+    sections.forEach((section, i) => {
+      if (section && section.getBoundingClientRect().top <= innerHeight * 0.4) current = i;
+    });
+
+    navLinks.forEach((link, i) => {
+      if (i === current) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+
+    if (indicator) {
+      const link = navLinks[current];
+      // offsetParent is null while the nav is hidden on small screens.
+      if (link?.offsetParent) {
+        indicator.style.opacity = '1';
+        indicator.style.width = `${link.offsetWidth}px`;
+        indicator.style.translate = `${link.offsetLeft}px 0`;
+      } else {
+        indicator.style.opacity = '0';
+      }
+    }
+  };
+
+  // Scroll events already fire at most once per frame, so this needs no extra throttling.
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', update);
+  update();
+
+  // --- Mobile menu ---
   const button = document.querySelector<HTMLButtonElement>('[data-menu-button]');
   const menu = document.getElementById('mobile-menu');
 
@@ -92,7 +181,7 @@ const links = [
 
     button.addEventListener('click', () => setOpen(!isOpen()));
     menu.addEventListener('click', (event) => {
-      if (event.target instanceof HTMLAnchorElement) setOpen(false);
+      if (event.target instanceof Element && event.target.closest('a')) setOpen(false);
     });
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && isOpen()) {

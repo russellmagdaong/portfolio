@@ -1,85 +1,147 @@
-import type { Accent } from '../lib/accent';
+import type { IconName } from '../components/Icon.astro';
 
 /*
  * Everything personal lives in this file.
- * Lines marked TODO are placeholders: swap them for the real thing.
  * Projects are separate Markdown files in src/content/projects/.
  */
 
 export const site = {
   name: 'Russell Magdaong',
-  initials: 'RM',
-  role: 'Software Developer',
-  // TODO: one-line pitch shown in the hero
-  tagline: 'I turn coffee and curiosity into fast, friendly software that people actually enjoy using.',
-  // TODO: used for search engines and link previews
-  description: 'Portfolio of Russell Magdaong, a software developer who builds web apps, APIs, and developer tools.',
-  // TODO
-  location: 'Your City, Country',
-  // TODO
-  email: 'hello@example.com',
-  // Shows the "available" badge in the hero and contact section.
-  available: true,
+  // The short form of the name, used wherever the full one does not fit.
+  handle: 'russm',
+  role: 'Student developer / DOST-SEI scholar / Philippines',
+  // Used for search engines and link previews.
+  description:
+    'Russell Magdaong is a student developer from the Philippines who builds games that teach things: ODIN, TAKO and Algebrawl.',
+  email: 'russelldizonmagdaong@gmail.com',
+  // Photos behind the hero's "De-pixelate" button: file names in src/assets/pics/, in the order shown.
+  // List more than one and they fade from one to the next.
+  photos: ['juIYtZ3o1.jpg'],
+  // Shown as the status line at the top of the hero. Leave empty to hide it.
+  status: '',
   // TODO: drop a PDF in public/ and set this to '/resume.pdf' to show a résumé button.
   resumeUrl: '',
 };
 
-// Cycles through the end of "…who builds ___" in the hero.
-export const rotatingWords = ['web apps', 'speedy APIs', 'developer tools', 'tiny experiments'];
+// The hero terminal types these out one at a time.
+export const dialogue = [
+  'I build games that teach things.',
+  'Godot up front, plain code behind it.',
+  'Now building ODIN, a tutor that lives inside a dungeon crawler.',
+  'I also edit videos, play games and make music.',
+];
 
-// TODO: point LinkedIn at your real profile
-export const socials = [
-  { label: 'GitHub', href: 'https://github.com/russellmagdaong' },
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/your-username' },
+export const socials: { label: string; icon: IconName; href: string; handle: string }[] = [
+  { label: 'Email', icon: 'email', href: `mailto:${site.email}`, handle: site.email },
+  { label: 'GitHub', icon: 'github', href: 'https://github.com/russellmagdaong', handle: 'github.com/russellmagdaong' },
+  { label: 'Facebook', icon: 'facebook', href: 'https://www.facebook.com/russssm', handle: 'facebook.com/russssm' },
 ];
 
 export const about = {
-  // TODO: your story, in your voice
   paragraphs: [
-    "I'm a software developer who likes the whole trip: sketching an idea, wiring up the backend, and sweating the last few pixels until it feels right.",
-    'Placeholder bio. Say what kind of problems you love, what you have shipped, and what makes working with you different. Two or three short paragraphs is plenty.',
-    'Away from the keyboard you can find me doing placeholder hobby one, placeholder hobby two, and hunting for the best coffee in town.',
+    "I'm a student developer from the Philippines and a DOST-SEI scholar. Most of what I build ends up being a game that teaches something: math, programming, or whatever I was struggling to learn at the time.",
+    'I like the part of a project where the "fun" layer and the "is this actually correct" layer have to meet. In practice that means a lot of Godot on the front and a lot of plain, deterministic code behind it.',
+    'Away from that, I edit videos, play games and make music, and I take part in CTFs and hackathons.',
   ],
-  // TODO
-  facts: [
-    { label: 'Based in', value: 'Your City' },
-    { label: 'Currently', value: 'Building side projects' },
-    { label: 'Powered by', value: 'Coffee & lo-fi' },
+  stats: [
+    { label: 'Role', value: 'Student developer' },
+    { label: 'Based in', value: 'Philippines' },
+    { label: 'Scholarship', value: 'DOST-SEI' },
+    { label: 'Now building', value: 'ODIN, my undergraduate thesis' },
+    { label: 'Also', value: 'Video editor, gamer, musician' },
+    { label: 'Open to', value: 'Software engineering internships' },
   ],
 };
 
-// TODO: list what you actually use
-export const skills: { title: string; accent: Accent; items: string[] }[] = [
-  { title: 'Languages', accent: 'pink', items: ['TypeScript', 'JavaScript', 'Python', 'SQL'] },
-  { title: 'Frontend', accent: 'sky', items: ['React', 'Astro', 'Tailwind CSS', 'HTML & CSS'] },
-  { title: 'Backend', accent: 'mint', items: ['Node.js', 'REST APIs', 'PostgreSQL', 'Auth'] },
-  { title: 'Tools', accent: 'tang', items: ['Git & GitHub', 'Docker', 'VS Code', 'Figma'] },
-];
-
-// TODO: newest first
-export const experience = [
+// `icon` is a file name in public/icons/ (without .svg). Leave it out to show initials instead.
+export const tools: { group: string; items: { name: string; icon?: string }[] }[] = [
   {
-    role: 'Software Developer',
-    company: 'Company Name',
-    period: '2025 — Present',
-    summary: 'Placeholder. One sentence on what the team does and what you own.',
-    highlights: [
-      'Shipped a feature that improved something measurable by some percent.',
-      'Rebuilt a slow thing so it became a fast thing.',
+    group: 'Games',
+    items: [{ name: 'Godot 4', icon: 'godot' }, { name: 'GDScript' }],
+  },
+  {
+    group: 'Web',
+    items: [
+      { name: 'TypeScript', icon: 'typescript' },
+      { name: 'React', icon: 'react' },
+      { name: 'Vite', icon: 'vitejs' },
+      { name: 'Tailwind CSS', icon: 'tailwindcss' },
     ],
   },
   {
-    role: 'Junior Developer / Intern',
-    company: 'Another Company',
-    period: '2023 — 2025',
-    summary: 'Placeholder. What you learned and what you delivered.',
-    highlights: ['Built and maintained internal tools used by the whole team.'],
+    group: 'Backend and data',
+    items: [
+      { name: 'C#', icon: 'csharp' },
+      { name: 'ASP.NET Core', icon: 'dotnetcore' },
+      { name: 'PostgreSQL', icon: 'postgresql' },
+      { name: 'SQLite', icon: 'sqlite' },
+      { name: 'Supabase', icon: 'supabase' },
+    ],
   },
   {
-    role: 'BS in Your Degree',
-    company: 'Your University',
-    period: '2019 — 2023',
-    summary: 'Placeholder. Capstone project, org work, or awards worth a mention.',
-    highlights: [],
+    group: 'Also comfortable in',
+    items: [
+      { name: 'Java', icon: 'java' },
+      { name: 'Python', icon: 'python' },
+      { name: 'C++', icon: 'cplusplus' },
+    ],
+  },
+];
+
+// Scrolls past in the band above the contact section.
+export const interests = ['Developer', 'Video editor', 'Gamer', 'Musician', 'CTF player', 'Hackathons'];
+
+export const contact = {
+  heading: "Want to talk games, code, or a project? Say hi.",
+};
+
+export const achievements: { title: string; detail?: string }[] = [
+  { title: 'DOST-SEI Scholar' },
+  { title: 'PMI Project Management Ready', detail: 'Project Management Institute' },
+  { title: 'Python developer certification' },
+];
+
+// Certificates, grouped under the buttons in the "Other things" section. Each group stays closed
+// until its button is pressed. `file` is the image name (without .jpg) in src/assets/certificates/<folder>/.
+export const certificates: {
+  label: string;
+  folder: string;
+  items: { file: string; title: string; detail: string }[];
+}[] = [
+  {
+    label: 'Certifications',
+    folder: 'certifications',
+    items: [
+      { file: 'pmi-project-management-ready', title: 'PMI Project Management Ready', detail: 'Project Management Institute, March 2026' },
+      { file: 'it-specialist-python', title: 'IT Specialist: Python', detail: 'Certiport, July 2025' },
+    ],
+  },
+  {
+    label: 'CTFs',
+    folder: 'ctfs',
+    items: [
+      { file: 'brunnerctf-2026', title: 'BrunnerCTF 2026', detail: '363rd of 1,103 teams, as Billiard Boys' },
+      { file: 'boroctf-2026', title: 'boroCTF 2026', detail: 'Rank 121, open division' },
+      { file: 'vishwactf-2026', title: 'VishwaCTF 2026', detail: 'Participant, March 2026' },
+      { file: 'v1t-ctf-2025', title: 'V1T CTF 2025', detail: 'Rank 240, October 2025' },
+      { file: 'deadface-ctf-2025', title: 'DEADFACE CTF 2025', detail: 'Competitor badge, October 2025' },
+      { file: 'trend-university-ctf-2025', title: 'Trend University Capture the Flag', detail: 'Preliminary round, August 2025' },
+    ],
+  },
+  {
+    label: 'Hackathons and colloquiums',
+    folder: 'hackathons',
+    items: [
+      { file: 'gcash-imagnation-2026', title: 'GCash ImaGnation 2026', detail: 'Top 10 Challenger Team, September 2026' },
+      { file: 'acm-techsprint-2026', title: 'ACM TechSprint', detail: '2nd runner-up, June 2026' },
+      { file: 'feu-tech-research-colloquium-2026', title: 'FEU Tech Research Colloquium 2026', detail: 'Presented the ODIN paper, July 2026' },
+    ],
+  },
+  {
+    label: 'Academic',
+    folder: 'academic',
+    items: [
+      { file: 'deans-silver-certificate', title: "Dean's Silver Certificate", detail: 'FEU Institute of Technology, 3rd Term S.Y. 2024-2025' },
+    ],
   },
 ];

@@ -1,39 +1,42 @@
 ---
 import SectionHeading from './SectionHeading.astro';
-import Shape from './Shape.astro';
-import { about, site } from '../data/site';
-import { accentAt, accentBg } from '../lib/accent';
+import { about } from '../data/site';
 ---
 
-<section id="about" class="container-page py-20 sm:py-28">
-  <SectionHeading kicker="01 / about" title="Nice to meet you" accent="mint" />
+<section id="about" class="container-page py-16 sm:py-24" data-accent="cyan">
+  <SectionHeading index="01" kicker="About" title="About me" />
 
-  <div class="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-    <div class="relative mx-auto w-full max-w-sm">
-      <!-- TODO: replace this block with <img src="/me.jpg" alt="…" class="size-full object-cover" /> once you have a photo in public/ -->
-      <div class="card relative grid aspect-square -rotate-3 place-items-center overflow-hidden bg-mint">
-        <Shape kind="blob" class="absolute inset-[12%] size-[76%] fill-sun stroke-night" />
-        <span class="relative font-display text-8xl font-extrabold text-night">{site.initials}</span>
-      </div>
-      <Shape kind="flower" class="absolute -top-8 -right-2 size-20 animate-float fill-pink sm:-right-6" />
-      <p
-        class="absolute -bottom-5 left-4 rotate-3 rounded-full border-2 border-line bg-sky px-4 py-1.5 font-display font-bold text-night shadow-pop-sm"
-      >
-        that's me!
-      </p>
+  <div class="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-14">
+    <div class="space-y-5 text-lg leading-relaxed" data-stagger>
+      {
+        about.paragraphs.map((paragraph, i) => (
+          <p class:list={{ 'text-xl text-white': i === 0 }} style={`--i:${i * 2}`}>
+            {paragraph}
+          </p>
+        ))
+      }
     </div>
 
-    <div>
-      <div class="space-y-5 text-lg leading-relaxed sm:text-xl">
-        {about.paragraphs.map((paragraph, i) => <p class:list={{ 'text-muted': i > 0 }}>{paragraph}</p>)}
-      </div>
-
-      <dl class="mt-10 grid gap-4 sm:grid-cols-3">
+    <!-- Read-out panel. -->
+    <div
+      class="neon-box neon-run self-start [--accent-2:var(--color-magenta)]"
+      data-spotlight
+      data-reveal="right"
+      style="--i:2"
+    >
+      <p class="border-b border-line px-5 py-3 font-mono text-xs tracking-[0.22em] text-accent uppercase">
+        <span class="text-muted">//</span>{' '}Profile
+        <span class="ml-1 inline-block h-[0.9em] w-[0.5em] animate-blink bg-cyan align-text-bottom" aria-hidden="true"></span>
+      </p>
+      <dl class="px-5 py-2" data-stagger>
         {
-          about.facts.map((fact, i) => (
-            <div class:list={['rounded-2xl border-2 border-line p-4 text-night shadow-pop-sm', accentBg[accentAt(i + 1)]]}>
-              <dt class="font-mono text-xs font-bold tracking-wide uppercase">{fact.label}</dt>
-              <dd class="mt-1 font-display text-lg leading-tight font-extrabold">{fact.value}</dd>
+          about.stats.map((stat, i) => (
+            <div
+              class="grid grid-cols-[7.5rem_1fr] items-baseline gap-3 border-b border-line/60 py-3 last:border-b-0"
+              style={`--i:${i + 4}`}
+            >
+              <dt class="font-mono text-[0.7rem] tracking-[0.16em] text-muted uppercase">{stat.label}</dt>
+              <dd class="font-medium text-white">{stat.value}</dd>
             </div>
           ))
         }

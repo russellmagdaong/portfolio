@@ -1,6 +1,6 @@
 ---
-import '@fontsource-variable/bricolage-grotesque';
-import '@fontsource-variable/dm-sans';
+import '@fontsource-variable/oxanium';
+import '@fontsource-variable/exo-2';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
@@ -14,7 +14,7 @@ interface Props {
 }
 
 const { title, description = site.description } = Astro.props;
-const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.role}`;
+const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · I build games that teach things`;
 // Only known once `site` is set in astro.config.mjs.
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
 ---
@@ -25,6 +25,7 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefin
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#06060c" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:type" content="website" />
@@ -34,30 +35,35 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefin
     {canonical && <meta property="og:url" content={canonical} />}
     <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
 
-    <!-- Runs before paint so the saved theme never flashes. -->
+    <!--
+      Marks the page as scripted, which is what hides blocks until they scroll in (see global.css).
+      If effects.ts has not reported in after a few seconds, the mark comes off again so that
+      nothing is left hidden.
+    -->
     <script is:inline>
-      (() => {
-        let theme;
-        try {
-          theme = localStorage.getItem('theme');
-        } catch {}
-        theme ??= matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        document.documentElement.dataset.theme = theme;
-      })();
+      document.documentElement.classList.add('js');
+      setTimeout(() => {
+        if (!document.documentElement.dataset.effects) document.documentElement.classList.remove('js');
+      }, 5000);
     </script>
   </head>
   <body class="min-h-dvh">
     <a
       href="#main"
-      class="sr-only rounded-full border-2 border-line bg-sun px-4 py-2 font-bold text-night focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50"
+      class="btn btn-solid sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
+      data-accent="acid"
     >
       Skip to content
     </a>
     <Header />
-    <!-- Clip here, not on body: decorative shapes poke past the edge and must not add sideways scroll. -->
+    <!-- Clipped sideways because blocks slide in from just outside the edge. -->
     <main id="main" class="overflow-x-clip">
       <slot />
     </main>
     <Footer />
+
+    <script>
+      import '../scripts/effects.ts';
+    </script>
   </body>
 </html>
