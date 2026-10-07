@@ -1,5 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- The cut-corner panel shape, with an "R" -->
-  <path d="M2 2h21l7 7v21H9l-7-7z" fill="#0e0c1a" stroke="#00f0ff" stroke-width="2.5" stroke-linejoin="miter" />
-  <path d="M11 23V9h6.5a4 4 0 0 1 0 8H11m6 0l4 6" fill="none" stroke="#ff2e97" stroke-width="3" stroke-linecap="square" />
+  <!-- The cut-corner panel shape, with the sliced sunset from the link preview (public/og.png). -->
+  <defs>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe91f" />
+      <stop offset="1" stop-color="#ff2e8b" />
+    </linearGradient>
+    <clipPath id="panel"><path d="M2 2h21l7 7v21H9l-7-7z" /></clipPath>
+  </defs>
+  <path d="M2 2h21l7 7v21H9l-7-7z" fill="#0c0e17" />
+  <g clip-path="url(#panel)">
+    <path d="M7 20a9 9 0 0 1 18 0z" fill="url(#sun)" />
+    <path d="M6 16h20v1.2H6zM6 18.4h20v1.2H6z" fill="#0c0e17" />
+    <path d="M2 20.5h28" stroke="#ff2e8b" stroke-width="1.2" />
+    <path d="M16 21v9M12 21l-4 9M20 21l4 9M2 24.5h28" stroke="#2de2f6" stroke-width="1" opacity=".7" />
+  </g>
+  <path d="M2 2h21l7 7v21H9l-7-7z" fill="none" stroke="#2de2f6" stroke-width="2.5" stroke-linejoin="miter" />
 </svg>
