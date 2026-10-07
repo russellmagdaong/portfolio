@@ -1,0 +1,35 @@
+---
+// Small UI icons on a 20x20 grid.
+const icons = {
+  play: '<path d="M5 2.5l12 7.5-12 7.5z"/>',
+  source:
+    '<path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" d="M7 5l-5 5 5 5M13 5l5 5-5 5"/>',
+  email:
+    '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="1.5" y="3.5" width="17" height="13" rx="1.5"/><path d="M2 5l8 6 8-6"/></g>',
+  resume:
+    '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="1.5" width="13" height="17" rx="1.5"/><path d="M7 7h6M7 11h6"/></g>',
+  facebook:
+    '<path transform="scale(.8333)" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>',
+  github:
+    '<path transform="scale(1.25)" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>',
+  chevron: '<path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" d="M7 4l6 6-6 6"/>',
+  swap: '<path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" d="M16 9a6 6 0 0 0-10.6-3.2M4 11a6 6 0 0 0 10.6 3.2M5 2.5v3.5h3.5M15 17.5v-3.5h-3.5"/>',
+  close: '<path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" d="M5 5l10 10M15 5L5 15"/>',
+  arrow:
+    '<path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" d="M5 15L15 5M7 5h8v8"/>',
+  // A cut-corner badge with a tick, for certifications and awards.
+  badge:
+    '<path fill="none" stroke="currentColor" stroke-width="2" d="M2 2h12l4 4v12H6l-4-4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" d="M6.5 10.3l2.5 2.5 4.7-5"/>',
+} as const;
+
+export type IconName = keyof typeof icons;
+
+interface Props {
+  name: IconName;
+  class?: string;
+}
+
+const { name, class: className } = Astro.props;
+---
+
+<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class:list={['size-5 shrink-0', className]} set:html={icons[name]} />
