@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <!-- Stand-in until TAKO has a real logo. Replace this file (or point the gallery at a new one). -->
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#00f0ff" stroke-opacity=".12" />
+    </pattern>
+  </defs>
+  <rect width="640" height="360" fill="#090814" />
+  <rect width="640" height="360" fill="url(#grid)" />
+  <g transform="translate(118 96) scale(1.4)" fill="none" stroke-width="3" stroke-linejoin="miter">
+    <path stroke="#00f0ff" d="M0 0h60v14H37v66H23V14H0z" />
+    <path stroke="#ff2e97" fill-rule="evenodd" d="M76 80L98 0h16l22 80h-15l-4-18H95l-4 18zM98 49h16l-8-33z" />
+    <path stroke="#00f0ff" d="M152 0h14v32l26-32h18l-28 36 30 44h-18l-20-32-8 10v22h-14z" />
+    <path stroke="#ff2e97" fill-rule="evenodd" d="M228 0h60v80h-60zM242 14v52h32V14z" />
+  </g>
+  <text x="320" y="262" text-anchor="middle" font-family="ui-monospace, Consolas, monospace" font-size="15" letter-spacing="5" fill="#8b90b8">LOGO PLACEHOLDER</text>
+</svg>
