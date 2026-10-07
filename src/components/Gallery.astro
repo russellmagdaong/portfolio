@@ -179,8 +179,10 @@ const fit = (image: ImageMetadata) => (image.width < 400 ? 'pixelated object-con
     thumbs.forEach((thumb, i) => thumb.addEventListener('click', () => step(i)));
 
     gallery.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowLeft') step(index - 1);
-      else if (event.key === 'ArrowRight') step(index + 1);
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      // Claims the keys, so that the project deck around the gallery does not turn as well.
+      event.preventDefault();
+      step(index + (event.key === 'ArrowLeft' ? -1 : 1));
     });
 
     const hold = (value: boolean) => () => {
