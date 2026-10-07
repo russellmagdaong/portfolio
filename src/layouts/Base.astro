@@ -18,6 +18,7 @@ const { title, description = site.description } = Astro.props;
 const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · I build games that teach things`;
 // Only known once `site` is set in astro.config.mjs.
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
+const ogImage = Astro.site ? new URL(url('/og.png'), Astro.site) : url('/og.png');
 ---
 
 <!doctype html>
@@ -34,6 +35,13 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefin
     <meta property="og:description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
     {canonical && <meta property="og:url" content={canonical} />}
+    <!-- Drawn by scripts/og-image.mjs. Most sites only read it from an absolute URL, which needs `site` set. -->
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="russm. in pixel letters over a neon sunset" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
     <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
 
     <!--
