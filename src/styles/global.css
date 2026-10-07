@@ -181,21 +181,22 @@
   }
 
   /*
-   * A panel with two corners sliced off and a hairline border that lights up at the cuts.
-   * clip-path would cut a real border off too, so the border is the element's own background
-   * and ::before paints the fill 1px inside it.
-   * Knobs: --cut (corner size), --accent / --accent-2 (the two lit corners), --fill.
+   * A panel with two corners sliced off and a quiet hairline border, with a solid neon bracket
+   * around each cut. clip-path would cut a real border off too, so the border is the element's
+   * own background and ::before paints the fill 1px inside it. The brackets are flat squares of
+   * colour tucked into the two cut corners; only their outer 1px ever shows.
+   * Knobs: --cut (corner size; the brackets scale with it), --line (the rest of the border),
+   * --accent / --accent-2 (the two brackets), --fill.
    */
   .neon-box {
+    --bracket: calc(var(--cut, 16px) * 2.25);
     position: relative;
     isolation: isolate;
-    background: linear-gradient(
-      45deg,
-      var(--accent-2, var(--accent, var(--color-cyan))),
-      var(--color-line) 26%,
-      var(--color-line) 74%,
-      var(--accent, var(--color-cyan))
-    );
+    background:
+      linear-gradient(var(--accent, var(--color-cyan)) 0 0) top right / var(--bracket) var(--bracket) no-repeat,
+      linear-gradient(var(--accent-2, var(--accent, var(--color-cyan))) 0 0) bottom left / var(--bracket)
+        var(--bracket) no-repeat,
+      var(--line, color-mix(in oklab, var(--accent, var(--color-cyan)) 22%, var(--color-line)));
     clip-path: polygon(
       0 0,
       calc(100% - var(--cut, 16px)) 0,
@@ -281,6 +282,8 @@
 
   /* Outlined: combine with .neon-box. */
   .btn-line {
+    /* Too small for brackets: the whole outline is lit instead. */
+    --line: var(--accent, var(--color-cyan));
     color: var(--accent, var(--color-cyan));
   }
 
@@ -417,6 +420,145 @@
     opacity: 1;
     border-color: var(--accent, var(--color-cyan));
     box-shadow: 0 0 14px color-mix(in oklab, var(--accent, var(--color-cyan)) 55%, transparent);
+  }
+
+  /*
+   * The project deck: a stack of cards with one up front and its neighbours peeking out at the
+   * sides. Projects.astro gives each card a data-pos (0 front, -1 left, 1 right, none = out of
+   * sight) and sets data-deck="on" once its script is running. Until then the cards are a
+   * plain list down the page.
+   */
+  .deck-track {
+    @apply space-y-10;
+  }
+
+  [data-deck="on"] .deck-track {
+    @apply grid touch-pan-y space-y-0;
+  }
+
+  /* Every card shares the one grid cell, so the deck is as tall as its tallest card. */
+  [data-deck="on"] .deck-track > li {
+    @apply grid w-full justify-self-center lg:w-[88%];
+    grid-area: 1 / 1;
+    margin: 0;
+    scale: 0.8;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
+      scale 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
+      visibility 0.6s;
+  }
+
+  [data-deck="on"] .deck-track > li[data-pos] {
+    visibility: visible;
+  }
+
+  [data-deck="on"] .deck-track > li[data-pos="0"] {
+    z-index: 2;
+    scale: 1;
+    opacity: 1;
+  }
+
+  /* The previews: smaller, dimmer, and shifted far enough to show past the front card's edge. */
+  [data-deck="on"] .deck-track > li:is([data-pos="-1"], [data-pos="1"]) {
+    z-index: 1;
+    scale: 0.88;
+    opacity: 0.45;
+    cursor: pointer;
+  }
+
+  [data-deck="on"] .deck-track > li[data-pos="-1"] {
+    translate: -19% 0;
+  }
+
+  [data-deck="on"] .deck-track > li[data-pos="1"] {
+    translate: 19% 0;
+  }
+
+  [data-deck="on"] .deck-track > li:is([data-pos="-1"], [data-pos="1"]):hover {
+    opacity: 0.75;
+  }
+
+  .deck-controls {
+    @apply mb-4 hidden items-center gap-4;
+  }
+
+  [data-deck="on"] .deck-controls {
+    display: flex;
+  }
+
+  .deck-tab {
+    @apply relative cursor-pointer py-2 font-mono text-xs tracking-[0.2em] text-fg uppercase transition-colors duration-200 hover:text-white sm:text-sm;
+  }
+
+  .deck-tab::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 2px;
+    background: var(--accent, var(--color-cyan));
+    box-shadow: 0 0 10px var(--accent, var(--color-cyan));
+    scale: 0 1;
+    transform-origin: left;
+    transition: scale 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .deck-tab[aria-current="true"] {
+    color: var(--accent, var(--color-cyan));
+  }
+
+  .deck-tab[aria-current="true"]::after {
+    scale: 1 1;
+  }
+
+  .deck-arrow {
+    @apply text-accent grid size-10 cursor-pointer place-items-center border border-line bg-void/75 transition-[color,background-color,opacity] duration-150 hover:bg-white hover:text-void disabled:pointer-events-none disabled:opacity-30;
+  }
+
+  .deck-rail {
+    @apply mb-6 hidden h-px bg-line;
+    /* Sideways only, so the segment can leave past an end while its glow still shows above and below. */
+    overflow-x: clip;
+  }
+
+  [data-deck="on"] .deck-rail {
+    display: block;
+  }
+
+  /*
+   * One card's share of the rail, placed by --at (which card it sits under, set by Projects.astro).
+   * A copy of it rides one whole rail-length to either side. When the deck wraps round, --at runs
+   * one step past the end, so the segment leaves through one end as a copy comes in at the other.
+   */
+  .deck-rail > div {
+    position: relative;
+    width: calc(100% / var(--n, 1));
+    height: 2px;
+    margin-top: -0.5px;
+    background: var(--accent, var(--color-cyan));
+    box-shadow: 0 0 10px var(--accent, var(--color-cyan));
+    translate: calc(var(--at, 0) * 100%) 0;
+    transition: translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .deck-rail > div::before,
+  .deck-rail > div::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    width: 100%;
+    background: inherit;
+    box-shadow: inherit;
+  }
+
+  .deck-rail > div::before {
+    right: calc(var(--n, 1) * 100%);
+  }
+
+  .deck-rail > div::after {
+    left: calc(var(--n, 1) * 100%);
   }
 
   /* The bar that slides under whichever nav link matches the section on screen. */

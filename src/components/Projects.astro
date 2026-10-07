@@ -1,15 +1,210 @@
 ---
 import { getCollection } from 'astro:content';
+import Icon from './Icon.astro';
 import ProjectCard from './ProjectCard.astro';
 import SectionHeading from './SectionHeading.astro';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const pad = (n: number) => String(n).padStart(2, '0');
+// Same rotation as ProjectCard, so each tab lights up in its project's colour.
+const accents = ['cyan', 'magenta', 'acid'] as const;
 ---
 
 <section id="projects" class="container-page py-16 sm:py-24" data-accent="magenta">
   <SectionHeading index="02" kicker="Projects" title="What I've been building" />
 
-  <div class="space-y-10">
-    {projects.map((project, index) => <ProjectCard project={project} index={index} />)}
+  <!--
+    A deck of cards: one project up front, its neighbours peeking out at either side, going round
+    in a loop. Without the script below it is simply the cards stacked down the page.
+  -->
+  <div data-deck style={`--n:${projects.length}`}>
+    <div data-deck-panel>
+      <div class="deck-controls">
+        <div class="flex flex-1 flex-wrap gap-x-6 gap-y-2">
+          {
+            projects.map((project, i) => (
+              <button
+                type="button"
+                data-deck-tab
+                data-accent={accents[i % accents.length]}
+                class="deck-tab"
+                aria-current={i === 0 ? 'true' : undefined}
+              >
+                <span class="text-muted">{pad(i + 1)}</span> {project.data.title}
+              </button>
+            ))
+          }
+        </div>
+        <div class="flex gap-2">
+          <button type="button" data-deck-prev aria-label="Previous project" class="deck-arrow">
+            <Icon name="chevron" class="rotate-180" />
+          </button>
+          <button type="button" data-deck-next aria-label="Next project" class="deck-arrow">
+            <Icon name="chevron" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Shows which card is up; the lit segment slides along with it. -->
+      <div class="deck-rail" aria-hidden="true"><div data-deck-thumb></div></div>
+
+      <ul data-deck-track class="deck-track" aria-label="Projects">
+        {
+          projects.map((project, index) => (
+            <li data-deck-card>
+              <ProjectCard project={project} index={index} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </div>
 </section>
+
+<script>
+  // Matches scroll-padding-top in global.css: the space the fixed header takes.
+  const HEADER_PX = 88;
+  // How much wheel movement counts as one deliberate step, and how long a step blocks the next,
+  // so that one flick of a trackpad does not spin through the whole deck.
+  const WHEEL_PX = 40;
+  const STEP_MS = 700;
+  const SWIPE_PX = 40;
+  // The length of the rail segment's slide, as set in global.css.
+  const RAIL_MS = 600;
+
+  document.querySelectorAll<HTMLElement>('[data-deck]').forEach((deck) => {
+    const panel = deck.querySelector<HTMLElement>('[data-deck-panel]');
+    const track = deck.querySelector<HTMLElement>('[data-deck-track]');
+    const cards = [...deck.querySelectorAll<HTMLElement>('[data-deck-card]')];
+    const tabs = [...deck.querySelectorAll<HTMLButtonElement>('[data-deck-tab]')];
+    const thumb = deck.querySelector<HTMLElement>('[data-deck-thumb]');
+    if (!panel || !track || cards.length < 2) return;
+
+    const count = cards.length;
+    let index = 0;
+
+    // Puts the rail segment under a card. Positions one step past either end are allowed:
+    // that is the segment on its way out while its copy comes in at the far end.
+    const place = (at: number, animate: boolean) => {
+      if (!thumb) return;
+      thumb.style.transition = animate ? '' : 'none';
+      thumb.style.setProperty('--at', String(at));
+      if (animate) return;
+      // Let the jump take effect before transitions are switched back on.
+      void thumb.offsetWidth;
+      thumb.style.transition = '';
+    };
+    let wrapTimer: number | undefined;
+
+    // Deals the cards out around the active one: data-pos 0 is up front, -1 and 1 are the
+    // previews at the sides, and any others wait out of sight. The numbering wraps round.
+    const show = (target: number) => {
+      const from = index;
+      index = ((target % count) + count) % count;
+
+      // The rail segment goes the same way round as the cards: a step past the last card
+      // carries on out of that end, and once it has arrived it is swapped for the real position.
+      let step = target - from;
+      if (target >= 0 && target < count) {
+        step = (index - from + count) % count;
+        if (step > count / 2) step -= count;
+      }
+      window.clearTimeout(wrapTimer);
+      place(from, false);
+      place(from + step, true);
+      if (from + step !== index) wrapTimer = window.setTimeout(() => place(index, false), RAIL_MS);
+
+      cards.forEach((card, i) => {
+        let offset = (i - index + count) % count;
+        if (offset > count / 2) offset -= count;
+        if (Math.abs(offset) <= 1) card.dataset.pos = String(offset);
+        else delete card.dataset.pos;
+        // Only the front card can be used; a click on a preview lands on its <li> instead.
+        card.firstElementChild?.toggleAttribute('inert', offset !== 0);
+      });
+      tabs.forEach((tab, i) => {
+        if (i === index) tab.setAttribute('aria-current', 'true');
+        else tab.removeAttribute('aria-current');
+      });
+    };
+
+    deck.querySelector('[data-deck-prev]')?.addEventListener('click', () => show(index - 1));
+    deck.querySelector('[data-deck-next]')?.addEventListener('click', () => show(index + 1));
+    tabs.forEach((tab, i) => tab.addEventListener('click', () => show(i)));
+    cards.forEach((card, i) =>
+      card.addEventListener('click', () => {
+        if (i !== index) show(i);
+      }),
+    );
+
+    deck.addEventListener('keydown', (event) => {
+      // A gallery inside the front card uses the same keys and claims them first.
+      if (event.defaultPrevented || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+      event.preventDefault();
+      show(index + (event.key === 'ArrowLeft' ? -1 : 1));
+    });
+
+    // --- Wheel: while the pointer is over the panel, scrolling turns the deck instead of the page ---
+
+    // Only once most of the panel is on screen, so the page can still scroll it into view.
+    const inPlace = () => {
+      const box = panel.getBoundingClientRect();
+      const visible = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, HEADER_PX);
+      return visible / box.height >= 0.8;
+    };
+
+    // Centres the panel under the header if part of it is cut off and it would fit.
+    const settle = () => {
+      const box = panel.getBoundingClientRect();
+      const room = window.innerHeight - HEADER_PX;
+      if (box.height > room || (box.top >= HEADER_PX && box.bottom <= window.innerHeight)) return;
+      window.scrollTo({ top: window.scrollY + box.top - HEADER_PX - (room - box.height) / 2 });
+    };
+
+    let travelled = 0;
+    let lastWheel = 0;
+    let lockedUntil = 0;
+
+    panel.addEventListener(
+      'wheel',
+      (event) => {
+        if (event.ctrlKey || !inPlace()) return;
+        event.preventDefault();
+
+        const now = performance.now();
+        if (now < lockedUntil) return;
+        if (now - lastWheel > 250) travelled = 0;
+        lastWheel = now;
+
+        const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+        // Some browsers report lines rather than pixels.
+        travelled += event.deltaMode === WheelEvent.DOM_DELTA_LINE ? delta * 32 : delta;
+        if (Math.abs(travelled) < WHEEL_PX) return;
+
+        show(index + (travelled > 0 ? 1 : -1));
+        settle();
+        travelled = 0;
+        lockedUntil = now + STEP_MS;
+      },
+      { passive: false },
+    );
+
+    // --- Swipe on touch screens. Galleries handle their own swipes. ---
+    let startX: number | undefined;
+    track.addEventListener('pointerdown', (event) => {
+      const onGallery = (event.target as Element).closest('[data-gallery]');
+      if (event.pointerType !== 'mouse' && !onGallery) startX = event.clientX;
+    });
+    track.addEventListener('pointerup', (event) => {
+      if (startX === undefined) return;
+      const moved = event.clientX - startX;
+      startX = undefined;
+      if (Math.abs(moved) >= SWIPE_PX) show(index + (moved < 0 ? 1 : -1));
+    });
+    track.addEventListener('pointercancel', () => (startX = undefined));
+
+    // Switches on the stacked layout and the controls (see global.css).
+    show(0);
+    deck.dataset.deck = 'on';
+  });
+</script>
