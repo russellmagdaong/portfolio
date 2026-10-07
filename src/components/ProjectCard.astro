@@ -1,8 +1,7 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import Shape from './Shape.astro';
-import { accentBg } from '../lib/accent';
-import { url } from '../lib/url';
+import { render, type CollectionEntry } from 'astro:content';
+import Gallery from './Gallery.astro';
+import Icon from './Icon.astro';
 
 interface Props {
   project: CollectionEntry<'projects'>;
@@ -10,33 +9,59 @@ interface Props {
 }
 
 const { project, index } = Astro.props;
-const { title, summary, year, tags, accent } = project.data;
-const shapes = ['burst', 'flower', 'blob', 'spark'] as const;
+const { title, tagline, gallery, stack, play, source } = project.data;
+const { Content } = await render(project);
+
+// Each project gets its own neon colour, in rotation, and the picture swaps sides each time.
+const accents = ['cyan', 'magenta', 'acid'] as const;
+const accent = accents[index % accents.length];
+const mediaFirst = index % 2 === 1;
 ---
 
-<article class="card pressable group relative flex flex-col overflow-hidden">
-  <!-- TODO: swap this patterned cover for a real screenshot when you have one -->
-  <div class:list={['relative grid aspect-[16/10] place-items-center overflow-hidden border-b-2 border-line', accentBg[accent]]}>
-    <Shape
-      kind={shapes[index % shapes.length]}
-      class="size-28 fill-white stroke-night transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12"
-    />
-    <span
-      class="absolute top-3 right-3 rounded-full border-2 border-line bg-card px-3 py-0.5 font-mono text-sm font-bold text-ink"
-    >
-      {year}
-    </span>
-  </div>
+<article class="neon-box neon-run [--cut:22px]" data-accent={accent} data-spotlight data-reveal>
+  <div class="grid items-start gap-8 p-5 sm:p-8 lg:grid-cols-2 lg:gap-10">
+    <div class:list={{ 'lg:order-2': !mediaFirst }} data-reveal={mediaFirst ? 'left' : 'right'} style="--i:2">
+      <Gallery images={gallery} label={title} />
+    </div>
 
-  <div class="flex flex-1 flex-col p-6">
-    <h3 class="text-2xl font-extrabold">
-      <a href={url(`/projects/${project.id}/`)} class="after:absolute after:inset-0">
-        {title}
-      </a>
-    </h3>
-    <p class="mt-2 flex-1 text-muted">{summary}</p>
-    <ul class="mt-5 flex flex-wrap gap-2">
-      {tags.map((tag) => <li class="chip">{tag}</li>)}
-    </ul>
+    <div data-stagger>
+      <div class="flex items-center gap-4" style="--i:1">
+        <span class="text-hollow font-display text-5xl leading-none font-extrabold sm:text-6xl" aria-hidden="true">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+        <h3 class="text-accent text-glow font-display text-4xl leading-none font-extrabold uppercase sm:text-5xl">
+          {title}
+        </h3>
+      </div>
+
+      <p class="mt-5 text-xl leading-snug font-semibold text-white" style="--i:2">{tagline}</p>
+
+      <div class="prose-neon mt-4" style="--i:3">
+        <Content />
+      </div>
+
+      <ul class="mt-6 flex flex-wrap gap-2" style="--i:4">
+        {stack.map((item) => <li class="chip">{item}</li>)}
+      </ul>
+
+      {
+        (play || source) && (
+          <div class="mt-6 flex flex-wrap gap-3" style="--i:5">
+            {play && (
+              <a href={play} target="_blank" rel="noopener noreferrer" class="btn btn-solid">
+                <Icon name="play" />
+                Play it
+              </a>
+            )}
+            {source && (
+              <a href={source} target="_blank" rel="noopener noreferrer" class="btn btn-line neon-box">
+                <Icon name="source" />
+                Source
+              </a>
+            )}
+          </div>
+        )
+      }
+    </div>
   </div>
 </article>

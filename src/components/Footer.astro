@@ -2,7 +2,11 @@
 import { site } from '../data/site';
 ---
 
-<footer class="container-page flex flex-col items-center justify-between gap-4 py-10 text-muted sm:flex-row">
-  <p>© {new Date().getFullYear()} {site.name}. Made with Astro and too much coffee.</p>
-  <a href="#top" class="link-underline font-semibold text-ink">Back to top ↑</a>
+<footer class="mt-8 border-t border-line">
+  <div
+    class="container-page flex flex-col items-center justify-between gap-3 py-8 font-mono text-xs tracking-[0.16em] text-muted uppercase sm:flex-row"
+  >
+    <p>© {new Date().getFullYear()} {site.name}</p>
+    <a href="#top" class="transition-colors hover:text-cyan">Back to top ↑</a>
+  </div>
 </footer>

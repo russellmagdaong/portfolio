@@ -1,64 +1,77 @@
 ---
-import Shape from './Shape.astro';
-import { rotatingWords, site } from '../data/site';
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import player from '../assets/hero/player.png';
+import { dialogue, site, socials } from '../data/site';
 import { url } from '../lib/url';
 
-const firstName = site.name.split(' ')[0];
+const [firstName, ...rest] = site.name.split(' ');
+const lastName = rest.join(' ');
+
+// The photos named in site.photos, looked up in src/assets/pics/. With none, a placeholder is shown.
+const files = import.meta.glob<{ default: ImageMetadata }>('../assets/pics/*.{jpg,jpeg,png,webp,avif}', {
+  eager: true,
+});
+const photos = site.photos.map((name) => {
+  const file = files[`../assets/pics/${name}`];
+  if (!file) throw new Error(`Photo not found: src/assets/pics/${name}`);
+  return file.default;
+});
 ---
 
-<section class="container-page relative pt-14 pb-20 sm:pt-20 sm:pb-28">
-  <Shape kind="spark" class="absolute top-6 right-[8%] hidden size-14 animate-float fill-sun sm:block" />
-  <Shape
-    kind="ring"
-    class="absolute bottom-10 left-[44%] hidden size-12 animate-float stroke-mint [animation-delay:-2s] lg:block"
-  />
-  <Shape
-    kind="squiggle"
-    class="absolute top-8 left-[40%] hidden size-20 animate-float stroke-grape [animation-delay:-4s] lg:block"
-  />
+<section class="relative overflow-hidden">
+  <div class="horizon" aria-hidden="true"><div><div></div></div></div>
 
-  <!-- min-w-0 lets the code card shrink below its longest line on small screens -->
-  <div class="grid items-center gap-14 lg:grid-cols-[1.15fr_0.85fr]">
+  <div class="container-page relative grid items-center gap-12 pt-12 pb-20 sm:pt-16 sm:pb-28 lg:grid-cols-[1.25fr_0.75fr]">
     <div class="min-w-0">
       {
-        site.available && (
-          <p class="inline-flex items-center gap-2 rounded-full border-2 border-line bg-card px-4 py-1.5 text-sm font-bold shadow-pop-sm">
-            <span class="relative flex size-2.5">
-              <span class="absolute inline-flex size-full animate-ping rounded-full bg-mint" />
-              <span class="relative inline-flex size-2.5 rounded-full border border-line bg-mint" />
-            </span>
-            Available for new projects
+        site.status && (
+          <p class="rise flex items-center gap-3 font-mono text-xs tracking-[0.18em] text-acid uppercase sm:text-sm">
+            <span class="size-2 shrink-0 animate-flicker bg-acid shadow-[0_0_10px_var(--color-acid)]" />
+            {site.status}
           </p>
         )
       }
 
-      <h1 class="mt-6 text-6xl leading-[0.95] font-extrabold sm:text-7xl lg:text-8xl">
-        <span class="block">Hi, I'm</span>
-        <span class="relative isolate inline-block whitespace-nowrap">
-          <span class="absolute inset-x-0 bottom-1 -z-10 h-[0.42em] -rotate-1 rounded-md bg-pink"></span>
-          {firstName}
-        </span>
-        <span class="ml-2 inline-block origin-[70%_70%] animate-wave" aria-hidden="true">👋</span>
+      <h1
+        class="rise mt-6 font-display text-[clamp(2.75rem,13vw,6.5rem)] leading-[0.86] font-extrabold text-white uppercase"
+        style="--i:1"
+      >
+        <span class="glitch block" data-text={firstName}>{firstName}</span>
+        <span class="glitch block text-cyan" data-text={lastName}>{lastName}</span>
       </h1>
 
-      <p class="mt-7 font-display text-2xl leading-snug font-semibold sm:text-3xl">
-        A {site.role.toLowerCase()} who builds{' '}
-        <span
-          data-rotate={JSON.stringify(rotatingWords)}
-          class="mt-2 inline-block -rotate-2 rounded-xl border-2 border-line bg-sun px-3 py-0.5 whitespace-nowrap text-night shadow-pop-sm"
-        >
-          {rotatingWords[0]}
-        </span>
-      </p>
+      <p class="rise mt-6 font-mono text-xs tracking-[0.2em] text-muted uppercase sm:text-sm" style="--i:2">{site.role}</p>
 
-      <p class="mt-6 max-w-xl text-lg text-muted sm:text-xl">{site.tagline}</p>
+      <!-- Terminal line: the tagline lines type themselves out in turn. -->
+      <div class="rise mt-7 border-l-2 border-magenta pl-4" data-lines={JSON.stringify(dialogue)} style="--i:3">
+        <p class="min-h-[3lh] font-mono text-base text-fg sm:min-h-[2lh] sm:text-lg" aria-hidden="true">
+          <span class="text-magenta">&gt;</span>{' '}
+          <span data-typed>{dialogue[0]}</span><span class="ml-0.5 inline-block h-[1.05em] w-[0.55em] animate-blink bg-cyan align-text-bottom"></span><span data-rest class="invisible"></span>
+        </p>
+        <p class="sr-only">{dialogue.join(' ')}</p>
+      </div>
 
-      <div class="mt-9 flex flex-wrap gap-4">
-        <a href={url('/#projects')} class="btn bg-pink">See my work →</a>
-        <a href={url('/#contact')} class="btn bg-card text-ink">Say hello</a>
+      <div class="rise mt-9 flex flex-wrap gap-3" style="--i:4">
+        <a href={url('/#projects')} class="btn btn-solid" data-accent="acid"><Icon name="play" />Projects</a>
+        {
+          socials.map((social) => (
+            <a
+              href={social.href}
+              class="btn btn-line neon-box"
+              target={social.href.startsWith('http') ? '_blank' : undefined}
+              rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+            >
+              <Icon name={social.icon} />
+              {social.label}
+            </a>
+          ))
+        }
         {
           site.resumeUrl && (
-            <a href={url(site.resumeUrl)} class="btn bg-sky">
+            <a href={url(site.resumeUrl)} class="btn btn-line neon-box">
+              <Icon name="resume" />
               Résumé
             </a>
           )
@@ -66,113 +79,156 @@ const firstName = site.name.split(' ')[0];
       </div>
     </div>
 
-    <div class="relative mx-auto w-full max-w-md min-w-0 lg:max-w-none">
-      <!-- A little "about me" object, straight from src/data/site.ts -->
-      <div class="card rotate-2 overflow-hidden transition-transform duration-300 hover:rotate-0">
-        <div class="flex items-center gap-2 border-b-2 border-line bg-grape px-4 py-3">
-          <span class="size-3.5 rounded-full border-2 border-line bg-pink"></span>
-          <span class="size-3.5 rounded-full border-2 border-line bg-sun"></span>
-          <span class="size-3.5 rounded-full border-2 border-line bg-mint"></span>
-          <span class="ml-2 font-mono text-sm font-bold text-night">{firstName.toLowerCase()}.ts</span>
-        </div>
-        <pre
-          class="overflow-x-auto p-4 pb-8 font-mono text-xs leading-7 sm:p-5 sm:pb-8 sm:text-sm xl:text-base"><code><span class="text-muted">const</span> <span class="font-bold">{firstName.toLowerCase()}</span> = &#123;
-  role: <span class="rounded bg-sun px-1 text-night">'{site.role}'</span>,
-  location: <span class="rounded bg-sky px-1 text-night">'{site.location}'</span>,
-  loves: [<span class="rounded bg-pink px-1 text-night">'clean code'</span>, <span class="rounded bg-mint px-1 text-night">'good coffee'</span>],
-  available: <span class="font-bold">{String(site.available)}</span>,
-&#125;;</code></pre>
-      </div>
+    <!--
+      Inline, and placed after the terminal line it drives, so the first line starts typing
+      before first paint. Without JavaScript the first line just stays on screen.
+    -->
+    <script is:inline>
+      (() => {
+        const typed = document.querySelector('[data-typed]');
+        const rest = document.querySelector('[data-rest]');
+        const lines = JSON.parse(typed.closest('[data-lines]').dataset.lines);
+        if (lines.length === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-      <button
-        type="button"
-        data-confetti
-        aria-label="Throw confetti"
-        class="absolute -right-3 -bottom-16 grid size-28 place-items-center transition-transform hover:scale-110 active:scale-95 sm:-right-8 sm:-bottom-20 sm:size-32"
-      >
-        <Shape kind="burst" class="absolute inset-0 size-full animate-spin-slow fill-tang" />
-        <span class="relative -rotate-12 font-display text-base leading-none font-extrabold text-night sm:text-lg">
-          Click<br />me!
-        </span>
-      </button>
+        const CHAR_MS = 32;
+        const HOLD_MS = 3200;
+        let line = 0;
+        let shown = 0;
+
+        // The untyped remainder stays in the layout, invisible, so words never jump between rows.
+        const tick = () => {
+          typed.textContent = lines[line].slice(0, shown);
+          rest.textContent = lines[line].slice(shown);
+          if (shown < lines[line].length) {
+            shown += 1;
+            setTimeout(tick, CHAR_MS);
+          } else {
+            line = (line + 1) % lines.length;
+            shown = 0;
+            setTimeout(tick, HOLD_MS);
+          }
+        };
+
+        tick();
+      })();
+    </script>
+
+    <!--
+      Hologram portrait with two views: the ODIN player sprite and a real photo.
+      The sprite is 44px wide at 1x, so it is shown at exactly 3x or 4x to keep its pixels square.
+    -->
+    <div
+      data-avatar
+      style="--i:3"
+      class="rise neon-box neon-run mx-auto w-full max-w-xs [--accent-2:var(--color-magenta)] [--cut:26px] [--fill:#090814] lg:max-w-none"
+    >
+      <div class="holo cut-inner scanlines relative m-px h-80 overflow-hidden lg:h-[27rem]">
+        <div data-avatar-stage class="absolute inset-0">
+          <div data-avatar-view="game" class="absolute inset-0 animate-bob">
+            <img
+              src={player.src}
+              width={player.width}
+              height={player.height}
+              alt={`${site.name} as the pixel-art player character from ODIN`}
+              class="holo-sprite pixelated absolute bottom-14 left-1/2 h-auto w-[132px] max-w-none -translate-x-1/2 lg:w-[176px]"
+            />
+          </div>
+
+          <div data-avatar-view="real" class="absolute inset-0" hidden>
+            {
+              photos.length > 0 ? (
+                photos.map((photo, i) => (
+                  <Image
+                    src={photo}
+                    width={800}
+                    alt={i === 0 ? `Photo of ${site.name}` : ''}
+                    data-avatar-photo
+                    class:list={[
+                      'absolute inset-0 size-full object-cover object-top transition-opacity duration-700',
+                      i !== 0 && 'opacity-0',
+                    ]}
+                  />
+                ))
+              ) : (
+                // Placeholder until a real photo is added.
+                <div class="grid size-full place-items-center pb-10 text-center">
+                  <div>
+                    <svg viewBox="0 0 120 130" class="mx-auto w-32 text-cyan lg:w-40" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 5" aria-hidden="true">
+                      <circle cx="60" cy="42" r="26" />
+                      <path d="M8 128c4-30 26-44 52-44s48 14 52 44" />
+                    </svg>
+                    <p class="mt-4 font-mono text-[0.7rem] tracking-[0.22em] text-cyan uppercase">Photo placeholder</p>
+                    <p class="mt-1 font-mono text-[0.65rem] tracking-wide text-muted">add src/assets/hero/photo.jpg</p>
+                  </div>
+                </div>
+              )
+            }
+          </div>
+        </div>
+
+        <div class="absolute inset-x-0 top-0 h-[10%] animate-scan bg-gradient-to-b from-transparent via-cyan/25 to-transparent" aria-hidden="true"></div>
+        <p class="absolute top-3 left-4 font-mono text-[0.65rem] tracking-[0.22em] text-cyan uppercase" aria-hidden="true">
+          ID // {site.handle}
+        </p>
+
+        <!-- Sits above the scanlines so the label stays crisp. One button flips between the two views. -->
+        <div class="absolute inset-x-0 bottom-3 z-10 flex justify-center">
+          <button
+            type="button"
+            data-avatar-toggle
+            class="group flex cursor-pointer items-center gap-2 border border-cyan/60 bg-void/85 px-4 py-2 font-mono text-[0.7rem] tracking-[0.2em] text-cyan uppercase transition-colors hover:bg-cyan hover:text-void"
+          >
+            <Icon name="swap" class="size-4 transition-transform duration-500 group-hover:rotate-180" />
+            <span data-avatar-label>De-pixelate</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <script>
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Flip the portrait between the game sprite and the real photo, with a burst of static.
+  const frame = document.querySelector<HTMLElement>('[data-avatar]');
+  const toggle = frame?.querySelector<HTMLButtonElement>('[data-avatar-toggle]');
+  const label = frame?.querySelector<HTMLElement>('[data-avatar-label]');
 
-  // Rotating "who builds ___" word.
-  const word = document.querySelector<HTMLElement>('[data-rotate]');
-  if (word && !reducedMotion) {
-    const words: string[] = JSON.parse(word.dataset.rotate ?? '[]');
-    let index = 0;
+  if (frame && toggle && label) {
+    const views = [...frame.querySelectorAll<HTMLElement>('[data-avatar-view]')];
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // The swap happens partway through the static, so the change itself is hidden by it.
+    const SWAP_AT_MS = 150;
+    const STATIC_MS = 420;
+    let showing = 'game';
 
-    if (words.length > 1) {
-      setInterval(async () => {
-        index = (index + 1) % words.length;
-        await word.animate(
-          [
-            { translate: '0 0', opacity: 1 },
-            { translate: '0 -40%', opacity: 0 },
-          ],
-          { duration: 180, easing: 'ease-in' },
-        ).finished;
-        word.textContent = words[index];
-        word.animate(
-          [
-            { translate: '0 40%', opacity: 0 },
-            { translate: '0 0', opacity: 1 },
-          ],
-          { duration: 320, easing: 'cubic-bezier(.34,1.56,.64,1)' },
-        );
-      }, 2400);
-    }
+    // While the real view is up, fade through the photos.
+    const photos = [...frame.querySelectorAll<HTMLElement>('[data-avatar-photo]')];
+    const PHOTO_MS = 4000;
+    let current = 0;
+    let timer: number | undefined;
+    const cycle = (on: boolean) => {
+      window.clearInterval(timer);
+      if (!on || photos.length < 2 || reducedMotion) return;
+      timer = window.setInterval(() => {
+        current = (current + 1) % photos.length;
+        photos.forEach((photo, i) => photo.classList.toggle('opacity-0', i !== current));
+      }, PHOTO_MS);
+    };
+
+    toggle.addEventListener('click', () => {
+      showing = showing === 'game' ? 'real' : 'game';
+      // The label names what the next press will do.
+      label.textContent = showing === 'game' ? 'De-pixelate' : 'Pixelate';
+      cycle(showing === 'real');
+      const swap = () => views.forEach((view) => (view.hidden = view.dataset.avatarView !== showing));
+
+      if (reducedMotion) {
+        swap();
+        return;
+      }
+      frame.classList.add('is-switching');
+      setTimeout(swap, SWAP_AT_MS);
+      setTimeout(() => frame.classList.remove('is-switching'), STATIC_MS);
+    });
   }
-
-  // Confetti burst from the "Click me!" sticker.
-  const confettiColors = ['pink', 'sun', 'mint', 'sky', 'grape', 'tang'];
-
-  function throwConfetti(x: number, y: number) {
-    for (let i = 0; i < 40; i++) {
-      const piece = document.createElement('span');
-      const size = 7 + Math.random() * 9;
-      Object.assign(piece.style, {
-        position: 'fixed',
-        left: `${x}px`,
-        top: `${y}px`,
-        width: `${size}px`,
-        height: `${size}px`,
-        background: `var(--color-${confettiColors[i % confettiColors.length]})`,
-        border: '1.5px solid var(--color-night)',
-        borderRadius: Math.random() > 0.5 ? '50%' : '3px',
-        pointerEvents: 'none',
-        zIndex: '60',
-      });
-      document.body.append(piece);
-
-      const angle = Math.random() * Math.PI * 2;
-      const distance = 90 + Math.random() * 190;
-      const dx = Math.cos(angle) * distance;
-      const dy = Math.sin(angle) * distance;
-
-      piece
-        .animate(
-          [
-            { translate: '0 0', rotate: '0deg', opacity: 1 },
-            { translate: `${dx}px ${dy - 60}px`, rotate: `${Math.random() * 540}deg`, opacity: 1, offset: 0.55 },
-            { translate: `${dx * 1.2}px ${dy + 220}px`, rotate: `${Math.random() * 900}deg`, opacity: 0 },
-          ],
-          { duration: 1000 + Math.random() * 600, easing: 'cubic-bezier(.2,.7,.3,1)' },
-        )
-        .finished.then(() => piece.remove());
-    }
-  }
-
-  document.querySelector<HTMLButtonElement>('[data-confetti]')?.addEventListener('click', (event) => {
-    if (reducedMotion) return;
-    const button = event.currentTarget as HTMLElement;
-    const box = button.getBoundingClientRect();
-    throwConfetti(box.left + box.width / 2, box.top + box.height / 2);
-  });
 </script>
