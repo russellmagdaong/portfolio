@@ -6,11 +6,11 @@ import SectionHeading from './SectionHeading.astro';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const pad = (n: number) => String(n).padStart(2, '0');
-// Same rotation as ProjectCard, so each tab lights up in its project's colour.
+// Same rotation as ProjectCard, so each tab, and each card waiting at the side, is in its project's colour.
 const accents = ['cyan', 'magenta', 'acid'] as const;
 ---
 
-<section id="projects" class="container-page py-16 sm:py-24" data-accent="magenta">
+<section id="projects" class="container-page py-16 sm:py-24" data-accent="cyan">
   <SectionHeading index="02" kicker="Projects" title="What I've been building" />
 
   <!--
@@ -51,7 +51,7 @@ const accents = ['cyan', 'magenta', 'acid'] as const;
       <ul data-deck-track class="deck-track" aria-label="Projects">
         {
           projects.map((project, index) => (
-            <li data-deck-card>
+            <li data-deck-card data-accent={accents[index % accents.length]} data-title={project.data.title}>
               <ProjectCard project={project} index={index} />
             </li>
           ))

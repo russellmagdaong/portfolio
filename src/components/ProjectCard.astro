@@ -12,31 +12,32 @@ const { project, index } = Astro.props;
 const { title, tagline, gallery, stack, play, source } = project.data;
 const { Content } = await render(project);
 
-// Each project gets its own neon colour, in rotation, and the picture swaps sides each time.
+// Each project gets its own colour, in rotation, and the picture swaps sides each time.
 const accents = ['cyan', 'magenta', 'acid'] as const;
 const accent = accents[index % accents.length];
 const mediaFirst = index % 2 === 1;
 ---
 
-<article class="neon-box neon-run [--cut:22px]" data-accent={accent} data-spotlight data-reveal>
+<article class="panel panel-run [--bw:4px] [--line:var(--accent)] [--px:6px]" data-accent={accent} data-spotlight data-reveal>
   <div class="grid items-start gap-8 p-5 sm:p-8 lg:grid-cols-2 lg:gap-10">
-    <div class:list={{ 'lg:order-2': !mediaFirst }} data-reveal={mediaFirst ? 'left' : 'right'} style="--i:2">
+    <!-- min-w-0 on both halves: the thumbnail strip scrolls inside its half instead of widening the card. -->
+    <div class:list={['min-w-0', { 'lg:order-2': !mediaFirst }]} data-reveal={mediaFirst ? 'left' : 'right'} style="--i:2">
       <Gallery images={gallery} label={title} />
     </div>
 
-    <div data-stagger>
+    <div class="min-w-0" data-stagger>
       <div class="flex items-center gap-4" style="--i:1">
-        <span class="text-hollow font-display text-5xl leading-none font-extrabold sm:text-6xl" aria-hidden="true">
+        <span class="font-display text-xl leading-none text-muted sm:text-2xl" aria-hidden="true">
           {String(index + 1).padStart(2, '0')}
         </span>
-        <h3 class="text-accent text-glow font-display text-4xl leading-none font-extrabold uppercase sm:text-5xl">
+        <h3 class="text-accent font-display text-xl leading-none uppercase sm:text-2xl">
           {title}
         </h3>
       </div>
 
       <p class="mt-5 text-xl leading-snug font-semibold text-white" style="--i:2">{tagline}</p>
 
-      <div class="prose-neon mt-4" style="--i:3">
+      <div class="prose-card mt-4" style="--i:3">
         <Content />
       </div>
 
@@ -54,7 +55,7 @@ const mediaFirst = index % 2 === 1;
               </a>
             )}
             {source && (
-              <a href={source} target="_blank" rel="noopener noreferrer" class="btn btn-line neon-box">
+              <a href={source} target="_blank" rel="noopener noreferrer" class="btn btn-line panel">
                 <Icon name="source" />
                 Source
               </a>

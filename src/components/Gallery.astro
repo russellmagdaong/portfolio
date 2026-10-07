@@ -20,10 +20,10 @@ const fit = (image: ImageMetadata) => (image.width < 400 ? 'pixelated object-con
 ---
 
 <div data-gallery>
-  <div class="neon-box [--cut:14px]">
+  <div class="panel [--bw:2px] [--px:4px]">
     <div
       data-stage
-      class="holo cut-inner relative m-px aspect-video touch-pan-y overflow-hidden select-none"
+      class="holo panel-inner relative aspect-video touch-pan-y overflow-hidden select-none"
       role="group"
       aria-roledescription="carousel"
       aria-label={`${label} previews`}
@@ -54,7 +54,7 @@ const fit = (image: ImageMetadata) => (image.width < 400 ? 'pixelated object-con
           <>
             <p
               data-counter
-              class="absolute top-2 left-2 bg-void/80 px-2 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-fg"
+              class="absolute top-3 left-3 bg-void/80 px-2 py-1 font-mono text-[0.65rem] tracking-[0.2em] text-fg"
               aria-hidden="true"
             >
               {pad(1)} / {pad(images.length)}
@@ -63,7 +63,7 @@ const fit = (image: ImageMetadata) => (image.width < 400 ? 'pixelated object-con
               type="button"
               data-prev
               aria-label="Previous image"
-              class="text-accent absolute top-1/2 left-2 grid size-9 -translate-y-1/2 cursor-pointer place-items-center bg-void/75 transition-colors hover:bg-white hover:text-void"
+              class="text-accent absolute top-1/2 left-3 grid size-9 -translate-y-1/2 cursor-pointer place-items-center bg-void/80 transition-colors hover:bg-white hover:text-void"
             >
               <Icon name="chevron" class="rotate-180" />
             </button>
@@ -71,7 +71,7 @@ const fit = (image: ImageMetadata) => (image.width < 400 ? 'pixelated object-con
               type="button"
               data-next
               aria-label="Next image"
-              class="text-accent absolute top-1/2 right-2 grid size-9 -translate-y-1/2 cursor-pointer place-items-center bg-void/75 transition-colors hover:bg-white hover:text-void"
+              class="text-accent absolute top-1/2 right-3 grid size-9 -translate-y-1/2 cursor-pointer place-items-center bg-void/80 transition-colors hover:bg-white hover:text-void"
             >
               <Icon name="chevron" />
             </button>
