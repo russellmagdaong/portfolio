@@ -102,11 +102,18 @@ const photos = site.photos.map((name) => {
 
         const CHAR_MS = 32;
         const HOLD_MS = 3200;
+        const WAIT_MS = 400;
         let line = 0;
         let shown = 0;
 
         // The untyped remainder stays in the layout, invisible, so words never jump between rows.
+        // While the minigame under the hero is being played (Runner.astro marks the root for
+        // as long as it is), the line waits where it is, as everything else on the page does.
         const tick = () => {
+          if (document.documentElement.classList.contains('is-playing')) {
+            setTimeout(tick, WAIT_MS);
+            return;
+          }
           typed.textContent = lines[line].slice(0, shown);
           rest.textContent = lines[line].slice(shown);
           if (shown < lines[line].length) {

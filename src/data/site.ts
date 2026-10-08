@@ -93,6 +93,11 @@ export const interests = ['Developer', 'Video editor', 'Gamer', 'Musician', 'CTF
 
 export const contact = {
   heading: "Want to talk games, code, or a project? Say hi.",
+  // The key that lets the "send a message" form email you. Get one free at https://web3forms.com
+  // (it is sent to the address the messages should go to) and paste it here. It is made to be
+  // public, so it is safe in this file. Left empty, the form opens the visitor's own mail app,
+  // with their message written out, instead of sending it itself.
+  formKey: '',
 };
 
 export const achievements: { title: string; detail?: string }[] = [
@@ -132,7 +137,7 @@ export const certificates: {
     label: 'Hackathons and colloquiums',
     folder: 'hackathons',
     items: [
-      { file: 'gcash-imagnation-2026', title: 'GCash ImaGnation 2026', detail: 'Top 10 Challenger Team, September 2026' },
+      { file: 'gcash-imagnation-2026', title: 'GCash ImaGnation 2026', detail: '1st runner-up, Top 10 Challenger Team, September 2026' },
       { file: 'acm-techsprint-2026', title: 'ACM TechSprint', detail: '2nd runner-up, June 2026' },
       { file: 'feu-tech-research-colloquium-2026', title: 'FEU Tech Research Colloquium 2026', detail: 'Presented the ODIN paper, July 2026' },
     ],

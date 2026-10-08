@@ -1,34 +1,138 @@
 ---
 import Icon from './Icon.astro';
 import SectionHeading from './SectionHeading.astro';
-import { contact, socials } from '../data/site';
+import { contact, site, socials } from '../data/site';
+
+// With a key (contact.formKey in src/data/site.ts) the form posts to Web3Forms, which emails
+// what was sent. Without one it falls back to the visitor's own mail app.
+const sends = Boolean(contact.formKey);
 ---
 
 <section id="contact" class="container-page py-16 sm:py-24" data-accent="cyan">
   <SectionHeading index="05" kicker="Contact" title="Get in touch" />
 
   <div class="panel panel-run [--bw:4px] [--line:var(--accent)] [--px:6px]" data-spotlight data-reveal>
-    <!-- Links are buttons only: the addresses themselves are never printed on the page. -->
-    <div class="p-6 text-center sm:p-12" data-stagger>
-      <p class="mx-auto max-w-2xl font-display text-sm leading-[2] text-white sm:text-xl sm:leading-[1.9]" style="--i:2">
-        {contact.heading}
-      </p>
-      <div class="mt-8 flex flex-wrap justify-center gap-3" style="--i:4">
-        {
-          socials.map((social, i) => (
-            <a
-              href={social.href}
-              target={social.href.startsWith('http') ? '_blank' : undefined}
-              rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-              class:list={['btn', i === 0 ? 'btn-solid' : 'btn-line panel']}
-              data-accent={i === 0 ? 'acid' : undefined}
-            >
-              <Icon name={social.icon} />
-              {social.label}
-            </a>
-          ))
-        }
+    <div class="grid gap-10 p-6 sm:p-10 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:gap-14" data-stagger>
+      <!-- Links are buttons only: the addresses themselves are never printed on the page. -->
+      <div class="text-center lg:text-left" style="--i:2">
+        <p class="font-display text-sm leading-[2] text-white sm:text-lg sm:leading-[1.9]">
+          {contact.heading}
+        </p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+          {
+            socials.map((social) => (
+              <a
+                href={social.href}
+                target={social.href.startsWith('http') ? '_blank' : undefined}
+                rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                class="btn btn-line panel"
+              >
+                <Icon name={social.icon} />
+                {social.label}
+              </a>
+            ))
+          }
+        </div>
       </div>
+
+      <!--
+        A message, sent without leaving the page. The script below posts it and reports back on
+        the line beside the button. Without the script the form still works: it is an ordinary
+        form, and the browser sends it and shows the service's own "sent" page. The checkbox is
+        a trap for bots, which fill in everything; people never see it.
+      -->
+      <form
+        data-contact-form
+        data-sends={sends ? '' : undefined}
+        action={sends ? 'https://api.web3forms.com/submit' : `mailto:${site.email}`}
+        method="post"
+        enctype={sends ? undefined : 'text/plain'}
+        class="grid gap-4 text-left"
+        style="--i:4"
+      >
+        <p class="flex items-center gap-2 font-display text-xs text-accent uppercase">
+          Send a message
+          <span class="hatch ml-auto h-2.5 w-16 opacity-60" aria-hidden="true"></span>
+        </p>
+
+        {sends && <input type="hidden" name="access_key" value={contact.formKey} />}
+        {sends && <input type="hidden" name="subject" value={`New message from ${site.handle}'s portfolio`} />}
+        {sends && <input type="checkbox" name="botcheck" class="hidden" tabindex="-1" autocomplete="off" />}
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="grid gap-1.5">
+            <span class="field-label">Name</span>
+            <input class="field" type="text" name="name" autocomplete="name" maxlength="80" required />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="field-label">Email</span>
+            <input class="field" type="email" name="email" autocomplete="email" maxlength="120" required />
+          </label>
+        </div>
+        <label class="grid gap-1.5">
+          <span class="field-label">Message</span>
+          <textarea class="field min-h-32 resize-y" name="message" rows="5" maxlength="4000" required></textarea>
+        </label>
+
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <button type="submit" class="btn btn-solid disabled:cursor-wait disabled:opacity-60" data-accent="acid">
+            <Icon name="send" />
+            Send
+          </button>
+          <p
+            data-contact-status
+            role="status"
+            class="min-w-0 flex-1 basis-48 font-mono text-xs tracking-wide text-muted data-[tone=bad]:text-magenta data-[tone=good]:text-cyan"
+          >
+          </p>
+        </div>
+      </form>
     </div>
   </div>
 </section>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  const status = form?.querySelector<HTMLElement>('[data-contact-status]');
+  const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+  if (form && status && button) {
+    const say = (text: string, tone: 'plain' | 'good' | 'bad' = 'plain') => {
+      status.textContent = text;
+      status.dataset.tone = tone;
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fields = new FormData(form);
+
+      // No key to send with: hand the message to the visitor's own mail app, already written.
+      if (!('sends' in form.dataset)) {
+        const body = `${fields.get('message')}\n\n${fields.get('name')}\n${fields.get('email')}`;
+        const subject = `Message from ${fields.get('name')}`;
+        window.location.href = `${form.action}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        say('Opening your mail app to send it.');
+        return;
+      }
+
+      button.disabled = true;
+      say('Sending...');
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: fields,
+        });
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result?.success) throw new Error(`Not sent: ${response.status}`);
+        form.reset();
+        say('Message sent. I will reply by email.', 'good');
+      } catch {
+        // What was typed is left in place, so that nothing has to be written twice.
+        say('That did not go through. Try again, or use the Email button.', 'bad');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+</script>

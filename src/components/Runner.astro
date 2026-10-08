@@ -21,21 +21,29 @@ const PLAYER_X = 76;
 
 <div class="border-y border-line bg-deck/60" data-accent="magenta">
   <div class="container-page">
-    <!-- No focus outline: a box round the whole strip is distracting mid-game. The prompt lights up instead. -->
+    <!--
+      No focus outline: a box round the whole strip is distracting mid-game. The prompt lights up
+      instead. contain-strict tells the browser that nothing in here can change the layout or
+      the picture of anything outside it, so what the game changes is never looked for elsewhere.
+    -->
     <div
       data-runner
       tabindex="0"
       role="button"
       aria-label="Minigame. Jump with space, W or the up arrow, or by clicking. Slide with S or the down arrow."
-      class="group relative h-48 cursor-pointer touch-manipulation overflow-hidden outline-none select-none"
+      class="group relative h-48 cursor-pointer touch-manipulation overflow-hidden outline-none select-none contain-strict"
     >
       <!-- The ground and the obstacles. -->
       <canvas data-runner-canvas class="absolute inset-0 size-full" aria-hidden="true"></canvas>
 
-      <!-- One frame of the sheet shows through at a time; the script moves the sheet behind this window. -->
+      <!--
+        One frame of the sheet shows through at a time; the script moves the sheet behind this
+        window. will-change gives him a layer of his own, so a jump only moves that layer and
+        nothing has to be drawn again.
+      -->
       <div
         data-runner-player
-        class="holo-sprite pixelated absolute bottom-6 bg-no-repeat"
+        class="holo-sprite pixelated absolute bottom-6 bg-no-repeat will-change-transform"
         style={`left:${PLAYER_X - sprite.anchor * SCALE}px;width:${px(sprite.width)};height:${px(sprite.height)};background-image:url('${sheet.src}');background-size:${px(sheet.width)} ${px(sheet.height)}`}
       >
       </div>
@@ -46,12 +54,38 @@ const PLAYER_X = 76;
         aria-hidden="true"
       >
       </p>
-      <!-- Both lines are filled in by the script, so that nothing invites a click when the game cannot run. -->
-      <!-- On a narrow strip they are kept clear of the runner, who stands at the left. -->
+      <!-- Filled in by the script, so that nothing invites a click when the game cannot run. -->
+      <!-- On a narrow strip it is kept clear of the runner, who stands at the left. -->
       <div data-runner-prompt class="absolute inset-x-0 top-1/2 -translate-y-1/2 pl-28 text-center font-mono uppercase sm:pl-0">
         <p data-runner-hint class="text-accent text-xs tracking-[0.22em] group-focus-visible:text-white sm:text-sm" aria-live="polite"></p>
-        <p data-runner-keys class="mt-2 text-[0.65rem] tracking-[0.18em] text-muted"></p>
       </div>
+    </div>
+
+    <!--
+      How to play. It is under the strip and not on it, so that it can be read at any time, in
+      the middle of a game included. The keys are in the colours of the two touch buttons. The
+      script shows the line that suits the device, so nothing is explained where the game
+      cannot run.
+    -->
+    <div
+      data-runner-keys
+      hidden
+      class="border-t border-line/60 py-3 font-mono text-[0.7rem] tracking-[0.16em] text-muted uppercase sm:text-xs"
+    >
+      <p data-keys="keyboard" class="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+        <span class="flex items-center gap-2">
+          <kbd class="keycap text-acid">W</kbd>
+          <kbd class="keycap text-acid">Space</kbd>
+          <kbd class="keycap text-acid">↑</kbd>
+          <span><span class="text-fg">Jump</span> / hold to go further</span>
+        </span>
+        <span class="flex items-center gap-2">
+          <kbd class="keycap text-cyan">S</kbd>
+          <kbd class="keycap text-cyan">↓</kbd>
+          <span class="text-fg">Slide</span>
+        </span>
+      </p>
+      <p data-keys="touch" class="text-center">Hold <span class="text-fg">Jump</span> to go further</p>
     </div>
 
     <!--
@@ -147,7 +181,7 @@ const PLAYER_X = 76;
   const scoreEl = stage?.querySelector<HTMLElement>('[data-runner-score]');
   const prompt = stage?.querySelector<HTMLElement>('[data-runner-prompt]');
   const hint = stage?.querySelector<HTMLElement>('[data-runner-hint]');
-  const keys = stage?.querySelector<HTMLElement>('[data-runner-keys]');
+  const keys = stage?.parentElement?.querySelector<HTMLElement>('[data-runner-keys]');
   const buttons = stage?.parentElement?.querySelector<HTMLElement>('[data-runner-pad]');
   const ctx = canvas?.getContext('2d');
 
@@ -167,6 +201,14 @@ const PLAYER_X = 76;
     const frameWidth = player.offsetWidth;
     const frameHeight = player.offsetHeight;
     const playerX = player.offsetLeft + (sprite.anchor * frameWidth) / sprite.width;
+
+    // The strip's size in CSS pixels, where its ground line is, and how many pixels of the
+    // canvas go to one CSS pixel. They are read when the strip changes size and kept: asking
+    // the page for a size in the middle of a frame makes it stop and lay itself out again.
+    let width = 0;
+    let height = 0;
+    let ground = 0;
+    let ratio = 1;
 
     type Clip = keyof typeof sprite.clips;
 
@@ -204,6 +246,26 @@ const PLAYER_X = 76;
     let clip: Clip = 'idle';
     let clipAt = 0;
 
+    // What is on screen now: the frame of the sheet, his height, and the score. Each is only
+    // written to the page when it differs, since most frames change none of them.
+    let shownColumn = -1;
+    let shownRow = -1;
+    let shownLift = 0;
+    let shownScore = -1;
+    const reading = scoreEl.appendChild(document.createTextNode(''));
+
+    // His height is not written as a transform. It is set by moving a paused animation to the
+    // moment that has him that high: it climbs a pixel a millisecond, so the time to move it
+    // to is his height. A transform written by a script makes the browser work out every layer
+    // of the page again before it will move his, on each frame of a jump; an element with a
+    // transform animation it already expects to move, and it only moves it.
+    const HIGHEST_PX = 1000;
+    const climb = player.animate(
+      { transform: ['translateY(0)', `translateY(${-HIGHEST_PX}px)`] },
+      { duration: HIGHEST_PX, fill: 'both' },
+    );
+    climb.pause();
+
     // Storage can be unavailable (private windows, blocked site data); the game works without it.
     let best = 0;
     try {
@@ -215,8 +277,6 @@ const PLAYER_X = 76;
     const invite = (to: string) => (touch ? `Tap to ${to}` : `Click or press space to ${to}`);
 
     const draw = () => {
-      const { clientWidth: width, clientHeight: height } = stage;
-      const ground = height - GROUND_PX;
       ctx.clearRect(0, 0, width, height);
 
       ctx.fillStyle = lineColor;
@@ -225,18 +285,23 @@ const PLAYER_X = 76;
       for (let x = -(distance % 48); x < width; x += 48) ctx.fillRect(x, ground + 8, 14, 1);
 
       const seconds = performance.now() / 1000;
-      for (const obstacle of obstacles) drawObstacle(ctx, obstacle, ground, seconds, theme);
+      for (const obstacle of obstacles) drawObstacle(ctx, obstacle, ground, seconds, theme, ratio);
 
-      // Written only when it changes: it is the same for several frames at a time.
-      const reading = `${pad(score())} // Hi ${pad(Math.max(best, score()))}`;
-      if (scoreEl.textContent !== reading) scoreEl.textContent = reading;
+      const points = score();
+      if (points !== shownScore) {
+        shownScore = points;
+        reading.data = `${pad(points)} // Hi ${pad(Math.max(best, points))}`;
+      }
     };
 
     // The canvas is drawn in screen pixels, at the display's own density so edges stay sharp.
     const resize = () => {
-      const ratio = window.devicePixelRatio || 1;
-      canvas.width = Math.round(stage.clientWidth * ratio);
-      canvas.height = Math.round(stage.clientHeight * ratio);
+      ratio = window.devicePixelRatio || 1;
+      width = stage.clientWidth;
+      height = stage.clientHeight;
+      ground = height - GROUND_PX;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       draw();
     };
@@ -287,8 +352,17 @@ const PLAYER_X = 76;
         clipAt = (clipAt + fps * pace * dt) % frames;
       }
 
-      player.style.backgroundPosition = `${-Math.floor(clipAt) * frameWidth}px ${-row * frameHeight}px`;
-      player.style.translate = `0 ${-Math.round(lift)}px`;
+      const column = Math.floor(clipAt);
+      if (column !== shownColumn || row !== shownRow) {
+        shownColumn = column;
+        shownRow = row;
+        player.style.backgroundPosition = `${-column * frameWidth}px ${-row * frameHeight}px`;
+      }
+      const up = Math.round(lift);
+      if (up !== shownLift) {
+        shownLift = up;
+        climb.currentTime = up;
+      }
     };
 
     // Tells the page whether a game is in play right now: one has been started, is not over,
@@ -359,22 +433,28 @@ const PLAYER_X = 76;
       slide(dt);
 
       for (const obstacle of obstacles) obstacle.x -= speed * dt;
-      obstacles = obstacles.filter((obstacle) => obstacle.x + obstacle.width > 0);
+      // They leave in the order they came, so only the front of the line needs looking at.
+      while (obstacles.length > 0 && obstacles[0].x + obstacles[0].width <= 0) obstacles.shift();
 
       // Obstacles arrive at least a jump and a breath apart. The gap is counted in time, from
       // the back of one to the front of the next, so it stretches as the pace picks up.
       nextObstacleIn -= speed * dt;
       if (nextObstacleIn <= 0) {
-        const group = spawn(score(), stage.clientWidth);
+        const group = spawn(score(), width);
         obstacles.push(...group);
         const back = group[group.length - 1];
-        nextObstacleIn = back.x + back.width - stage.clientWidth + speed * (0.85 + Math.random() * 0.9);
+        nextObstacleIn = back.x + back.width - width + speed * (0.85 + Math.random() * 0.9);
       }
 
       const body = slideTime >= 0 ? SLIDING_BODY : BODY;
       const left = playerX - body.back;
       const right = playerX + body.front;
-      if (obstacles.some((obstacle) => hits(obstacle, left, right, lift, body.height))) crash();
+      for (const obstacle of obstacles) {
+        if (hits(obstacle, left, right, lift, body.height)) {
+          crash();
+          break;
+        }
+      }
     };
 
     // There is something to animate while a game is on, while he is still in the air or dying,
@@ -426,7 +506,7 @@ const PLAYER_X = 76;
       slideHeld = false;
       slideLocked = false;
       obstacles = [];
-      nextObstacleIn = Math.max(0, FIRST_OBSTACLE_PX - stage.clientWidth);
+      nextObstacleIn = Math.max(0, FIRST_OBSTACLE_PX - width);
       prompt.hidden = true;
       tellPage();
       loop();
@@ -516,7 +596,10 @@ const PLAYER_X = 76;
     }).observe(stage);
 
     hint.textContent = invite('run');
-    keys.textContent = touch ? 'Hold jump to go further' : 'W / Space / ↑ jump, hold to go further · S / ↓ slide';
+    for (const line of keys.querySelectorAll<HTMLElement>('[data-keys]')) {
+      line.hidden = line.dataset.keys !== (touch ? 'touch' : 'keyboard');
+    }
+    keys.hidden = false;
     new ResizeObserver(resize).observe(stage);
     resize();
   }
