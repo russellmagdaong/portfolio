@@ -122,13 +122,13 @@ const { id, last = false } = Astro.props;
       marked = el;
       document.dispatchEvent(new CustomEvent('stage:change'));
     };
-    // A section the visitor asked for by its link stays highlighted until they scroll away.
+    // A section the visitor asked for by its link stays highlighted until they scroll away
+    // from where the link took them. It is kept through the stages passed on the way there.
     let picked: { el: HTMLElement; at: number; when: number } | null = null;
 
     const show = (to: number, animate: boolean) => {
       const from = active;
       active = to;
-      picked = null;
       const forwards = to > from;
       const change = CHANGES[((forwards ? to - 1 : to) + (forwards ? 0 : BACK_SHIFT)) % CHANGES.length];
       screens.forEach((screen, i) => {
@@ -172,7 +172,8 @@ const { id, last = false } = Astro.props;
       if (picked && performance.now() - picked.when > 1200 && Math.abs(scrollY - picked.at) > 60) picked = null;
       // Of the linked sections on this stage, the last one that has reached the middle of the window.
       const inView = linked[active].filter((el) => el.getBoundingClientRect().top <= innerHeight * 0.5).pop();
-      mark(picked?.el ?? inView ?? stages[active]);
+      const asked = picked && screens[active].contains(picked.el) ? picked.el : undefined;
+      mark(asked ?? inView ?? stages[active]);
     }
 
     // Brings a section inside a stage into view: to the stage, and as far down it as it scrolls.
@@ -275,7 +276,12 @@ const { id, last = false } = Astro.props;
       if (!link || !link.hash || link.origin !== location.origin || link.pathname !== location.pathname) return;
       const target = document.getElementById(link.hash.slice(1));
       const index = target ? screens.findIndex((screen) => screen.contains(target)) : -1;
-      if (!target || index === -1) return;
+      if (!target || index === -1) {
+        // A link to the stage itself: whatever section of it was asked for before no longer is.
+        picked = null;
+        update();
+        return;
+      }
       event.preventDefault();
       history.pushState(null, '', link.hash);
       goInside(index, target);
