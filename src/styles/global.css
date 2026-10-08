@@ -983,6 +983,35 @@
   translate: 0 16px;
 }
 
+/*
+ * While a game is being played on the minigame (Runner.astro puts .is-playing on the root),
+ * everything else on the page that moves by itself holds still. Most of the cost is two
+ * things, the field of dots across the whole window and the floor under the hero: each is
+ * redrawn across the full width of the window on every frame, and in a big window that
+ * leaves too little time for the game, which then stutters. The rest are small, but together
+ * they are the difference between an even picture and a slightly uneven one. They all carry
+ * on from where they stopped as soon as the game is over or scrolled out of view.
+ *
+ * The things that move are named one by one rather than caught with `*`: a rule that could
+ * match every element makes the browser look at every element again when the game starts,
+ * which is a hitch on the very first frame. Something new that animates forever belongs here.
+ */
+.is-playing body::before,
+.is-playing .horizon > div > div,
+.is-playing .panel-run::after,
+.is-playing .btn-solid::after,
+.is-playing .pulse-line::after,
+.is-playing .glitch::before,
+.is-playing .glitch::after,
+.is-playing .arrows > i,
+.is-playing .icon-wave,
+.is-playing .animate-scan,
+.is-playing .animate-bob,
+.is-playing .animate-blink,
+.is-playing .animate-flicker {
+  animation-play-state: paused;
+}
+
 /* The striped bar beside a section heading draws itself in from the left. */
 .rule-draw {
   transform-origin: left;

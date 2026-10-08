@@ -227,7 +227,9 @@ const PLAYER_X = 76;
       const seconds = performance.now() / 1000;
       for (const obstacle of obstacles) drawObstacle(ctx, obstacle, ground, seconds, theme);
 
-      scoreEl.textContent = `${pad(score())} // Hi ${pad(Math.max(best, score()))}`;
+      // Written only when it changes: it is the same for several frames at a time.
+      const reading = `${pad(score())} // Hi ${pad(Math.max(best, score()))}`;
+      if (scoreEl.textContent !== reading) scoreEl.textContent = reading;
     };
 
     // The canvas is drawn in screen pixels, at the display's own density so edges stay sharp.
@@ -289,8 +291,15 @@ const PLAYER_X = 76;
       player.style.translate = `0 ${-Math.round(lift)}px`;
     };
 
+    // Tells the page whether a game is in play right now: one has been started, is not over,
+    // and is on screen. While one is, global.css holds everything else that moves on the
+    // page still. In a large window the backdrops take most of each frame to redraw, and the
+    // game stutters for it; the game itself costs very little.
+    const tellPage = () => document.documentElement.classList.toggle('is-playing', state === 'running' && visible);
+
     const crash = () => {
       state = 'over';
+      tellPage();
       crashedAt = performance.now();
       deathTime = 0;
       slideTime = -1;
@@ -378,8 +387,11 @@ const PLAYER_X = 76;
         looping = false;
         return;
       }
-      // A long gap means the tab was in the background; do not let the game leap ahead.
-      const dt = Math.min((now - last) / 1000, 0.05);
+      // A long gap means the tab was in the background; do not let the game leap ahead. Nor
+      // may time run backwards: a frame's own time can be a little earlier than the tap that
+      // started the game within it, and a negative step would have him getting up from a
+      // slide he never made.
+      const dt = Math.min(Math.max(0, (now - last) / 1000), 0.05);
       last = now;
       fall(dt);
       if (state === 'running') {
@@ -416,6 +428,7 @@ const PLAYER_X = 76;
       obstacles = [];
       nextObstacleIn = Math.max(0, FIRST_OBSTACLE_PX - stage.clientWidth);
       prompt.hidden = true;
+      tellPage();
       loop();
     };
 
@@ -498,6 +511,7 @@ const PLAYER_X = 76;
     // The game stands still while it is off screen and picks up where it was.
     new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
+      tellPage();
       loop();
     }).observe(stage);
 
