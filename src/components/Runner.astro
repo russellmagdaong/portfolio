@@ -495,18 +495,11 @@ const PLAYER_X = 76;
       if (document.hidden) letGo();
     });
 
-    // The game stands still while it is off screen and picks up where it was. Off screen also
-    // means on a stage that is switched off (Stage.astro), which can still be within the window.
-    let inWindow = false;
-    const look = () => {
-      visible = inWindow && !stage.closest('[data-screen="off"], [data-screen="leaving"]');
-      loop();
-    };
+    // The game stands still while it is off screen and picks up where it was.
     new IntersectionObserver(([entry]) => {
-      inWindow = entry.isIntersecting;
-      look();
+      visible = entry.isIntersecting;
+      loop();
     }).observe(stage);
-    document.addEventListener('stage:change', look);
 
     hint.textContent = invite('run');
     keys.textContent = touch ? 'Hold jump to go further' : 'W / Space / ↑ jump, hold to go further · S / ↓ slide';
