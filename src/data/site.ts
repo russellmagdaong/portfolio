@@ -27,7 +27,7 @@ export const site = {
 export const dialogue = [
   'I build games that teach things.',
   'Godot up front, plain code behind it.',
-  'Now building ODIN, a tutor that lives inside a dungeon crawler.',
+  'Now building ODIN, a tutor in a dungeon crawler.',
   'I also edit videos, play games and make music.',
 ];
 
@@ -39,16 +39,16 @@ export const socials: { label: string; icon: IconName; href: string; handle: str
 
 export const about = {
   paragraphs: [
-    "I'm a student developer from the Philippines and a DOST-SEI scholar. Most of what I build ends up being a game that teaches something: math, programming, or whatever I was struggling to learn at the time.",
+    "I'm a 4th year BS Computer Science student at FEU Tech, specializing in Software Engineering, and a DOST-SEI scholar from the Philippines. Most of what I build ends up being a game that teaches something: math, programming, or whatever I was struggling to learn at the time.",
     'I like the part of a project where the "fun" layer and the "is this actually correct" layer have to meet. In practice that means a lot of Godot on the front and a lot of plain, deterministic code behind it.',
     'Away from that, I edit videos, play games and make music, and I take part in CTFs and hackathons.',
   ],
   stats: [
-    { label: 'Role', value: 'Student developer' },
+    { label: 'Degree', value: 'BS Computer Science (Software Engineering)' },
+    { label: 'School', value: 'FEU Tech, 4th year' },
     { label: 'Based in', value: 'Philippines' },
     { label: 'Scholarship', value: 'DOST-SEI' },
     { label: 'Now building', value: 'ODIN, my undergraduate thesis' },
-    { label: 'Also', value: 'Video editor, gamer, musician' },
     { label: 'Open to', value: 'Software engineering internships' },
   ],
 };
