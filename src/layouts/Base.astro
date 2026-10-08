@@ -7,7 +7,7 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
-import { url } from '../lib/url';
+import { versioned } from '../lib/versioned';
 
 interface Props {
   title?: string;
@@ -18,7 +18,7 @@ const { title, description = site.description } = Astro.props;
 const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · I build games that teach things`;
 // Only known once `site` is set in astro.config.mjs.
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
-const ogImage = Astro.site ? new URL(url('/og.png'), Astro.site) : url('/og.png');
+const ogImage = Astro.site ? new URL(versioned('/og.png'), Astro.site) : versioned('/og.png');
 ---
 
 <!doctype html>
@@ -45,11 +45,12 @@ const ogImage = Astro.site ? new URL(url('/og.png'), Astro.site) : url('/og.png'
     <!--
       The icon three ways: an .ico for the browsers and tools that only know that, the SVG for
       the rest, and a PNG for iPhone and iPad. scripts/favicons.mjs makes the first and last
-      from the SVG.
+      from the SVG. All three addresses carry a fingerprint, so a browser that has the old icon
+      saved fetches the new one.
     -->
-    <link rel="icon" href={url('/favicon.ico')} sizes="32x32" />
-    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
-    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
+    <link rel="icon" href={versioned('/favicon.ico')} sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href={versioned('/favicon.svg')} />
+    <link rel="apple-touch-icon" href={versioned('/apple-touch-icon.png')} />
 
     <!--
       Marks the page as scripted, which is what hides blocks until they scroll in (see global.css).
