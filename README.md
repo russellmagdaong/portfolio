@@ -107,15 +107,9 @@ Images narrower than 400px are treated as pixel-art logos: they get a margin and
 
 ### Animation notes
 
-- The home page is a set of stages, not one long scroll: each stage fills the screen and holds still, and
-  scrolling on changes the picture to the next stage in its place. A stage taller than the screen scrolls as usual
-  until its end. A stage is a `<Stage>` in `src/pages/index.astro`; it can hold more than one section, and its `id`
-  is what links point at.
-- Scrolling never rests between two stages: once it has left one it carries on to the next, which settles in the
-  middle of the screen. `NUDGE_PX` in `src/components/Stage.astro` is how far counts as having left.
-- The changes between stages (scan line, iris, pixel dissolve, interlace, glitch) are listed in `CHANGES` in
-  `src/components/Stage.astro` and drawn under "Stages" in `src/styles/global.css`. `--stage-hold` there is how far
-  a stage holds. Contents smaller than the window are enlarged to use it, up to `MAX_FIT`.
+- Each section after the hero arrives with a change of picture of its own (scan line, iris, pixel dissolve,
+  interlace, glitch), every time it scrolls into view. Which section gets which is the order of `ARRIVALS` in
+  `src/scripts/effects.ts`; the changes are drawn under "Arrivals" in `src/styles/global.css`.
 - `data-reveal` fades a block up when it scrolls into view (`data-reveal="left"` / `"right"` slide it in from a side).
 - `data-stagger` does the same to each child in turn. `style="--i:2"` moves an item later in the queue.
 - `data-scramble` on a heading inside a `data-reveal` block makes its letters decode into place.

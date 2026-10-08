@@ -2,7 +2,7 @@
 import { site } from '../data/site';
 import { url } from '../lib/url';
 
-// `id` is the stage each link points at; the script below uses it to highlight the current one.
+// `id` is the section each link points at; the script below uses it to highlight the current one.
 const links = [
   { label: 'About', id: 'about' },
   { label: 'Projects', id: 'projects' },
@@ -134,13 +134,10 @@ const upcoming = ['Videos'];
     const scrollable = document.documentElement.scrollHeight - innerHeight;
     if (progress) progress.style.scale = `${scrollable > 0 ? Math.min(1, scrollY / scrollable) : 0} 1`;
 
-    // The current section is the stage that is showing (Stage.astro marks it). Where the page
-    // is not staged, it is the last one whose top has passed 40% of the way down the window.
-    const staged = document.documentElement.classList.contains('stages-on');
+    // The current section is the last one whose top has passed 40% of the way down the window.
     let current = -1;
     sections.forEach((section, i) => {
-      if (!section) return;
-      if (staged ? section.hasAttribute('data-active') : section.getBoundingClientRect().top <= innerHeight * 0.4) current = i;
+      if (section && section.getBoundingClientRect().top <= innerHeight * 0.4) current = i;
     });
 
     navLinks.forEach((link, i) => {
@@ -164,7 +161,6 @@ const upcoming = ['Videos'];
   // Scroll events already fire at most once per frame, so this needs no extra throttling.
   addEventListener('scroll', update, { passive: true });
   addEventListener('resize', update);
-  document.addEventListener('stage:change', update);
   update();
 
   // --- Mobile menu ---

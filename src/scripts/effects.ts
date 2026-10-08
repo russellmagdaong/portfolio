@@ -85,9 +85,6 @@ const observer = new IntersectionObserver(
     for (const entry of entries) {
       if (!entry.isIntersecting) continue;
       const el = entry.target as HTMLElement;
-      // A stage that is switched off (Stage.astro) is still on the page, and can be within the
-      // window. Its blocks wait until it is switched on; see the listener below.
-      if (el.closest('[data-screen="off"]')) continue;
       observer.unobserve(el);
       el.classList.add('is-in');
       setTimeout(() => el.classList.add('is-done'), SETTLE_MS);
@@ -100,40 +97,78 @@ const observer = new IntersectionObserver(
 // While the entry screen (Entry.astro) is up, nothing is watched yet: whatever is on the first
 // screenful should animate in when the visitor arrives, not behind the entry screen.
 const watch = () => document.querySelectorAll('[data-reveal], [data-stagger]').forEach((el) => observer.observe(el));
-if (document.documentElement.classList.contains('gated')) {
-  document.addEventListener('site:enter', watch, { once: true });
-} else {
+/*
+ * Arrivals. Each section after the hero comes into view with a change of picture of its own,
+ * and does so again whenever it has been right out of view and comes back. The changes are
+ * drawn by the styles under "Arrivals" in global.css; this only says which section gets which,
+ * and when. The sections take them in this order down the page.
+ */
+const ARRIVALS = ['scan', 'iris', 'pixels', 'blinds', 'glitch'];
+// If a change's end is never reported, the section is shown anyway after this long.
+const ARRIVE_MS = 1000;
+
+const arrivals = () => {
+  if (reducedMotion) return;
+
+  const arrive = (section: HTMLElement) => {
+    const box = section.getBoundingClientRect();
+    // Coming up from below, the first windowful to show is the section's top; coming down
+    // from above, it is its end.
+    const fromBelow = box.top > innerHeight * 0.4;
+    const top = fromBelow ? 0 : Math.max(0, box.height - innerHeight);
+    section.style.setProperty('--vt', `${top}px`);
+    section.style.setProperty('--vb', `${Math.min(box.height, top + innerHeight)}px`);
+    // The middle of the part that is in the window right now.
+    section.style.setProperty('--vc', `${(Math.max(0, -box.top) + Math.min(box.height, innerHeight - box.top)) / 2}px`);
+    section.dataset.way = fromBelow ? 'down' : 'up';
+    section.classList.add('has-arrived', 'is-arriving');
+    window.setTimeout(() => section.classList.remove('is-arriving'), ARRIVE_MS);
+  };
+
+  // A section arrives once it is properly in the window, clear of its top and bottom edges...
+  const near = new IntersectionObserver(
+    (entries) => {
+      for (const { target, isIntersecting } of entries) {
+        if (isIntersecting && !target.classList.contains('has-arrived')) arrive(target as HTMLElement);
+      }
+    },
+    { rootMargin: '-12% 0px -12% 0px' },
+  );
+  // ...and is forgotten once it is right out of it, so that it arrives afresh next time.
+  const away = new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      if (!isIntersecting) target.classList.remove('has-arrived', 'is-arriving');
+    }
+  });
+
+  document.querySelectorAll<HTMLElement>('#main > section[id]').forEach((section, i) => {
+    section.dataset.arrive = ARRIVALS[i % ARRIVALS.length];
+    section.addEventListener('animationend', (event) => {
+      if (event.target === section && !event.pseudoElement && event.animationName.startsWith('arrive-')) {
+        section.classList.remove('is-arriving');
+      }
+    });
+    near.observe(section);
+    away.observe(section);
+  });
+};
+
+const begin = () => {
   watch();
+  arrivals();
+};
+if (document.documentElement.classList.contains('gated')) {
+  document.addEventListener('site:enter', begin, { once: true });
+} else {
+  begin();
 }
 
-// A link to a section that is already on screen moves nothing (Stage.astro), so its title is
-// run through the scramble again, to show that the click landed.
-document.addEventListener('stage:focus', (event) => {
-  (event.target as HTMLElement).querySelectorAll<HTMLElement>('[data-scramble]:not([data-scrambling])').forEach((title) => {
-    if (title.closest('[data-reveal]')?.classList.contains('is-in')) scramble(title);
-  });
-});
-
-// When a stage is switched on, look again at whatever in it has not come in yet. The observer
-// only reports a block when it moves in or out of the window, and these may not have moved.
-document.addEventListener('stage:change', (event) => {
-  if (document.documentElement.classList.contains('gated')) return;
-  const waiting = (event.target as HTMLElement).querySelectorAll('[data-reveal]:not(.is-in), [data-stagger]:not(.is-in)');
-  waiting.forEach((el) => {
-    observer.unobserve(el);
-    observer.observe(el);
-  });
-});
-
-// Panels with data-spotlight light up under the pointer.
+// Panels with data-spotlight get a soft light under the pointer.
 document.querySelectorAll<HTMLElement>('[data-spotlight]').forEach((el) => {
   el.addEventListener('pointermove', (event) => {
     const box = el.getBoundingClientRect();
-    // A panel on an enlarged stage (Stage.astro) is drawn bigger than it is laid out. The
-    // pointer is measured as drawn; the styles want it as laid out.
-    const drawn = box.width / el.offsetWidth || 1;
-    el.style.setProperty('--mx', `${(event.clientX - box.left) / drawn}px`);
-    el.style.setProperty('--my', `${(event.clientY - box.top) / drawn}px`);
+    el.style.setProperty('--mx', `${event.clientX - box.left}px`);
+    el.style.setProperty('--my', `${event.clientY - box.top}px`);
   });
   el.addEventListener('pointerleave', () => {
     el.style.removeProperty('--mx');
