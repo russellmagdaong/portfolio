@@ -44,12 +44,21 @@ const photos = site.photos.map((name) => {
 
       <p class="rise mt-6 font-mono text-xs tracking-[0.2em] text-muted uppercase sm:text-sm" style="--i:2">{site.role}</p>
 
-      <!-- Terminal line: the tagline lines type themselves out in turn. -->
+      <!--
+        Terminal line: the tagline lines type themselves out in turn. Every one of them is also
+        laid out unseen in the same cell of a grid, which makes the block exactly as tall as the
+        tallest of them at whatever width it has: no room is kept that no line uses, and nothing
+        under it moves when a longer line comes round. The cursor takes up no room of its own,
+        so the line being typed always wraps where its unseen copy does.
+      -->
       <div class="rise mt-7 border-l-2 border-magenta pl-4" data-lines={JSON.stringify(dialogue)} style="--i:3">
-        <p class="min-h-[3lh] font-mono text-base text-fg sm:min-h-[2lh] sm:text-lg" aria-hidden="true">
-          <span class="text-magenta">&gt;</span>{' '}
-          <span data-typed>{dialogue[0]}</span><span class="ml-0.5 inline-block h-[1.05em] w-[0.55em] animate-blink bg-cyan align-text-bottom"></span><span data-rest class="invisible"></span>
-        </p>
+        <div class="grid grid-cols-1 font-mono text-base text-fg sm:text-lg" aria-hidden="true">
+          {dialogue.map((line) => <p class="invisible col-start-1 row-start-1">&gt; {line}</p>)}
+          <p class="col-start-1 row-start-1">
+            <span class="text-magenta">&gt;</span>{' '}
+            <span data-typed>{dialogue[0]}</span><span class="relative"><span class="absolute bottom-0 left-0.5 h-[1.05em] w-[0.55em] animate-blink bg-cyan"></span></span><span data-rest class="invisible"></span>
+          </p>
+        </div>
         <p class="sr-only">{dialogue.join(' ')}</p>
       </div>
 

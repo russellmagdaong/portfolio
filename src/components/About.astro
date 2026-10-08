@@ -6,7 +6,7 @@ import { about } from '../data/site';
 <section id="about" class="container-page py-16 sm:py-24" data-accent="cyan">
   <SectionHeading index="01" kicker="About" title="About me" />
 
-  <div class="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-14">
+  <div class="grid gap-10 lg:grid-cols-2 lg:gap-14">
     <div class="space-y-5 text-lg leading-relaxed" data-stagger>
       {
         about.paragraphs.map((paragraph, i) => (
@@ -17,18 +17,22 @@ import { about } from '../data/site';
       }
     </div>
 
-    <!-- Read-out panel, with the heavy frame of a profile card. -->
-    <div class="panel panel-run self-start [--bw:4px] [--line:var(--accent)] [--px:6px]" data-spotlight data-reveal="right" style="--i:2">
+    <!--
+      Read-out panel, with the heavy frame of a profile card. Beside the text it stands as tall
+      as the text does, its rows sharing out whatever height that leaves over, so the two
+      columns end on the same line.
+    -->
+    <div class="panel panel-run flex flex-col [--bw:4px] [--line:var(--accent)] [--px:6px]" data-spotlight data-reveal="right" style="--i:2">
       <p class="flex items-center gap-2 border-b-2 border-line px-6 py-4 font-display text-xs text-accent uppercase">
         Profile
         <span class="inline-block h-[1em] w-[0.5em] animate-blink bg-cyan" aria-hidden="true"></span>
         <span class="hatch ml-auto h-2.5 w-16 opacity-60" aria-hidden="true"></span>
       </p>
-      <dl class="px-6 py-2" data-stagger>
+      <dl class="flex flex-1 flex-col px-6 py-2" data-stagger>
         {
           about.stats.map((stat, i) => (
             <div
-              class="grid grid-cols-[7.5rem_1fr] items-baseline gap-3 border-b border-line/60 py-3 last:border-b-0"
+              class="grid flex-1 grid-cols-[7.5rem_1fr] content-center items-baseline gap-3 border-b border-line/60 py-3 last:border-b-0"
               style={`--i:${i + 4}`}
             >
               <dt class="font-mono text-[0.7rem] tracking-[0.16em] text-muted uppercase">{stat.label}</dt>

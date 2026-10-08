@@ -86,30 +86,24 @@
     @apply font-sans text-fg antialiased;
   }
 
-  /* Both backdrop layers are fixed, so content scrolls across them, and only ever animate
-     opacity or translate, which the browser can do without repainting. */
+  /* Both backdrop layers are fixed, so content scrolls across them. Neither moves. */
   body::before,
   body::after {
     content: "";
     position: fixed;
+    inset: 0;
     z-index: -1;
     pointer-events: none;
   }
 
-  /* A field of phosphor dots, like the face of an arcade tube. It creeps diagonally by exactly
-     one cell, so the loop is seamless, and slowly brightens and dims. */
+  /* A field of phosphor dots, like the face of an arcade tube. */
   body::before {
-    inset: -16px;
-    background: radial-gradient(circle, color-mix(in oklab, var(--color-cyan) 17%, transparent) 1px, transparent 1.5px)
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-cyan) 14%, transparent) 1px, transparent 1.5px)
       0 0 / 16px 16px;
-    animation:
-      drift 14s linear infinite,
-      breathe 9s ease-in-out infinite alternate;
   }
 
   /* The tube's dark corners. */
   body::after {
-    inset: 0;
     background: radial-gradient(ellipse 90% 80% at 50% 45%, transparent 50%, rgb(0 0 0 / 0.72));
   }
 
@@ -757,21 +751,6 @@
   }
 }
 
-@keyframes breathe {
-  from {
-    opacity: 0.65;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes drift {
-  to {
-    translate: 16px 16px;
-  }
-}
-
 @keyframes edge-run {
   from {
     translate: -100% 0;
@@ -985,18 +964,17 @@
 
 /*
  * While a game is being played on the minigame (Runner.astro puts .is-playing on the root),
- * everything else on the page that moves by itself holds still. Most of the cost is two
- * things, the field of dots across the whole window and the floor under the hero: each is
- * redrawn across the full width of the window on every frame, and in a big window that
- * leaves too little time for the game, which then stutters. The rest are small, but together
- * they are the difference between an even picture and a slightly uneven one. They all carry
- * on from where they stopped as soon as the game is over or scrolled out of view.
+ * everything else on the page that moves by itself holds still. Most of the cost is the
+ * floor under the hero: it is redrawn across the full width of the window on every frame,
+ * and in a big window that leaves too little time for the game, which then stutters. The
+ * rest are small, but together they are the difference between an even picture and a
+ * slightly uneven one. They all carry on from where they stopped as soon as the game is over
+ * or scrolled out of view.
  *
  * The things that move are named one by one rather than caught with `*`: a rule that could
  * match every element makes the browser look at every element again when the game starts,
  * which is a hitch on the very first frame. Something new that animates forever belongs here.
  */
-.is-playing body::before,
 .is-playing .horizon > div > div,
 .is-playing .panel-run::after,
 .is-playing .btn-solid::after,
