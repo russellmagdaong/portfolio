@@ -24,6 +24,7 @@ If projects or images go missing in the dev server after files are moved or rena
 | Minigame character (sprite sheet, built from GIFs)      | `src/assets/runner/`         |
 | CTF and hackathon certificates (images)                 | `src/assets/certificates/`   |
 | Tool icons                                              | `public/icons/`              |
+| Browser-tab icon and link-preview image                 | `public/`                    |
 | Colours, fonts, panel, button and animation styles      | `src/styles/global.css`      |
 | Scroll-in, heading and spotlight effects                | `src/scripts/effects.ts`     |
 | Page sections                                           | `src/components/`            |
@@ -48,6 +49,15 @@ node scripts/runner-sprites.mjs path/to/the/gifs
 The GIFs can be exported at any whole-number scale, as long as they all share it and have a transparent background.
 They do not have to be the same size: they are lined up by their bottom edge (the ground) and the middle of their width.
 The obstacles are not images: they are drawn in code, in `src/scripts/runner-obstacles.ts`.
+
+### Icon and link preview
+
+The browser-tab icon is `public/favicon.svg`. After changing it, run `node scripts/favicons.mjs` to remake the two
+copies that cannot be SVG: `favicon.ico` and `apple-touch-icon.png` (for iPhone and iPad).
+
+`public/og.png` is the picture that Facebook, Discord, X and the like show when the site is shared. It is drawn by
+`scripts/og-image.mjs`, which needs Playwright (see the top of that file). Those sites keep their own copy of a
+preview for a while, so a new image can take time to show up on links that were shared before.
 
 ### Certificates
 
@@ -105,7 +115,8 @@ Images narrower than 400px are treated as pixel-art logos: they get a margin and
 
 ## Deploying
 
-Set `site` in `astro.config.mjs` to your final URL before deploying. If the site will live under a sub-path
+`site` in `astro.config.mjs` is the address the site is published at; the link preview and canonical link are built
+from it, so change it if the site moves. If the site will live under a sub-path
 (for example `https://username.github.io/portfolio/`), also set `base: '/portfolio'`.
 
 ## Credits

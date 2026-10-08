@@ -27,7 +27,7 @@ const ogImage = Astro.site ? new URL(url('/og.png'), Astro.site) : url('/og.png'
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content="#06060c" />
+    <meta name="theme-color" content="#050508" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:type" content="website" />
@@ -35,14 +35,21 @@ const ogImage = Astro.site ? new URL(url('/og.png'), Astro.site) : url('/og.png'
     <meta property="og:description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
     {canonical && <meta property="og:url" content={canonical} />}
-    <!-- Drawn by scripts/og-image.mjs. Most sites only read it from an absolute URL, which needs `site` set. -->
+    <!-- Drawn by scripts/og-image.mjs. Most sites only read it from a full address, which comes from `site` in astro.config.mjs. -->
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="russm. in pixel letters over a neon sunset" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImage} />
+    <!--
+      The icon three ways: an .ico for the browsers and tools that only know that, the SVG for
+      the rest, and a PNG for iPhone and iPad. scripts/favicons.mjs makes the first and last
+      from the SVG.
+    -->
+    <link rel="icon" href={url('/favicon.ico')} sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
 
     <!--
       Marks the page as scripted, which is what hides blocks until they scroll in (see global.css).
