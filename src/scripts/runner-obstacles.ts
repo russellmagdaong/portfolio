@@ -113,12 +113,33 @@ const fillTinted = (ctx: CanvasRenderingContext2D, colour: string, dark: string,
   ctx.globalAlpha = 1;
 };
 
-type Painter = (ctx: CanvasRenderingContext2D, obstacle: Obstacle, time: number, theme: Theme) => void;
+// The few ways an obstacle's look changes while it is on screen. A drone's rotors snap between
+// wide and narrow, which reads as spinning, and its eye blinks; a gate's foot blinks so that
+// it stands out against the posts that stand on the ground. Nothing else changes at all.
+const WIDE_ROTORS = 1;
+const EYE_OPEN = 2;
+const FOOT_LIT = 1;
+
+/** Which of its looks an obstacle has at `time`, as a sum of the flags above. */
+const lookOf = ({ kind, seed }: Obstacle, time: number) => {
+  if (kind === 'drone') {
+    const rotors = Math.floor(time * 24 + seed * 8) % 2 ? WIDE_ROTORS : 0;
+    return Math.floor(time * 3 + seed * 4) % 4 !== 0 ? rotors + EYE_OPEN : rotors;
+  }
+  if (kind === 'gate') return Math.floor(time * 4 + seed * 4) % 2 === 0 ? FOOT_LIT : 0;
+  return 0;
+};
+
+/** How far below its place an obstacle is at `time`: a drone bobs, the rest stay put. */
+const dropOf = ({ kind, seed }: Obstacle, time: number) =>
+  kind === 'drone' ? Math.round(Math.sin(time * 6 + seed * 6.28) * 2) : 0;
+
+type Painter = (ctx: CanvasRenderingContext2D, width: number, height: number, look: number, theme: Theme) => void;
 
 // Each painter draws with the obstacle's bottom-left corner at 0,0 and up as negative y.
 const PAINT: Record<Kind, Painter> = {
   // A neon triangle: lit edges, a dim fill, and a brighter core up the middle.
-  spike(ctx, { width, height }, _time, theme) {
+  spike(ctx, width, height, _look, theme) {
     ctx.beginPath();
     ctx.moveTo(1, 0);
     ctx.lineTo(width / 2, -height);
@@ -140,7 +161,7 @@ const PAINT: Record<Kind, Painter> = {
   },
 
   // A cargo crate with the same sliced corners as the site's panels, braced on the inside.
-  crate(ctx, { width, height }, _time, theme) {
+  crate(ctx, width, height, _look, theme) {
     const cut = 7;
     ctx.beginPath();
     ctx.moveTo(1, -height + 1);
@@ -171,7 +192,7 @@ const PAINT: Record<Kind, Painter> = {
   },
 
   // A tall barrier post in hazard stripes, with a lit cap.
-  pylon(ctx, { width, height }, _time, theme) {
+  pylon(ctx, width, height, _look, theme) {
     ctx.fillStyle = theme.deck;
     ctx.fillRect(1, -height, width - 2, height);
 
@@ -200,9 +221,8 @@ const PAINT: Record<Kind, Painter> = {
     ctx.fillRect(-2, -height - 4, width + 4, 4);
   },
 
-  // A hovering drone: it bobs, its rotors flicker and its eye blinks.
-  drone(ctx, { width, height, seed }, time, theme) {
-    ctx.translate(0, Math.round(Math.sin(time * 6 + seed * 6.28) * 2));
+  // A hovering drone, with two rotors on stalks and an eye.
+  drone(ctx, width, height, look, theme) {
     const nose = 7;
     ctx.beginPath();
     ctx.moveTo(1, -height / 2);
@@ -218,16 +238,15 @@ const PAINT: Record<Kind, Painter> = {
     ctx.shadowBlur = GLOW_PX;
     ctx.stroke();
 
-    // Two rotors on stalks. Their width snaps between wide and narrow, which reads as spinning.
     ctx.fillStyle = theme.violet;
-    const span = Math.floor(time * 24 + seed * 8) % 2 ? 14 : 6;
+    const span = look & WIDE_ROTORS ? 14 : 6;
     for (const hub of [nose + 3, width - nose - 3]) {
       ctx.fillRect(hub - 1, -height - 4, 2, 4);
       ctx.fillRect(hub - span / 2, -height - 6, span, 2);
     }
 
     // It faces the way it is flying: left.
-    if (Math.floor(time * 3 + seed * 4) % 4 !== 0) {
+    if (look & EYE_OPEN) {
       ctx.fillStyle = theme.acid;
       ctx.shadowColor = theme.acid;
       ctx.fillRect(nose, -height / 2 - 2, 6, 4);
@@ -235,8 +254,7 @@ const PAINT: Record<Kind, Painter> = {
   },
 
   // A hazard-striped post let down from above, in the drone's colour: both mean "keep low".
-  // Its foot is lit, and blinks so that it stands out against the posts that stand on the ground.
-  gate(ctx, { width, height, seed }, time, theme) {
+  gate(ctx, width, height, look, theme) {
     ctx.fillStyle = theme.deck;
     ctx.fillRect(1, -height, width - 2, height);
 
@@ -261,19 +279,75 @@ const PAINT: Record<Kind, Painter> = {
     ctx.shadowColor = theme.violet;
     ctx.shadowBlur = GLOW_PX;
     ctx.strokeRect(1, -height, width - 2, height);
-    const lit = Math.floor(time * 4 + seed * 4) % 2 === 0;
-    ctx.fillStyle = lit ? theme.acid : theme.violet;
+    ctx.fillStyle = look & FOOT_LIT ? theme.acid : theme.violet;
     ctx.shadowColor = ctx.fillStyle;
     ctx.fillRect(-3, -5, width + 6, 5);
   },
 };
 
-/** Draws one obstacle. `ground` is the y of the ground line, `time` is in seconds. */
-export function draw(ctx: CanvasRenderingContext2D, obstacle: Obstacle, ground: number, time: number, theme: Theme) {
-  ctx.save();
-  // Whole pixels, so that the thin lines stay sharp as it moves.
-  ctx.translate(Math.round(obstacle.x), ground - obstacle.altitude);
-  ctx.lineWidth = 2;
-  PAINT[obstacle.kind](ctx, obstacle, time, theme);
-  ctx.restore();
+/*
+ * Painting an obstacle is the slow part of a frame, its glow most of all, and an obstacle
+ * looks the same from one frame to the next. So each is painted once, onto a small canvas of
+ * its own, and from then on only copied into place. What is kept is one picture for each
+ * kind, size and look that has turned up.
+ */
+const KINDS: Kind[] = ['spike', 'crate', 'pylon', 'drone', 'gate'];
+// Room left round an obstacle in its picture, for its glow and for the parts that stick out
+// of its box: a drone's rotors, a pylon's cap, a gate's foot.
+const MARGIN_PX = 20;
+// Crates alone come in well over a hundred sizes. When a long game has been through this many
+// pictures they are all let go, and painted again as they turn up.
+const MOST_PICTURES = 64;
+const pictures = new Map<number, HTMLCanvasElement>();
+// The scale the pictures were painted at. They are no use at another, so a change empties the store.
+let paintedAt = 0;
+
+const pictureOf = (kind: Kind, width: number, height: number, look: number, theme: Theme, ratio: number) => {
+  // One number for the four things a picture depends on: a width is under 64, a height under
+  // 512 and a look under 4.
+  const key = ((KINDS.indexOf(kind) * 64 + width) * 512 + height) * 4 + look;
+  const kept = pictures.get(key);
+  if (kept) return kept;
+
+  const picture = document.createElement('canvas');
+  picture.width = Math.ceil((width + MARGIN_PX * 2) * ratio);
+  picture.height = Math.ceil((height + MARGIN_PX * 2) * ratio);
+  const ctx = picture.getContext('2d');
+  if (ctx) {
+    ctx.scale(ratio, ratio);
+    ctx.translate(MARGIN_PX, MARGIN_PX + height);
+    ctx.lineWidth = 2;
+    PAINT[kind](ctx, width, height, look, theme);
+  }
+  if (pictures.size >= MOST_PICTURES) pictures.clear();
+  pictures.set(key, picture);
+  return picture;
+};
+
+/**
+ * Draws one obstacle. `ground` is the y of the ground line and `time` is in seconds. `ratio` is
+ * how many pixels of the canvas go to one CSS pixel: the scale `ctx` is drawing at, which it
+ * is left at.
+ */
+export function draw(
+  ctx: CanvasRenderingContext2D,
+  obstacle: Obstacle,
+  ground: number,
+  time: number,
+  theme: Theme,
+  ratio: number,
+) {
+  if (ratio !== paintedAt) {
+    pictures.clear();
+    paintedAt = ratio;
+  }
+  // No taller than the strip: a gate runs up out of sight, and that part need not be painted.
+  const height = Math.min(obstacle.height, ground);
+  const picture = pictureOf(obstacle.kind, obstacle.width, height, lookOf(obstacle, time), theme, ratio);
+  const left = Math.round(obstacle.x) - MARGIN_PX;
+  const top = ground - obstacle.altitude - height - MARGIN_PX + dropOf(obstacle, time);
+  // Copied pixel for pixel onto whole pixels of the canvas, so that it stays as sharp as it was painted.
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(picture, Math.round(left * ratio), Math.round(top * ratio));
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 }

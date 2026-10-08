@@ -336,6 +336,25 @@
     @apply brackets inline-block px-2.5 py-1 font-mono text-xs tracking-wide text-fg;
   }
 
+  /* A box to type in on the contact form, and the label over it. */
+  .field {
+    @apply block w-full border-2 border-line bg-void px-3 py-2.5 font-sans text-base text-white outline-none transition-colors duration-150;
+  }
+
+  .field:focus {
+    border-color: var(--accent, var(--color-cyan));
+  }
+
+  .field-label {
+    @apply font-mono text-[0.7rem] tracking-[0.16em] text-muted uppercase;
+  }
+
+  /* A key of the keyboard, where the minigame's controls are explained. It takes the text colour. */
+  .keycap {
+    @apply inline-flex h-6 min-w-6 items-center justify-center border border-current bg-void px-1.5 font-mono text-[0.7rem] leading-none tracking-normal;
+    box-shadow: 0 2px 0 color-mix(in oklab, currentColor 45%, transparent);
+  }
+
   /* Three arrowheads that blink in turn: the marker in front of a label. Holds three <i>. */
   .arrows {
     display: inline-flex;

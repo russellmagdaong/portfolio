@@ -50,6 +50,14 @@ The GIFs can be exported at any whole-number scale, as long as they all share it
 They do not have to be the same size: they are lined up by their bottom edge (the ground) and the middle of their width.
 The obstacles are not images: they are drawn in code, in `src/scripts/runner-obstacles.ts`.
 
+### Contact form
+
+The "send a message" form in the Contact section emails you through [Web3Forms](https://web3forms.com), which is
+free and needs no server. Enter your address on their site, they email you an access key, and you paste it into
+`contact.formKey` in `src/data/site.ts`. The key is made to be public, so it is safe in the repository.
+Without a key the form still works, but differently: it opens the visitor's own mail app with their message
+written out, and they send it from there.
+
 ### Icon and link preview
 
 The browser-tab icon is `public/favicon.svg`. After changing it, run `node scripts/favicons.mjs` to remake the two
@@ -113,6 +121,9 @@ Images narrower than 400px are treated as pixel-art logos: they get a margin and
 - `data-reveal` fades a block up when it scrolls into view (`data-reveal="left"` / `"right"` slide it in from a side).
 - `data-stagger` does the same to each child in turn. `style="--i:2"` moves an item later in the queue.
 - `data-scramble` on a heading inside a `data-reveal` block makes its letters decode into place.
+- While the minigame is being played, everything else on the page that moves by itself holds still, so the game
+  gets the whole of each frame. Something new that animates forever belongs in the `.is-playing` rule in
+  `src/styles/global.css`.
 - Everything respects the visitor's "reduce motion" setting, and the hero's entrance is plain CSS so the first screen
   never waits on a script.
 
