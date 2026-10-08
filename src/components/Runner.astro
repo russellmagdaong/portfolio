@@ -407,6 +407,12 @@ const PLAYER_X = 76;
       slideTime = -1;
       getUp = 0;
       deathTime = -1;
+      // A game starts with nothing held. A finger or key whose release was never reported (a
+      // call coming in, a switch of apps, dying mid-slide) would otherwise carry over, and he
+      // would open the next game with a slide nobody asked for.
+      jumpHeld = false;
+      slideHeld = false;
+      slideLocked = false;
       obstacles = [];
       nextObstacleIn = Math.max(0, FIRST_OBSTACLE_PX - stage.clientWidth);
       prompt.hidden = true;
@@ -465,7 +471,7 @@ const PLAYER_X = 76;
     const button = (selector: string, press: () => void, release: () => void) => {
       const el = buttons?.querySelector<HTMLElement>(selector);
       if (!el) return;
-      const lift = () => {
+      const letUp = () => {
         el.removeAttribute('data-held');
         release();
       };
@@ -474,16 +480,20 @@ const PLAYER_X = 76;
         el.setAttribute('data-held', '');
         press();
       });
-      el.addEventListener('pointerup', lift);
-      el.addEventListener('pointercancel', lift);
+      // Losing the capture covers the ways a touch can end without an "up" being reported.
+      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) el.addEventListener(type, letUp);
       // A long press would otherwise bring up the browser's menu in the middle of a slide.
       el.addEventListener('contextmenu', (event) => event.preventDefault());
     };
     button('[data-runner-jump]', pressJump, () => (jumpHeld = false));
     button('[data-runner-slide]', pressSlide, releaseSlide);
     if (buttons) buttons.hidden = !touch;
-    // A key let go after the strip has lost focus would never be heard of here.
+    // A key let go after the strip has lost focus would never be heard of here, and nor would
+    // anything let go while the page was in the background.
     stage.addEventListener('blur', letGo);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) letGo();
+    });
 
     // The game stands still while it is off screen and picks up where it was. Off screen also
     // means on a stage that is switched off (Stage.astro), which can still be within the window.
