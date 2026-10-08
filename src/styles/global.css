@@ -76,7 +76,9 @@
   html {
     color-scheme: dark;
     scroll-behavior: smooth;
-    scroll-padding-top: 5.5rem;
+    /* The height of the header: where a link's target, and the top of a stage, comes to rest. */
+    --header-h: 4.25rem;
+    scroll-padding-top: var(--header-h);
     background: var(--color-void);
     /* The pixel font has one weight, and a faked bold would smear it. */
     font-synthesis-weight: none;
@@ -487,31 +489,6 @@
     animation: holo-switch 0.42s steps(1, end);
   }
 
-  /*
-   * A hairline divider with a pulse of light running along it. The line fades out towards the
-   * screen edges, and is clipped sideways only so the glow can spill above and below.
-   */
-  .pulse-line {
-    height: 1px;
-    overflow-x: clip;
-    background: linear-gradient(90deg, transparent, var(--color-line) 15%, var(--color-line) 85%, transparent);
-  }
-
-  /* The pulse is a quarter of the line wide and starts and ends fully outside it. */
-  .pulse-line::after {
-    content: "";
-    display: block;
-    width: 25%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, var(--accent, var(--color-cyan)), transparent);
-    filter: drop-shadow(0 0 6px var(--accent, var(--color-cyan)));
-    animation: pulse-line 6s linear infinite;
-  }
-
-  .pulse-line[data-reverse]::after {
-    animation-direction: reverse;
-  }
-
   /* Gallery thumbnails. */
   .thumb {
     @apply relative aspect-video w-24 flex-none cursor-pointer overflow-hidden border-2 border-line bg-void opacity-55 transition-[opacity,border-color] duration-200 hover:opacity-90;
@@ -814,15 +791,6 @@
   }
 }
 
-@keyframes pulse-line {
-  from {
-    translate: -100% 0;
-  }
-  to {
-    translate: 400% 0;
-  }
-}
-
 @keyframes icon-wave {
   0%,
   24%,
@@ -987,6 +955,265 @@
 
 .js [data-reveal]:not(.is-in) .rule-draw {
   scale: 0 1;
+}
+
+/*
+ * Stages (Stage.astro): the page as a set of screens that take each other's place, instead of
+ * one long scroll. The script puts .stages-on on the root; without it these are plain blocks.
+ *
+ * Each stage is made taller than its screen by --stage-hold, and the screen sticks in place
+ * for that distance. Each stage after the first is pulled up by a whole window, so that its
+ * screen arrives at its resting place just as the one before has finished holding. Which
+ * screen is showing, and how it takes over, is the script's decision; the rest is this layout.
+ */
+.stages-on {
+  --stage-hold: 56svh;
+  /* The room under the header, which a screen at least fills. svh, not dvh: it must not
+     change as a phone's address bar slides away. */
+  --stage-h: calc(100svh - var(--header-h));
+}
+
+/* The extra height is a block of its own, not padding: a sticky box can only travel within
+   the content of its parent, and padding is outside that. */
+.stages-on .stage::after {
+  content: "";
+  display: block;
+  height: var(--stage-hold);
+}
+
+/* Every stage but the first. Not `+`: the first is followed by its own <script> element. */
+.stages-on .stage ~ .stage {
+  margin-top: calc(var(--stage-h) * -1);
+}
+
+.stages-on .stage[data-last]::after {
+  content: none;
+}
+
+/*
+ * A screen that fits sticks by its top, under the header. A taller one scrolls until its
+ * bottom edge reaches the bottom of the window and sticks there; --h is its height, kept up
+ * to date by the script.
+ */
+.stages-on .stage-screen {
+  position: sticky;
+  top: min(var(--header-h), calc(100svh - var(--h, 100svh)));
+  display: flex;
+  min-height: var(--stage-h);
+  flex-direction: column;
+  justify-content: center;
+  /* The part of the screen that is in the window, set by the script when it changes: from
+     --vt down to --vb, measured from the screen's top edge. --vc is the middle of it. */
+  --vt: 0px;
+  --vb: var(--stage-h);
+  --vc: calc((var(--vt) + var(--vb)) / 2);
+}
+
+/* Contents smaller than the window are enlarged to use it (--fit, from the script), the way
+   an arcade game fills whatever tube it is played on. */
+.stages-on .stage-fit {
+  scale: var(--fit, 1);
+}
+
+/* A screen that is not showing is still there to be found by a search or the Tab key, just unseen. */
+.stage-screen[data-screen="off"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage-screen[data-screen="leaving"] {
+  pointer-events: none;
+}
+
+/*
+ * The changes. The script names one on both screens (data-change) and says which way the
+ * visitor is going (data-way). None of them moves or resizes a screen: they only change which
+ * parts of each picture can be seen, so it is the picture that changes, not a card that turns.
+ *
+ * In the ones that run on both screens at once, the two are cut along the same line or to the
+ * same pattern, one showing exactly where the other does not.
+ */
+
+/* --stage-cut is how much of each cell of a pattern the old picture still has. */
+@property --stage-cut {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@keyframes stage-cut {
+  from {
+    --stage-cut: 100%;
+  }
+  to {
+    --stage-cut: 0%;
+  }
+}
+
+/* Scan: a bright line travels down the tube, redrawing it. Going back, it travels up. */
+.stage-screen[data-change="scan"][data-screen="leaving"] {
+  animation: stage-scan-old 0.5s cubic-bezier(0.5, 0, 0.5, 1) both;
+}
+
+.stage-screen[data-change="scan"][data-screen="entering"] {
+  animation: stage-scan-new 0.5s cubic-bezier(0.5, 0, 0.5, 1) both;
+}
+
+.stage-screen[data-change="scan"][data-way="back"][data-screen="leaving"] {
+  animation: stage-scan-new 0.5s cubic-bezier(0.5, 0, 0.5, 1) reverse both;
+}
+
+.stage-screen[data-change="scan"][data-way="back"][data-screen="entering"] {
+  animation: stage-scan-old 0.5s cubic-bezier(0.5, 0, 0.5, 1) reverse both;
+}
+
+.stage-screen[data-change="scan"][data-screen="entering"]::after {
+  content: "";
+  position: absolute;
+  inset: var(--vt) 0 auto;
+  z-index: 10;
+  height: 3px;
+  background: #dffcff;
+  box-shadow: 0 0 18px 3px var(--color-cyan);
+  pointer-events: none;
+  animation: stage-scan-line 0.5s cubic-bezier(0.5, 0, 0.5, 1) both;
+}
+
+.stage-screen[data-change="scan"][data-way="back"][data-screen="entering"]::after {
+  animation-direction: reverse;
+}
+
+@keyframes stage-scan-old {
+  from {
+    clip-path: inset(var(--vt) 0 0 0);
+  }
+  to {
+    clip-path: inset(var(--vb) 0 0 0);
+  }
+}
+
+@keyframes stage-scan-new {
+  from {
+    clip-path: inset(0 0 calc(100% - var(--vt)) 0);
+  }
+  to {
+    clip-path: inset(0 0 calc(100% - var(--vb)) 0);
+  }
+}
+
+@keyframes stage-scan-line {
+  to {
+    translate: 0 calc(var(--vb) - var(--vt));
+  }
+}
+
+/* Iris: the old picture closes down to a point in the middle of the window, and the new one opens out of it. */
+.stage-screen[data-change="iris"][data-screen="leaving"] {
+  animation: stage-iris 0.3s cubic-bezier(0.5, 0, 0.9, 0.5) reverse both;
+}
+
+.stage-screen[data-change="iris"][data-screen="entering"] {
+  animation: stage-iris 0.4s cubic-bezier(0.1, 0.5, 0.3, 1) 0.26s both;
+}
+
+@keyframes stage-iris {
+  from {
+    clip-path: circle(0 at 50% var(--vc));
+  }
+  to {
+    clip-path: circle(72vmax at 50% var(--vc));
+  }
+}
+
+/*
+ * Pixels: the old picture breaks into squares that shrink away, in a few coarse steps, while
+ * the new one fills in around them. The pattern starts from the line under the header on both
+ * screens (mask-position), so the two sets of squares are the same squares.
+ */
+.stage-screen[data-change="pixels"]:is([data-screen="leaving"], [data-screen="entering"]) {
+  --half: calc(var(--stage-cut) / 2);
+  mask-position: 0 var(--vt);
+  mask-size: 36px 36px;
+  animation: stage-cut 0.55s steps(9) both;
+}
+
+.stage-screen[data-change="pixels"][data-screen="leaving"] {
+  mask-image:
+    linear-gradient(90deg, transparent calc(50% - var(--half)), #000 0 calc(50% + var(--half)), transparent 0),
+    linear-gradient(transparent calc(50% - var(--half)), #000 0 calc(50% + var(--half)), transparent 0);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.stage-screen[data-change="pixels"][data-screen="entering"] {
+  mask-image:
+    linear-gradient(90deg, #000 calc(50% - var(--half)), transparent 0 calc(50% + var(--half)), #000 0),
+    linear-gradient(#000 calc(50% - var(--half)), transparent 0 calc(50% + var(--half)), #000 0);
+}
+
+/* Blinds: the old picture thins out line by line, like an interlaced signal, and the new one comes up between the lines. */
+.stage-screen[data-change="blinds"]:is([data-screen="leaving"], [data-screen="entering"]) {
+  mask-position: 0 var(--vt);
+  mask-size: 100% 14px;
+  animation: stage-cut 0.5s steps(7) both;
+}
+
+.stage-screen[data-change="blinds"][data-screen="leaving"] {
+  mask-image: linear-gradient(#000 var(--stage-cut), transparent 0);
+}
+
+.stage-screen[data-change="blinds"][data-screen="entering"] {
+  mask-image: linear-gradient(transparent var(--stage-cut), #000 0);
+}
+
+/*
+ * Glitch: the signal tears. The old picture is cut to a few jumping strips and is gone; the
+ * new one arrives the same way and settles.
+ */
+.stage-screen[data-change="glitch"][data-screen="leaving"] {
+  animation: stage-glitch 0.34s steps(1, end) both;
+}
+
+.stage-screen[data-change="glitch"][data-screen="entering"] {
+  animation: stage-glitch 0.38s steps(1, end) 0.24s reverse both;
+}
+
+@keyframes stage-glitch {
+  0% {
+    clip-path: inset(var(--vt) 0 calc(100% - var(--vb)) 0);
+    translate: 0 0;
+    filter: none;
+  }
+  14% {
+    clip-path: inset(calc(var(--vt) + (var(--vb) - var(--vt)) * 0.1) 0 calc(100% - var(--vt) - (var(--vb) - var(--vt)) * 0.52) 0);
+    translate: -14px 0;
+    filter: hue-rotate(90deg) brightness(1.6);
+  }
+  30% {
+    clip-path: inset(calc(var(--vt) + (var(--vb) - var(--vt)) * 0.58) 0 calc(100% - var(--vt) - (var(--vb) - var(--vt)) * 0.94) 0);
+    translate: 16px 0;
+    filter: none;
+  }
+  46% {
+    clip-path: inset(calc(var(--vt) + (var(--vb) - var(--vt)) * 0.28) 0 calc(100% - var(--vt) - (var(--vb) - var(--vt)) * 0.5) 0);
+    translate: -8px 0;
+    filter: hue-rotate(-60deg) brightness(1.8);
+  }
+  62% {
+    clip-path: inset(calc(var(--vt) + (var(--vb) - var(--vt)) * 0.04) 0 calc(100% - var(--vt) - (var(--vb) - var(--vt)) * 0.2) 0);
+    translate: 10px 0;
+    filter: none;
+  }
+  78% {
+    clip-path: inset(calc(var(--vt) + (var(--vb) - var(--vt)) * 0.66) 0 calc(100% - var(--vt) - (var(--vb) - var(--vt)) * 0.74) 0);
+    translate: -4px 0;
+  }
+  92%,
+  100% {
+    clip-path: inset(50% 0 50% 0);
+    translate: 0 0;
+    filter: none;
+  }
 }
 
 /*

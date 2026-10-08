@@ -7,18 +7,23 @@ import Tools from '../components/Tools.astro';
 import Credentials from '../components/Credentials.astro';
 import Entry from '../components/Entry.astro';
 import Contact from '../components/Contact.astro';
-import PulseLine from '../components/PulseLine.astro';
 import Runner from '../components/Runner.astro';
+import Stage from '../components/Stage.astro';
 ---
 
 <Base>
   <Entry slot="overlay" />
-  <Hero />
-  <Runner />
-  <About />
-  <Projects />
-  <Tools />
-  <Credentials />
-  <PulseLine accent="acid" reverse />
-  <Contact />
+  <!-- Each stage is one screenful; the ids are what the header's links point at. -->
+  <Stage>
+    <Hero />
+    <Runner />
+  </Stage>
+  <Stage id="about"><About /></Stage>
+  <Stage id="projects"><Projects /></Stage>
+  <Stage id="tools"><Tools /></Stage>
+  <!-- Two short sections on one screen, so that neither sits alone in an empty window. -->
+  <Stage id="other" last>
+    <Credentials />
+    <Contact />
+  </Stage>
 </Base>

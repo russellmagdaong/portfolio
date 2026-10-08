@@ -85,6 +85,9 @@ const observer = new IntersectionObserver(
     for (const entry of entries) {
       if (!entry.isIntersecting) continue;
       const el = entry.target as HTMLElement;
+      // A stage that is switched off (Stage.astro) is still on the page, and can be within the
+      // window. Its blocks wait until it is switched on; see the listener below.
+      if (el.closest('[data-screen="off"]')) continue;
       observer.unobserve(el);
       el.classList.add('is-in');
       setTimeout(() => el.classList.add('is-done'), SETTLE_MS);
@@ -103,12 +106,34 @@ if (document.documentElement.classList.contains('gated')) {
   watch();
 }
 
-// Panels with data-spotlight get a soft light under the pointer.
+// A link to a section that is already on screen moves nothing (Stage.astro), so its title is
+// run through the scramble again, to show that the click landed.
+document.addEventListener('stage:focus', (event) => {
+  (event.target as HTMLElement).querySelectorAll<HTMLElement>('[data-scramble]:not([data-scrambling])').forEach((title) => {
+    if (title.closest('[data-reveal]')?.classList.contains('is-in')) scramble(title);
+  });
+});
+
+// When a stage is switched on, look again at whatever in it has not come in yet. The observer
+// only reports a block when it moves in or out of the window, and these may not have moved.
+document.addEventListener('stage:change', (event) => {
+  if (document.documentElement.classList.contains('gated')) return;
+  const waiting = (event.target as HTMLElement).querySelectorAll('[data-reveal]:not(.is-in), [data-stagger]:not(.is-in)');
+  waiting.forEach((el) => {
+    observer.unobserve(el);
+    observer.observe(el);
+  });
+});
+
+// Panels with data-spotlight light up under the pointer.
 document.querySelectorAll<HTMLElement>('[data-spotlight]').forEach((el) => {
   el.addEventListener('pointermove', (event) => {
     const box = el.getBoundingClientRect();
-    el.style.setProperty('--mx', `${event.clientX - box.left}px`);
-    el.style.setProperty('--my', `${event.clientY - box.top}px`);
+    // A panel on an enlarged stage (Stage.astro) is drawn bigger than it is laid out. The
+    // pointer is measured as drawn; the styles want it as laid out.
+    const drawn = box.width / el.offsetWidth || 1;
+    el.style.setProperty('--mx', `${(event.clientX - box.left) / drawn}px`);
+    el.style.setProperty('--my', `${(event.clientY - box.top) / drawn}px`);
   });
   el.addEventListener('pointerleave', () => {
     el.style.removeProperty('--mx');
