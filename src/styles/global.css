@@ -280,8 +280,21 @@
     @apply inline-flex h-12 items-center justify-center gap-2.5 px-5 font-display text-xs whitespace-nowrap uppercase transition-colors duration-150;
   }
 
-  .btn:hover {
-    animation: jolt 0.24s steps(1, end);
+  /* The hover looks below are only for a pointer that can hover. On a touch screen "hover"
+     sticks to whatever was tapped last, which would leave a button looking pressed. */
+  @media (hover: hover) {
+    .btn:hover {
+      animation: jolt 0.24s steps(1, end);
+    }
+
+    .btn-solid:hover {
+      background: #fff;
+    }
+
+    .btn-line:hover {
+      --fill: var(--accent, var(--color-cyan));
+      color: var(--color-void);
+    }
   }
 
   /* Filled: the main action, with a darker lip along the bottom like the edge of a key.
@@ -304,10 +317,6 @@
     animation: sheen 4.5s ease-in-out infinite;
   }
 
-  .btn-solid:hover {
-    background: #fff;
-  }
-
   .btn-solid:active {
     box-shadow: none;
   }
@@ -316,11 +325,6 @@
   .btn-line {
     --line: var(--accent, var(--color-cyan));
     color: var(--accent, var(--color-cyan));
-  }
-
-  .btn-line:hover {
-    --fill: var(--accent, var(--color-cyan));
-    color: var(--color-void);
   }
 
   /* clip-path hides a normal focus ring, so clipped controls draw theirs on the inside. */
