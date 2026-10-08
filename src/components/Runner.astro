@@ -425,11 +425,18 @@ const PLAYER_X = 76;
     // A key let go after the strip has lost focus would never be heard of here.
     stage.addEventListener('blur', letGo);
 
-    // The game stands still while it is off screen and picks up where it was.
-    new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
+    // The game stands still while it is off screen and picks up where it was. Off screen also
+    // means on a stage that is switched off (Stage.astro), which can still be within the window.
+    let inWindow = false;
+    const look = () => {
+      visible = inWindow && !stage.closest('[data-screen="off"], [data-screen="leaving"]');
       loop();
+    };
+    new IntersectionObserver(([entry]) => {
+      inWindow = entry.isIntersecting;
+      look();
     }).observe(stage);
+    document.addEventListener('stage:change', look);
 
     hint.textContent = invite('run');
     keys.textContent = canSlide ? 'W / Space / ↑ jump, hold to go further · S / ↓ slide' : 'Hold to jump further';
