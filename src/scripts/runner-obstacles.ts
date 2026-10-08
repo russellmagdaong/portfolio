@@ -56,24 +56,20 @@ const gate = (random: () => number): Shape[] => [
 ];
 
 // What can turn up, how likely each is next to the others, and the score it first appears at.
-// The game opens with the plain ones and adds the harder ones as it goes on. The ones marked
-// `slide` can only be got past by sliding, so they are left out where there is no way to slide.
+// The game opens with the plain ones and adds the harder ones as it goes on.
 const MENU = [
   { from: 0, weight: 3, make: spikes(1, 22, 34) },
   { from: 0, weight: 3, make: crate },
   { from: 150, weight: 3, make: spikes(2, 20, 30) },
   { from: 150, weight: 2, make: pylon },
-  { from: 250, weight: 3, make: gate, slide: true },
+  { from: 250, weight: 3, make: gate },
   { from: 400, weight: 2, make: spikes(3, 18, 26) },
   { from: 400, weight: 2, make: drone },
 ];
 
-/**
- * Picks the next obstacle for this score and places it at `x`. A row of spikes comes back as
- * several. `canSlide` says whether the player has a way to slide.
- */
-export function spawn(score: number, x: number, canSlide: boolean, random: () => number = Math.random): Obstacle[] {
-  const open = MENU.filter((entry) => score >= entry.from && (canSlide || !entry.slide));
+/** Picks the next obstacle for this score and places it at `x`. A row of spikes comes back as several. */
+export function spawn(score: number, x: number, random: () => number = Math.random): Obstacle[] {
+  const open = MENU.filter((entry) => score >= entry.from);
   let pick = random() * open.reduce((sum, entry) => sum + entry.weight, 0);
   const chosen = open.find((entry) => (pick -= entry.weight) < 0) ?? open[0];
   return chosen.make(random).map(({ offset, ...shape }) => ({ ...shape, x: x + offset, seed: random() }));

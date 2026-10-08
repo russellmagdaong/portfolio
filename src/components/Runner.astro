@@ -1,10 +1,12 @@
 ---
+import Icon from './Icon.astro';
 import sheet from '../assets/runner/man.png';
 import sprite from '../assets/runner/man.json';
 
 // A small runner in the spirit of the browser's offline dinosaur: a little pixel man runs along
-// a strip, jumping over some things and sliding under others. It sits between sections as a
-// divider. The obstacles themselves are in src/scripts/runner-obstacles.ts.
+// a strip, jumping over some things and sliding under others. It sits under the hero. It is
+// played with the keyboard, or on a phone or tablet with the two buttons below the strip; the
+// game itself is the same on both. The obstacles are in src/scripts/runner-obstacles.ts.
 //
 // His animations are the rows of one sprite sheet (idle, run, jump, slide, death), a frame per
 // column. scripts/runner-sprites.mjs builds the sheet from the original GIFs and writes
@@ -45,10 +47,38 @@ const PLAYER_X = 76;
       >
       </p>
       <!-- Both lines are filled in by the script, so that nothing invites a click when the game cannot run. -->
-      <div data-runner-prompt class="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-mono uppercase">
+      <!-- On a narrow strip they are kept clear of the runner, who stands at the left. -->
+      <div data-runner-prompt class="absolute inset-x-0 top-1/2 -translate-y-1/2 pl-28 text-center font-mono uppercase sm:pl-0">
         <p data-runner-hint class="text-accent text-xs tracking-[0.22em] group-focus-visible:text-white sm:text-sm" aria-live="polite"></p>
         <p data-runner-keys class="mt-2 text-[0.65rem] tracking-[0.18em] text-muted"></p>
       </div>
+    </div>
+
+    <!--
+      The touch controls: the two moves of the keyboard, for where there is no keyboard. The
+      script shows them on phones and tablets. touch-none, so that a thumb resting on one does
+      not scroll or zoom the page. They light up while they are held; the script marks that with
+      data-held, since :active is not dependable under a finger.
+    -->
+    <div data-runner-pad hidden class="grid grid-cols-2 gap-3 pb-4">
+      <button
+        type="button"
+        data-runner-slide
+        data-accent="cyan"
+        class="btn btn-line panel h-14 w-full touch-none select-none data-held:[--fill:var(--accent)] data-held:text-void"
+      >
+        <Icon name="chevron" class="rotate-90" />
+        Slide
+      </button>
+      <button
+        type="button"
+        data-runner-jump
+        data-accent="acid"
+        class="btn btn-solid h-14 w-full touch-none select-none data-held:bg-white"
+      >
+        <Icon name="chevron" class="-rotate-90" />
+        Jump
+      </button>
     </div>
   </div>
 </div>
@@ -103,9 +133,8 @@ const PLAYER_X = 76;
   // Matched on where a key is, not what it types, so W and S work on any keyboard layout.
   const JUMP_KEYS = new Set(['KeyW', 'Space', 'ArrowUp', 'Enter']);
   const SLIDE_KEYS = new Set(['KeyS', 'ArrowDown']);
-  // A phone or tablet has nothing to slide with. There it is a one-button game, and the
-  // obstacles that can only be slid under are left out.
-  const canSlide = !matchMedia('(hover: none) and (pointer: coarse)').matches;
+  // A phone or tablet has no keys, so it is given two buttons under the strip instead.
+  const touch = matchMedia('(hover: none) and (pointer: coarse)').matches;
 
   // After a crash, ignore input briefly so a late jump does not restart the game at once.
   const RETRY_MS = 450;
@@ -119,6 +148,7 @@ const PLAYER_X = 76;
   const prompt = stage?.querySelector<HTMLElement>('[data-runner-prompt]');
   const hint = stage?.querySelector<HTMLElement>('[data-runner-hint]');
   const keys = stage?.querySelector<HTMLElement>('[data-runner-keys]');
+  const buttons = stage?.parentElement?.querySelector<HTMLElement>('[data-runner-pad]');
   const ctx = canvas?.getContext('2d');
 
   if (stage && canvas && player && scoreEl && prompt && hint && keys && ctx) {
@@ -182,7 +212,7 @@ const PLAYER_X = 76;
 
     const pad = (n: number) => String(n).padStart(5, '0');
     const score = () => Math.floor(distance / 10);
-    const invite = (to: string) => (canSlide ? `Click or press space to ${to}` : `Tap to ${to}`);
+    const invite = (to: string) => (touch ? `Tap to ${to}` : `Click or press space to ${to}`);
 
     const draw = () => {
       const { clientWidth: width, clientHeight: height } = stage;
@@ -326,7 +356,7 @@ const PLAYER_X = 76;
       // the back of one to the front of the next, so it stretches as the pace picks up.
       nextObstacleIn -= speed * dt;
       if (nextObstacleIn <= 0) {
-        const group = spawn(score(), stage.clientWidth, canSlide);
+        const group = spawn(score(), stage.clientWidth);
         obstacles.push(...group);
         const back = group[group.length - 1];
         nextObstacleIn = back.x + back.width - stage.clientWidth + speed * (0.85 + Math.random() * 0.9);
@@ -383,20 +413,30 @@ const PLAYER_X = 76;
       loop();
     };
 
-    // Jump, or if no game is on, start one.
+    // Either move starts a game if none is on.
+    const begin = () => {
+      if (state === 'idle' || performance.now() - crashedAt > RETRY_MS) start();
+    };
+
     const pressJump = () => {
       jumpHeld = true;
-      if (state === 'running') {
-        if (!airborne) jump();
-      } else if (state === 'idle' || performance.now() - crashedAt > RETRY_MS) {
-        start();
-      }
+      if (state !== 'running') begin();
+      else if (!airborne) jump();
+    };
+
+    const pressSlide = () => {
+      if (state !== 'running') begin();
+      else slideHeld = true;
+    };
+
+    const releaseSlide = () => {
+      slideHeld = false;
+      slideLocked = false;
     };
 
     const letGo = () => {
       jumpHeld = false;
-      slideHeld = false;
-      slideLocked = false;
+      releaseSlide();
     };
 
     stage.addEventListener('pointerdown', pressJump);
@@ -406,22 +446,42 @@ const PLAYER_X = 76;
 
     stage.addEventListener('keydown', (event) => {
       const jumps = JUMP_KEYS.has(event.code);
-      const slides = canSlide && SLIDE_KEYS.has(event.code);
+      const slides = SLIDE_KEYS.has(event.code);
       // The slide keys are only taken during a game: before one, the down arrow still scrolls the page.
       if (!jumps && !(slides && state === 'running')) return;
       // Space and the arrows would otherwise scroll the page.
       event.preventDefault();
       if (event.repeat) return;
       if (jumps) pressJump();
-      else slideHeld = true;
+      else pressSlide();
     });
     stage.addEventListener('keyup', (event) => {
       if (JUMP_KEYS.has(event.code)) jumpHeld = false;
-      if (SLIDE_KEYS.has(event.code)) {
-        slideHeld = false;
-        slideLocked = false;
-      }
+      if (SLIDE_KEYS.has(event.code)) releaseSlide();
     });
+
+    // The touch buttons. A button stays held for as long as the finger that pressed it is
+    // down, even if the finger wanders off its edge, which is what capturing the pointer does.
+    const button = (selector: string, press: () => void, release: () => void) => {
+      const el = buttons?.querySelector<HTMLElement>(selector);
+      if (!el) return;
+      const lift = () => {
+        el.removeAttribute('data-held');
+        release();
+      };
+      el.addEventListener('pointerdown', (event) => {
+        el.setPointerCapture(event.pointerId);
+        el.setAttribute('data-held', '');
+        press();
+      });
+      el.addEventListener('pointerup', lift);
+      el.addEventListener('pointercancel', lift);
+      // A long press would otherwise bring up the browser's menu in the middle of a slide.
+      el.addEventListener('contextmenu', (event) => event.preventDefault());
+    };
+    button('[data-runner-jump]', pressJump, () => (jumpHeld = false));
+    button('[data-runner-slide]', pressSlide, releaseSlide);
+    if (buttons) buttons.hidden = !touch;
     // A key let go after the strip has lost focus would never be heard of here.
     stage.addEventListener('blur', letGo);
 
@@ -439,7 +499,7 @@ const PLAYER_X = 76;
     document.addEventListener('stage:change', look);
 
     hint.textContent = invite('run');
-    keys.textContent = canSlide ? 'W / Space / ↑ jump, hold to go further · S / ↓ slide' : 'Hold to jump further';
+    keys.textContent = touch ? 'Hold jump to go further' : 'W / Space / ↑ jump, hold to go further · S / ↓ slide';
     new ResizeObserver(resize).observe(stage);
     resize();
   }
