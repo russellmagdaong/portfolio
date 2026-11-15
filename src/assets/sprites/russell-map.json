@@ -1,0 +1,32 @@
+{
+  "source": "art/russell-map.aseprite",
+  "width": 14,
+  "height": 19,
+  "columns": 4,
+  "rows": 3,
+  "origin": {
+    "x": 7,
+    "y": 19
+  },
+  "tags": {
+    "down": {
+      "row": 0,
+      "frames": 4,
+      "durations": [200, 200, 200, 200],
+      "direction": "forward"
+    },
+    "up": {
+      "row": 1,
+      "frames": 4,
+      "durations": [200, 200, 200, 200],
+      "direction": "forward"
+    },
+    "side": {
+      "row": 2,
+      "frames": 4,
+      "durations": [200, 200, 200, 200],
+      "direction": "forward"
+    }
+  },
+  "slices": []
+}

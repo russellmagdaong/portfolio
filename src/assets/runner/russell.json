@@ -1,0 +1,14 @@
+{
+  "width": 45,
+  "height": 70,
+  "anchor": 23,
+  "body": { "back": 6, "front": 9, "height": 30 },
+  "slidingBody": { "back": 15, "front": 13, "height": 17 },
+  "clips": {
+    "idle": { "row": 0, "frames": 10, "fps": 10 },
+    "run": { "row": 1, "frames": 10, "fps": 10 },
+    "jump": { "row": 2, "frames": 10, "fps": 10 },
+    "slide": { "row": 3, "frames": 8, "fps": 10 },
+    "death": { "row": 4, "frames": 23, "fps": 10 }
+  }
+}

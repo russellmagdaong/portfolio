@@ -37,18 +37,30 @@ cropped to the frame from the top and resized at build time.
 
 ### Minigame character
 
-The runner under the hero animates from one sprite sheet, `src/assets/runner/man.png`, with a row each for idle,
-run, jump, slide and death. It is built from five GIFs: `man_idle.gif`, `man_run.gif`, `man_jump.gif`,
-`man_slide.gif` and `man_death.gif`.
-After changing them, rebuild the sheet by pointing the script at their folder:
+The runner under the hero is a pixel sprite of me. The artwork lives in `art/russell.aseprite`: one tag per move,
+and three slices (`feet` for where he stands, `body` and `slide` for the game's two hit boxes). The game animates
+from a sheet exported from that file, `src/assets/runner/russell.png`, with a row each for idle, run, jump, slide
+and death, and reads the frame size, speeds and hit boxes from `russell.json` beside it.
+After changing the sprite in [Aseprite](https://www.aseprite.org), export again (see "Pixel art" below).
+
+The poses and outlines come from the "male hero" animation template by Ozzbit Games, repainted to look like me.
+`scripts/sprite/build-russell.lua` does that repaint and needs the template files, which are not in this
+repository. The obstacles are not images: they are drawn in code, in `src/scripts/runner-obstacles.ts`.
+
+### Pixel art
+
+All the pixel art is drawn in Aseprite, in `art/`, and exported into `src/assets/` with:
 
 ```
-node scripts/runner-sprites.mjs path/to/the/gifs
+npm run art                  # every file
+npm run art -- russell-map   # only the files whose path contains this
 ```
 
-The GIFs can be exported at any whole-number scale, as long as they all share it and have a transparent background.
-They do not have to be the same size: they are lined up by their bottom edge (the ground) and the middle of their width.
-The obstacles are not images: they are drawn in code, in `src/scripts/runner-obstacles.ts`.
+The exports are committed, so building the site never needs Aseprite. The script looks for Aseprite at
+`C:\aseprite\build\bin\aseprite.exe`; set the `ASEPRITE` environment variable if it is somewhere else.
+`art/README.md` explains what each file holds and which settings in it the site reads (tags, frame durations,
+slices, layer user data), and `art/BRIEF.md` is the style guide for drawing new scenes.
+`art/_work/` is git-ignored and holds working files that still contain template pixels.
 
 ### Contact form
 

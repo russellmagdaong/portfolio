@@ -1,0 +1,117 @@
+{
+  "source": "art/russell.aseprite",
+  "width": 46,
+  "height": 70,
+  "columns": 23,
+  "rows": 13,
+  "origin": {
+    "x": 24,
+    "y": 70
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 10,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "idle_turn": {
+      "row": 1,
+      "frames": 4,
+      "durations": [100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "walk": {
+      "row": 2,
+      "frames": 10,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "walk_turn": {
+      "row": 3,
+      "frames": 4,
+      "durations": [100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "run": {
+      "row": 4,
+      "frames": 10,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "run_turn": {
+      "row": 5,
+      "frames": 4,
+      "durations": [100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "run_to_idle": {
+      "row": 6,
+      "frames": 7,
+      "durations": [100, 100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "jump": {
+      "row": 7,
+      "frames": 6,
+      "durations": [100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "fall": {
+      "row": 8,
+      "frames": 4,
+      "durations": [100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "fall_loop": {
+      "row": 9,
+      "frames": 3,
+      "durations": [100, 100, 100],
+      "direction": "forward"
+    },
+    "slide": {
+      "row": 10,
+      "frames": 8,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "hurt": {
+      "row": 11,
+      "frames": 6,
+      "durations": [100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    },
+    "death": {
+      "row": 12,
+      "frames": 23,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "slide",
+      "x": 9,
+      "y": 53,
+      "width": 28,
+      "height": 17,
+      "data": {}
+    },
+    {
+      "name": "feet",
+      "x": 17,
+      "y": 68,
+      "width": 14,
+      "height": 2,
+      "data": {}
+    },
+    {
+      "name": "body",
+      "x": 18,
+      "y": 40,
+      "width": 15,
+      "height": 30,
+      "data": {}
+    }
+  ]
+}

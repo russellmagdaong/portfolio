@@ -1,0 +1,82 @@
+GIMP Palette
+Name: Pixel Town
+Columns: 8
+#
+# The one palette every file in art/ draws from (see art/BRIEF.md).
+# In Aseprite: Palette options (the menu above the palette) > Load Palette.
+# Entries 0-17 match the order in art/russell.aseprite, so loading this into
+# that indexed file changes nothing. Add colours at the end, never in between.
+#
+# --- Index 0: transparent in indexed sprites. Never paint with it.
+  0   0   0	(transparent)
+# --- Characters
+  0   0   0	K outline
+ 28  26  35	h hair
+ 58  53  69	H hair light
+219 162 132	s skin
+173 118  88	S skin shadow
+ 60  97 152	d denim
+ 38  63 108	D denim dark
+ 92 131 184	l denim light
+197 207 219	P pale steel
+200 100  46	r rust
+131  59  29	R rust dark
+220 187 133	k khaki
+178 148  96	Q khaki shadow
+ 70  41  31	b shoe
+106  66  48	B shoe light
+220 181  90	g gold
+255 255 255	W white
+241 177 126	skin light
+# --- Night sky, darkest to lightest
+ 13  11  26	ink
+ 23  20  51	night
+ 34  29  74	sky high
+ 51  41 107	sky
+ 74  58 133	sky low
+107  79 158	haze
+150 110 170	horizon glow
+# --- Concrete, walls, road (cool greys)
+ 26  25  38	concrete 1
+ 38  37  56	concrete 2
+ 53  53  76	concrete 3
+ 75  76 100	concrete 4
+104 106 132	concrete 5
+140 143 168	concrete 6
+179 182 201	concrete 7
+# --- Plaster and paint under warm light
+ 92  64  66	plaster 1
+140  98  86	plaster 2
+186 140 112	plaster 3
+# --- Wood
+ 44  28  22	wood 1
+ 74  46  31	wood 2
+110  72  44	wood 3
+153 104  62	wood 4
+# --- Rusted iron, corrugated roofs
+ 96  48  38	rust iron 1
+150  76  50	rust iron 2
+# --- Sodium streetlight and warm windows, dark to bright
+120  60  22	sodium 1
+196 104  36	sodium 2
+255 160  64	sodium 3
+255 205 120	sodium 4
+255 238 190	sodium 5
+# --- Neon: each a bright tube colour and its dim glow
+255  79 154	neon pink
+150  30  90	neon pink dim
+ 70 230 225	neon cyan
+ 25 120 140	neon cyan dim
+124 240  90	neon green
+ 40 120  60	neon green dim
+255  70  60	neon red
+140  28  36	neon red dim
+255 226  77	neon yellow
+190 110 255	neon violet
+# --- Plants
+ 16  36  30	leaf 1
+ 28  58  42	leaf 2
+ 44  88  58	leaf 3
+ 76 125  72	leaf 4
+# --- Screens
+170 220 255	screen glow

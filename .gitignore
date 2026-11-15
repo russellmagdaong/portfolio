@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# art working files that still contain third-party template pixels (never commit)
+art/_work/

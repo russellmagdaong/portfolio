@@ -1,16 +1,17 @@
 ---
 import Icon from './Icon.astro';
-import sheet from '../assets/runner/man.png';
-import sprite from '../assets/runner/man.json';
+import sheet from '../assets/runner/russell.png';
+import sprite from '../assets/runner/russell.json';
 
-// A small runner in the spirit of the browser's offline dinosaur: a little pixel man runs along
+// A small runner in the spirit of the browser's offline dinosaur: a little pixel Russell runs along
 // a strip, jumping over some things and sliding under others. It sits under the hero. It is
 // played with the keyboard, or on a phone or tablet with the two buttons below the strip; the
 // game itself is the same on both. The obstacles are in src/scripts/runner-obstacles.ts.
 //
 // His animations are the rows of one sprite sheet (idle, run, jump, slide, death), a frame per
-// column. scripts/runner-sprites.mjs builds the sheet from the original GIFs and writes
-// man.json, which says how big a frame is, where he stands in it, and how long each row runs.
+// column. `npm run art` (scripts/art/runner.lua) builds the sheet from art/russell.aseprite and writes
+// russell.json, which says how big a frame is, where he stands in it, how long each row runs,
+// and where his hit boxes are.
 //
 // How many screen pixels each pixel of the artwork takes. Keep it whole, so the pixels stay square.
 const SCALE = 2;
@@ -118,17 +119,11 @@ const PLAYER_X = 76;
 </div>
 
 <script>
-  import sprite from '../assets/runner/man.json';
+  import sprite from '../assets/runner/russell.json';
   import { draw as drawObstacle, hits, spawn, type Obstacle, type Theme } from '../scripts/runner-obstacles';
 
   // Matches bottom-6 on the sprite: how far the ground line sits above the strip's bottom edge.
   const GROUND_PX = 24;
-  // The part of him that can hit something, as a box: how far it reaches behind and in front of
-  // the middle of his artwork, and how tall it is from his feet. It is about where his body is,
-  // so a trailing arm or leg does not count. Sliding, he is longer and much lower.
-  const BODY = { back: 12, front: 18, height: 60 };
-  const SLIDING_BODY = { back: 30, front: 26, height: 34 };
-
   // Pixels per second, and per second squared. A tap is the plain jump these two give.
   const GRAVITY = 2400;
   const JUMP = 600;
@@ -152,9 +147,6 @@ const PLAYER_X = 76;
   // How much ground goes by before the first obstacle reaches him, whatever the width of the strip.
   const FIRST_OBSTACLE_PX = 1000;
 
-  // The jump animation opens with a crouch. The game skips it, so that he leaves the ground the
-  // moment the key goes down.
-  const JUMP_FIRST_FRAME = 3;
   // The slide animation is one frame of going down, a run of frames that loop while he slides,
   // and the frames of getting up. These are the first and last frame of the last two.
   const SLIDE_LOOP = [1, 5];
@@ -200,7 +192,19 @@ const PLAYER_X = 76;
     // in the strip. Both follow from how the markup sized and placed the sprite.
     const frameWidth = player.offsetWidth;
     const frameHeight = player.offsetHeight;
-    const playerX = player.offsetLeft + (sprite.anchor * frameWidth) / sprite.width;
+    const scale = frameWidth / sprite.width;
+    const playerX = player.offsetLeft + sprite.anchor * scale;
+    // The part of him that can hit something, as a box: how far it reaches behind and in front of
+    // the column he stands on, and how tall it is from his feet. It is about where his body is,
+    // so a trailing arm or leg does not count. Sliding, he is longer and much lower. The boxes
+    // are the `body` and `slide` slices of the Aseprite file, in pixels of the artwork.
+    const sized = (box: { back: number; front: number; height: number }) => ({
+      back: box.back * scale,
+      front: box.front * scale,
+      height: box.height * scale,
+    });
+    const BODY = sized(sprite.body);
+    const SLIDING_BODY = sized(sprite.slidingBody);
 
     // The strip's size in CSS pixels, where its ground line is, and how many pixels of the
     // canvas go to one CSS pixel. They are read when the strip changes size and kept: asking
@@ -333,11 +337,11 @@ const PLAYER_X = 76;
       } else if (clip === 'jump') {
         // Tied to the jump rather than the clock: half the frames are spread over the climb and
         // half over the fall, however long the jump was held, so he is always stretching on the
-        // way up and reaching for the ground on the way down.
-        const shown = frames - JUMP_FIRST_FRAME;
+        // way up and reaching for the ground on the way down. (The crouch that the drawn jump
+        // opens with is left out of the sheet, so he leaves the ground the moment the key goes down.)
         const landingSpeed = Math.sqrt(2 * GRAVITY * Math.max(apex, 1));
         const through = rise > 0 ? 0.5 * (1 - rise / JUMP) : 0.5 + 0.5 * Math.min(1, -rise / landingSpeed);
-        clipAt = JUMP_FIRST_FRAME + Math.min(shown - 1, Math.floor(through * shown));
+        clipAt = Math.min(frames - 1, Math.floor(through * frames));
       } else if (clip === 'slide' && slideTime >= 0) {
         const [first, lastFrame] = SLIDE_LOOP;
         const step = Math.floor(slideTime * SLIDE_FPS);
