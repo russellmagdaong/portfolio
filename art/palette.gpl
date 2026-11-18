@@ -80,3 +80,15 @@ Columns: 8
  76 125  72	leaf 4
 # --- Screens
 170 220 255	screen glow
+# --- Added 2026-11-16 for the cyberpunk Manila direction
+ 96  44 150	neon violet dim
+150 120  30	neon yellow dim
+120 200 255	holo
+ 50 100 170	holo dim
+ 60  30  80	neon haze (a sky tint where signs light the air)
+# --- Atmospheric distance ramp, from art/concept/palette.md (added 2026-11-16 for scenes/home)
+ 36  52  63	mist 1
+ 48  69  80	mist 2
+ 62  86  96	mist 3
+ 80 106 115	mist 4
+102 127 134	mist 5

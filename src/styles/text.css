@@ -1,0 +1,3168 @@
+/*
+ * The text version (src/components/text/TextSite.astro, run by src/game/textsite.ts).
+ *
+ * One postcard from a made-up Manila, night edition: the game's own street on the front, a letter
+ * on the back, then a chapter per place, each opening with its shopfront. Everything comes from the
+ * game's art: the palette's ink, night and concrete for the page, each place's sign colour for its
+ * markers, the sign lettering for titles. No glows, blurs or text shadows; the only hard shadow is
+ * the lip under a button. Tokens: src/styles/global.css.
+ *
+ * html:not(.game)   the text page shows (also without JavaScript); the game's own content hides
+ * html.game         the text page hides
+ */
+
+html[data-playable]:not(.game) .dock {
+  display: none;
+}
+
+html.game .tsite {
+  display: none;
+}
+
+html[data-playable]:not(.game) body::before,
+html[data-playable]:not(.game) body::after {
+  display: none;
+}
+
+html[data-playable]:not(.game) {
+  scroll-padding-top: 64px; /* the nav bar */
+}
+
+.tsite {
+  position: relative;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  background: var(--color-ground);
+  scrollbar-color: var(--color-plate-line) var(--color-ground);
+}
+
+.tsite ::selection {
+  color: var(--color-ground);
+  background: var(--color-sign-home);
+}
+
+/* Low specificity, so each link's own colour wins. */
+:where(.tsite) a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:where(.tsite) button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.t-skip {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 60;
+  padding: 8px 12px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  color: var(--color-ground);
+  background: var(--color-acid);
+}
+
+.t-skip:focus {
+  top: 16px;
+}
+
+/* ---------- Where he was in the game: marked for a moment ---------- */
+
+.tsite .is-here {
+  position: relative;
+  overflow: visible !important;
+  --here: var(--sign, var(--color-sign-home));
+  outline: 4px solid var(--here);
+  outline-offset: 6px;
+  animation: t-here 2.8s steps(1) both;
+}
+
+/* A postmark in the place's colour. */
+.tsite .is-here::after {
+  content: "Russell was here";
+  position: absolute;
+  top: -40px;
+  left: -4px;
+  z-index: 5;
+  padding: 4px 8px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--here);
+  background: var(--color-card);
+  border: 2px solid currentColor;
+  animation: t-here-tag 2.8s steps(1) both;
+}
+
+/* ---------- Things wipe in as they scroll into view ---------- */
+
+html.js .tsite [data-reveal]:not(.is-in) {
+  clip-path: inset(0 0 100% 0);
+}
+
+/* Backwards only: once in, nothing stays clipped (a mark's outline sits outside the box). */
+html.js .tsite [data-reveal].is-in {
+  animation: t-wipe 0.5s steps(6) backwards;
+  animation-delay: calc(var(--d, 0) * 70ms);
+}
+
+/* A marked thing keeps its mark animation rather than the wipe. */
+html.js .tsite [data-reveal].is-in.is-here {
+  animation: t-here 2.8s steps(1) both;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes t-wipe {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes t-here {
+  0%, 20%, 40%, 60% { outline-color: var(--here); }
+  10%, 30%, 50% { outline-color: transparent; }
+  92% { outline-color: var(--here); }
+  100% { outline-color: transparent; }
+}
+
+@keyframes t-here-tag {
+  0% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tsite *,
+  .tsite *::before,
+  .tsite *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html.js .tsite [data-reveal]:not(.is-in) {
+    clip-path: none;
+  }
+}
+
+/* ---------- The postcard's front: the game's own street (PostcardFront.astro) ---------- */
+
+/*
+ * One art pixel is --s CSS pixels: 2 by default, 3 once the frame holds 1400 px (the street is
+ * 1440 at 3x; up to 20 px of sky at either edge is cropped between 1400 and 1440). Below 960 the
+ * street is wider than the frame and scrolls sideways inside it; the page never does.
+ */
+.t-front {
+  position: relative;
+  background: var(--color-ground);
+}
+
+.t-front-frame {
+  position: relative;
+  background: var(--color-card); /* the few px a side left over at 3x read as border */
+  border: 12px solid var(--color-card);
+}
+
+.t-front-bar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  left: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.t-front-bar > * {
+  pointer-events: auto;
+}
+
+.t-front-scroll {
+  container: front / inline-size;
+  overflow-x: auto;
+  scrollbar-color: var(--color-plate-line) transparent;
+}
+
+/* The postcard is cropped top and bottom (in art pixels): some sky above the rooftops and most of
+   the canal's reflection go, so the street sits shorter and the letter below shows on the first
+   screen. The six places, the stairs, Russell and the jeepney stay whole. Only the height is
+   clipped (overflow-y: clip), so on a phone the street still scrolls sideways inside the frame. */
+.t-front-clip {
+  --s: 2;
+  --crop-top: 18;
+  --crop-bottom: 26;
+  height: calc((var(--sh) - var(--crop-top) - var(--crop-bottom)) * var(--s) * 1px);
+  overflow-y: clip;
+}
+
+.t-front-stage {
+  position: relative;
+  width: calc(var(--sw) * var(--s) * 1px);
+  height: calc(var(--sh) * var(--s) * 1px);
+  margin-top: calc(var(--crop-top) * var(--s) * -1px);
+}
+
+/* Wider than a phone, the street is zoomed to the smallest whole-number scale that covers the
+   frame (480 art px at 3x is 1440px; up to 4px a side is left to the border, so 1469px stays 3x),
+   its ends cropped evenly. The six places sit in the middle, clear of any crop. */
+@container front (min-width: 960px) {
+  .t-front-clip {
+    --s: 3;
+    overflow: hidden;
+  }
+
+  .t-front-stage {
+    margin-inline: calc((100% - var(--sw) * var(--s) * 1px) / 2);
+  }
+}
+
+@container front (min-width: 1449px) {
+  .t-front-clip {
+    --s: 4;
+  }
+}
+
+@container front (min-width: 1929px) {
+  .t-front-clip {
+    --s: 5;
+  }
+}
+
+@container front (min-width: 2409px) {
+  .t-front-clip {
+    --s: 6;
+  }
+}
+
+/* A layer of the street, or a sprite: placed and sized in art pixels. */
+.t-layer,
+.t-front-place,
+.t-front-russell {
+  position: absolute;
+  left: calc(var(--x) * var(--s) * 1px);
+  top: calc(var(--y) * var(--s) * 1px);
+  width: calc(var(--w) * var(--s) * 1px);
+  height: calc(var(--h) * var(--s) * 1px);
+}
+
+.t-layer {
+  pointer-events: none;
+  background: var(--sheet) 0 0 / calc(var(--w) * var(--frames, 1) * var(--s) * 1px) 100% no-repeat;
+  image-rendering: pixelated;
+}
+
+.t-front-sprite,
+.t-front-russell {
+  background-image: var(--sheet);
+  background-repeat: no-repeat;
+  background-size: calc(var(--w) * var(--cols) * var(--s) * 1px) calc(var(--h) * var(--rows) * var(--s) * 1px);
+  background-position: 0 calc(var(--row) * var(--h) * var(--s) * -1px);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.t-front-sprite {
+  position: absolute;
+  left: calc(var(--ox) * var(--s) * 1px);
+  top: calc(var(--oy) * var(--s) * 1px);
+  width: calc(var(--w) * var(--s) * 1px);
+  height: calc(var(--h) * var(--s) * 1px);
+}
+
+/* Anything with more than one frame plays them along its row, each held for its own time
+   (PostcardFront.astro writes the keyframes from the Aseprite durations). */
+[data-anim] {
+  animation: var(--anim) var(--dur) steps(1, end) infinite;
+}
+
+/* The site's name on a steel plate, like the game's HUD, so it reads over the art. */
+.t-front-mark {
+  display: inline-flex;
+  padding: 8px 12px;
+  background: var(--color-plate);
+  border: 2px solid var(--color-plate-line);
+  border-top-color: var(--color-plate-edge);
+}
+
+/* A destination is a link to its chapter: pointed at or focused, its sign lights (its hover tag). */
+.t-front-place {
+  display: block;
+  outline-offset: 3px;
+}
+
+.t-front-place:focus-visible {
+  outline: 3px solid var(--sign);
+}
+
+.t-front-place:is(:hover, :focus-visible) .t-front-sprite {
+  background-position: 0 calc(var(--hover-row) * var(--h) * var(--s) * -1px);
+  animation: none;
+}
+
+/* The way on: a plate at the foot of the postcard, over the canal, with the game's arrow bobbing
+   under the word (its frames at 3x, whole pixels). A link to the letter, so it also works without
+   JavaScript; the page's own smooth scroll (data-goto) takes it there. */
+.t-front {
+  --front-foot: 0px;
+}
+
+.t-front-down {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--front-foot) + 56px);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 14px 10px;
+  color: var(--color-heading);
+  background: var(--color-plate);
+  border: 2px solid var(--color-plate-line);
+  border-top-color: var(--color-plate-edge);
+  translate: -50% 0;
+}
+
+.t-front-down-word {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.t-front-arrow {
+  --s: 3;
+  display: block;
+  width: calc(var(--w) * var(--s) * 1px);
+  height: calc(var(--h) * var(--s) * 1px);
+  background-image: var(--sheet);
+  background-repeat: no-repeat;
+  background-size: calc(var(--w) * var(--cols) * var(--s) * 1px) calc(var(--h) * var(--rows) * var(--s) * 1px);
+  background-position: 0 calc(var(--row) * var(--h) * var(--s) * -1px);
+  image-rendering: pixelated;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-front-down:hover {
+    color: var(--color-acid);
+    border-color: var(--color-acid);
+  }
+}
+
+/* Under the frame, the caption and (on a phone) the places' list: the plate sits on the street. */
+@media (max-width: 959px) {
+  .t-front-down {
+    display: none;
+  }
+}
+
+.t-front-caption {
+  margin: 0;
+  padding: 16px 16px 0;
+  font-family: var(--font-title);
+  font-size: 24px;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--color-soft);
+}
+
+.t-front-list {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 16px 16px 0;
+  list-style: none;
+}
+
+.t-front-list a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  color: var(--color-heading);
+}
+
+.t-sq {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  background: var(--sign);
+}
+
+@media (max-width: 959px) {
+  .t-front-list {
+    display: flex;
+  }
+}
+
+/* ---------- Buttons: "press me" is the street's sodium yellow; a 1-art-pixel lip, like a key ---------- */
+
+.t-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 1;
+  white-space: nowrap;
+  border: 2px solid var(--color-ground);
+  box-shadow: 0 4px 0 #000;
+  transition: translate 90ms steps(2, end), box-shadow 90ms steps(2, end);
+}
+
+.t-btn:active {
+  translate: 0 4px;
+  box-shadow: 0 0 0 #000;
+}
+
+.t-btn-primary {
+  color: var(--color-ground);
+  background: var(--color-acid);
+}
+
+.t-btn-line {
+  color: var(--color-heading);
+  background: var(--color-card);
+  border-color: var(--color-rule);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-btn-primary:hover {
+    background: #fff;
+  }
+
+  .t-btn-line:hover {
+    border-color: var(--color-heading);
+  }
+}
+
+.t-btn:focus-visible,
+.tsite a:focus-visible,
+.tsite button:focus-visible {
+  outline: 3px solid var(--color-acid);
+  outline-offset: 3px;
+}
+
+.t-textlink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-heading);
+  background: none;
+  border: 0;
+  text-decoration: underline 2px var(--sign, var(--color-sign-home));
+  text-underline-offset: 6px;
+}
+
+/* ---------- The nav: fixed, and slid away until the street is out of view ---------- */
+
+.t-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 64px;
+  padding: 0 max(16px, calc((100% - 1240px) / 2));
+  background: var(--color-card);
+  border-bottom: 2px solid var(--color-rule);
+  translate: 0 -100%;
+  visibility: hidden;
+  transition: translate 240ms cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s 240ms;
+}
+
+.t-header[data-past-front] {
+  translate: 0 0;
+  visibility: visible;
+  transition: translate 240ms cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s;
+}
+
+.t-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.t-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+.t-nav a:hover,
+.t-nav a[aria-current] {
+  color: var(--color-heading);
+}
+
+/* Where the reader is: a stripe of the place's colour under its name. */
+.t-nav a[aria-current] {
+  background: linear-gradient(var(--sign), var(--sign)) left bottom / 100% 3px no-repeat;
+}
+
+.t-nav .t-btn {
+  margin-left: 8px;
+}
+
+.t-menu-toggle {
+  display: none;
+  min-height: 44px;
+  padding: 0 14px;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  color: var(--color-heading);
+  background: var(--color-ground);
+  border: 2px solid var(--color-rule);
+}
+
+@media (max-width: 1180px) {
+  .t-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .t-nav {
+    position: absolute;
+    top: 100%;
+    right: max(16px, calc((100% - 1240px) / 2));
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 240px;
+    padding: 8px;
+    background: var(--color-card);
+    border: 2px solid var(--color-rule);
+  }
+
+  .t-header.is-open .t-nav {
+    display: flex;
+  }
+
+  .t-nav .t-btn {
+    margin: 8px 0 0;
+  }
+}
+
+/* ---------- The sidebar (1181px and up): an index of the six places, beside the sections ----------
+ * The page becomes a grid: the street front and the footer span it; the sidebar holds the first
+ * column for the six sections' rows and stays put (sticky) while they scroll past it. */
+
+.t-side {
+  display: none;
+}
+
+@media (min-width: 1181px) {
+  .tsite {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    transition: grid-template-columns 160ms steps(4, end);
+  }
+
+  html[data-side="folded"] .tsite {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .tsite > * {
+    grid-column: 1 / -1;
+  }
+
+  .tsite > section[data-place]:not([data-front]) {
+    grid-column: 2;
+  }
+
+  /* The sidebar is sticky, so at the very bottom it still covers the first column: the footer
+     keeps to the second, or its wordmark sits hidden under the sidebar. */
+  .tsite > .t-footer {
+    grid-column: 2;
+  }
+
+  .t-header {
+    display: none;
+  }
+
+  .t-side {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    grid-column: 1;
+    grid-row: 2 / span 6;
+    align-self: start;
+    height: 100vh;
+    overflow: hidden auto;
+    background: var(--color-card);
+    border-right: 2px solid var(--color-rule);
+  }
+}
+
+.t-side-mark {
+  display: block;
+  padding: 20px 20px 16px;
+}
+
+.t-side-plate {
+  display: inline-block;
+  padding: 8px 12px;
+  background: var(--color-plate);
+  border: 2px solid var(--color-plate-line);
+  border-top-color: var(--color-plate-edge);
+}
+
+.t-side-plate .wordmark {
+  color: var(--color-plate-label);
+}
+
+.t-side-nav a {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: 12px;
+  align-items: start;
+  padding: 12px 20px;
+  border-top: 2px solid var(--color-rule);
+}
+
+.t-side-nav a:last-child {
+  border-bottom: 2px solid var(--color-rule);
+}
+
+.t-side-nav img {
+  width: calc(var(--w) * 2px);
+  height: calc(var(--h) * 2px);
+  margin-top: 3px;
+  justify-self: center;
+  image-rendering: pixelated;
+}
+
+.t-side-word {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+.t-side-line {
+  grid-column: 2;
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-soft);
+}
+
+/* Where the reader is: the row goes ink, its word white, a stripe of the place's colour at its edge. */
+.t-side-nav a[aria-current] {
+  background: linear-gradient(var(--sign), var(--sign)) left / 3px 100% no-repeat, var(--color-ground);
+}
+
+.t-side-nav a[aria-current] .t-side-word,
+.t-side-nav a:hover .t-side-word {
+  color: var(--color-heading);
+}
+
+.t-side-foot {
+  margin-top: auto;
+  padding: 16px 20px 20px;
+  border-top: 2px solid var(--color-rule);
+}
+
+.t-side-talk {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--color-heading);
+}
+
+.t-side-talk span {
+  color: var(--color-sign-post-office);
+}
+
+.t-side-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.t-side-buttons .t-btn {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 20px;
+}
+
+.t-side-fold-closed {
+  display: none;
+}
+
+/* Folded: a rail of the sign icons at 3x; the words stay for screen readers. */
+html[data-side="folded"] .t-side-mark,
+html[data-side="folded"] .t-side-talk,
+html[data-side="folded"] .t-side-word,
+html[data-side="folded"] .t-side-line,
+html[data-side="folded"] .t-side-buttons [data-change-ui] span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+html[data-side="folded"] .t-side-nav {
+  margin-top: 20px;
+}
+
+html[data-side="folded"] .t-side-nav a {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 16px 0;
+}
+
+html[data-side="folded"] .t-side-nav img {
+  width: calc(var(--w) * 3px);
+  height: calc(var(--h) * 3px);
+  margin: 0;
+}
+
+html[data-side="folded"] .t-side-foot {
+  padding: 12px 6px;
+}
+
+html[data-side="folded"] .t-side-buttons {
+  flex-direction: column;
+  align-items: center;
+}
+
+html[data-side="folded"] .t-side-fold-open {
+  display: none;
+}
+
+html[data-side="folded"] .t-side-fold-closed {
+  display: inline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tsite {
+    transition: none;
+  }
+}
+
+/* ---------- The postcard's back: Russell's room, its corkboard hung over the PC and shelves ---------- */
+
+.t-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 48px;
+  font-weight: 400;
+  line-height: 1;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--color-heading);
+}
+
+.t-back {
+  background: var(--color-ground);
+}
+
+/* Lines of facts (what he is open to, where to reach him): a term over its value. */
+.t-lines {
+  display: grid;
+  margin: 0;
+}
+
+.t-lines > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+.t-lines dt {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.t-lines dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.t-lines a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.t-lines-name {
+  display: none;
+}
+
+/* ---------- Home: the corkboard ----------
+ * A wood-framed board of speckled cork. The list is a row of index tabs down its left; the shown
+ * one is pulled out to meet the sheet beside it, ruled cream paper held up by a cyan pushpin. */
+
+.t-panel[data-material="cork"] {
+  min-height: 500px; /* the whole board, whichever tab is out: it does not jump between them */
+  padding: 8px;
+  color: #2c1c16;
+  background: #6e482c;
+  clip-path: var(--step-2);
+  box-shadow: inset 4px 4px 0 #99683e, inset -4px -4px 0 #4a2e1f;
+}
+
+.t-panel[data-material="cork"] .t-sign {
+  margin-bottom: 8px;
+}
+
+.t-panel[data-material="cork"] .t-panel-body {
+  grid-template-columns: 164px minmax(0, 1fr);
+  padding: 16px 16px 16px 0;
+  background: #99683e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Crect x='2' y='4' width='2' height='2' fill='%236e482c'/%3E%3Crect x='14' y='2' width='2' height='2' fill='%23c46824'/%3E%3Crect x='8' y='12' width='2' height='2' fill='%23ba8c70'/%3E%3Crect x='20' y='10' width='2' height='2' fill='%236e482c'/%3E%3Crect x='4' y='18' width='2' height='2' fill='%23c46824'/%3E%3Crect x='16' y='20' width='2' height='2' fill='%236e482c'/%3E%3C/svg%3E");
+  box-shadow: inset 0 0 0 2px #4a2e1f;
+}
+
+.t-panel[data-material="cork"] .t-items {
+  padding-top: 12px;
+  overflow: visible;
+}
+
+.t-panel[data-material="cork"] .t-items li + li {
+  margin-top: 6px;
+}
+
+/* An index tab: kraft card with a darker foot; pulled out (cream, a cyan edge) when it is shown. */
+.t-panel[data-material="cork"] .t-item {
+  width: calc(100% - 12px);
+  min-height: 40px;
+  padding: 6px 10px 8px 14px;
+  color: #2c1c16;
+  background: #dcbb85;
+  box-shadow: inset 0 -4px 0 #b29460;
+}
+
+.t-panel[data-material="cork"] .t-item-name {
+  font-size: 22px;
+}
+
+.t-panel[data-material="cork"] .t-item[aria-pressed="true"] {
+  width: 100%;
+  background: #ffeebe;
+  box-shadow: inset 4px 0 0 #46e6e1, inset 0 -4px 0 #dcbb85;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-panel[data-material="cork"] .t-item:hover {
+    background: #ffeebe;
+  }
+}
+
+/* The sheet: cream paper ruled every 28px, a red margin, the pin at its head. */
+.t-panel[data-material="cork"] .t-details {
+  position: relative;
+  background: #ffeebe;
+}
+
+.t-panel[data-material="cork"] .t-details::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: calc(50% - 6px);
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  background: #46e6e1;
+  box-shadow: inset -4px -4px 0 #19788c;
+}
+
+.t-panel[data-material="cork"] .t-detail {
+  position: relative;
+  padding: 26px 22px 0 42px;
+  background: repeating-linear-gradient(transparent 0 26px, #dcbb85 26px 28px) 0 26px / 100% 28px;
+}
+
+.t-panel[data-material="cork"] .t-detail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 26px;
+  width: 2px;
+  background: #ff463c;
+}
+
+.t-panel[data-material="cork"] .t-title {
+  font-size: 48px;
+  line-height: 56px;
+  color: #2c1c16;
+}
+
+.t-panel[data-material="cork"] .t-detail p,
+.t-panel[data-material="cork"] .t-ps li,
+.t-panel[data-material="cork"] .t-lines dd {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 28px;
+}
+
+.t-panel[data-material="cork"] .t-letter-body p + p {
+  margin-top: 28px;
+}
+
+/* The letter's sign-off: what he is open to and where to write, on the ruled lines like the rest. */
+.t-panel[data-material="cork"] .t-letter-sign strong {
+  font-weight: 600;
+  color: #2c1c16;
+}
+
+.t-panel[data-material="cork"] .t-letter-sign a {
+  color: #263f6c;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.t-panel[data-material="cork"] .t-ps-title {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 28px;
+  color: #8c1c24;
+}
+
+.t-panel[data-material="cork"] .t-ps ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.t-panel[data-material="cork"] .t-ps strong {
+  margin-right: 8px;
+  font-weight: 600;
+}
+
+/* Reach me: each line a label and its value side by side, the values aligned, and each exactly one
+   28px ruled line tall (the icon and the link's tap height used to make them 33px, drifting off
+   the rules a little more each line). */
+.t-panel[data-material="cork"] .t-lines > div {
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0 12px;
+  height: 28px;
+  padding: 0;
+}
+
+.t-panel[data-material="cork"] .t-lines dd {
+  line-height: 28px;
+}
+
+.t-panel[data-material="cork"] .t-lines a {
+  min-height: 0;
+  line-height: 28px;
+  vertical-align: top;
+}
+
+.t-panel[data-material="cork"] .t-lines a svg {
+  width: 16px;
+  height: 16px;
+}
+
+.t-panel[data-material="cork"] .t-lines dt {
+  font-size: 20px;
+  line-height: 28px;
+  color: #5c4042;
+}
+
+.t-panel[data-material="cork"] .t-lines a {
+  color: #263f6c;
+}
+
+/* The photo, pinned to the middle of the sheet in a white border, the postmark stamped across its
+   lower corner. */
+.t-panel[data-material="cork"] .t-stamp {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  margin: 0;
+  padding: 4px 0 24px;
+}
+
+.t-panel[data-material="cork"] .t-stamp .t-postmark {
+  position: absolute;
+  right: calc(50% - 156px);
+  bottom: 14px;
+  background: #ffeebe;
+  rotate: -6deg;
+}
+
+.t-panel[data-material="cork"] .t-stamp img {
+  display: block;
+  width: 236px;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border: 8px solid #ffffff;
+  border-bottom-width: 28px;
+  outline: 2px solid #dcbb85;
+}
+
+.t-postmark {
+  margin: 0;
+  padding: 6px 10px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1;
+  color: #8c1c24;
+  border: 2px solid currentColor;
+}
+
+/* ---------- Chapters: each opens on its place's room (SceneStage), the panel hung over it ---------- */
+
+.t-chapter {
+  padding-bottom: 96px;
+  background: var(--color-ground);
+}
+
+/* A room with nothing under it: the next room follows straight on, past the 2px rule. */
+.t-chapter:not(:has(> .t-column)) {
+  padding-bottom: 0;
+}
+
+/* The room at 2x, as tall as the art, or as its panel if that is taller (on ink below the room).
+   The art, the panel and the title plate share one grid cell, never wider than the room's view
+   (the art, less a crop kept at every width; see SceneStage): wider than the stage, the art is
+   cropped at its focus (a negative margin, never past its right edge); narrower, the cell is
+   centred on ink, so the panel and the plate still hang inside the room's own edges instead of the
+   stage's (on a wide desktop they hung half off the room). */
+.t-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, var(--view-w));
+  justify-content: center;
+  min-height: 540px;
+  overflow: hidden;
+  background: var(--color-ground);
+  border-bottom: 2px solid var(--color-rule);
+}
+
+.t-stage-art {
+  position: relative;
+  grid-area: 1 / 1;
+  justify-self: safe center;
+  width: var(--art-w);
+  height: 540px;
+  margin-left: min(0px, max(calc(100% - var(--art-w)), calc(var(--focus) * -2px)));
+}
+
+/* A room cropped at every width: the cropped strip would otherwise show on the ink beside the cell. */
+.t-stage[data-crop] .t-stage-art {
+  clip-path: inset(0 0 0 var(--crop));
+}
+
+/* A stage wider than its room (textpanels.ts fitArt, from 900px): the art is zoomed up to the
+   stage's width, so no ink shows beside it, and the cell spans the stage. Its lengths are the
+   art's own, scaled by the zoom: the crop still comes off its left edge. */
+.t-stage[data-fill] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.t-stage[data-fill] .t-stage-art {
+  justify-self: start;
+  margin-left: calc(var(--crop) * -1);
+}
+
+/* Things moved out from under the panel (StagePlan.shift), wide screens only. */
+@media (min-width: 900px) {
+  .t-stage [data-shifted] {
+    translate: var(--dx) var(--dy);
+  }
+}
+
+/* Wider than a phone, the frame is not there: the art is the stage's own flex item. */
+.t-stage-frame {
+  display: contents;
+}
+
+.t-layer {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.t-layer img,
+.t-arrow-sprite img {
+  display: block;
+  max-width: none;
+  image-rendering: pixelated;
+}
+
+/* The one loop each room keeps running: its frames side by side, stepped through. */
+.t-layer[data-loop] img {
+  animation: t-loop var(--dur) steps(var(--frames)) infinite;
+}
+
+@keyframes t-loop {
+  to {
+    translate: calc(var(--fw) * var(--frames) * -1px) 0;
+  }
+}
+
+/* What can be pointed at: invisible until pointed at, focused or chosen, then a press-yellow frame. */
+.t-target {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  background: none;
+  border: 0;
+}
+
+.t-target:focus-visible,
+.t-target[data-on] {
+  outline: 2px solid var(--color-acid);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-target:hover {
+    outline: 2px solid var(--color-acid);
+    outline-offset: 2px;
+  }
+}
+
+/* A thing drawn as its own sprite (a hobby prop, the mirror, a cabinet) lights in its own shape: a
+   hard 2px press-yellow outline around its pixels, no blur. Its button keeps no box of its own. The
+   filter is on the sprite's frame, so the outline is drawn outside it, not clipped by it. */
+.t-target[data-sprite]:is(:focus-visible, [data-on]),
+.t-target[data-sprite]:hover {
+  outline: none;
+}
+
+.t-obj:is([data-on], [data-hover]) {
+  filter: drop-shadow(2px 0 0 var(--color-acid)) drop-shadow(-2px 0 0 var(--color-acid)) drop-shadow(0 2px 0 var(--color-acid))
+    drop-shadow(0 -2px 0 var(--color-acid));
+}
+
+/* What a board or screen shows (SceneStage fills): a certificate in a wall frame, or a screen's
+   logos. Decoration only, under the panel's layer; the panel lists the same things. */
+.t-fill {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  pointer-events: none;
+}
+
+.t-fill img {
+  display: block;
+}
+
+/* A certificate hangs inside its frame's board on a mat: pinned to the board less 8px a side (a
+   percentage height in a grid cell would fall back to the picture's own size and spill over the
+   frame), whole, never cropped. */
+.t-fill > img {
+  position: absolute;
+  inset: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  object-fit: contain;
+}
+
+.t-fill-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+/* Each logo on a light tile, like an icon on a desktop, so a dark logo still reads on a dark screen. */
+.t-fill-icons img {
+  box-sizing: content-box;
+  width: 22px;
+  height: 22px;
+  padding: 4px;
+  background: #ffeebe;
+  box-shadow: inset 0 -2px 0 #dcbb85;
+}
+
+/* A board the game writes on (its <Show>): the same words, in the board's own ink, in the room's
+   pixel lettering. textpanels.ts sets --fs (letter size in art pixels, 2 CSS px each) to the
+   largest that fits the board, as the game does; the board never scrolls. */
+.t-fill[data-board] {
+  display: block;
+  /* --clear: a strip at the bottom where the art stands things on the board (the poster's books). */
+  padding: 6px 8px calc(6px + var(--clear, 0px));
+  overflow: hidden;
+}
+
+.t-board {
+  font-family: var(--font-pixel);
+  font-size: calc(var(--fs, 5) * 2px);
+  line-height: 1.12;
+  color: #0d0b1a;
+  overflow-wrap: anywhere;
+}
+
+.t-board p,
+.t-board ul,
+.t-board dl,
+.t-board dd {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.t-board-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-bottom: 0.35em !important;
+  padding-bottom: 0.2em;
+  font-size: 1.5em;
+  line-height: 1;
+  border-bottom: 2px solid rgb(74 46 31 / 0.45);
+}
+
+.t-board-head > span:first-child {
+  padding: 0.08em 0.3em 0.04em;
+  color: #ffcd78;
+  background: #4a2e1f;
+}
+
+.t-board-note {
+  margin-left: auto;
+  font-size: 0.5em;
+  color: #833b1d;
+  white-space: nowrap;
+}
+
+.t-board-p + .t-board-p {
+  margin-top: 0.6em !important;
+}
+
+.t-board-lead {
+  font-size: 1.15em;
+  color: #4a2e1f;
+}
+
+.t-board-facts {
+  display: grid;
+  gap: 0.35em;
+}
+
+.t-board-facts > div {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 0.6em;
+}
+
+.t-board-facts dt {
+  opacity: 0.7;
+}
+
+.t-board-facts dd {
+  color: #6b2a10;
+}
+
+.t-board-lines li + li {
+  margin-top: 0.35em;
+}
+
+/* The chalkboard: chalk-white words, the title in yellow chalk over a dashed chalk line. */
+.t-fill[data-look="chalk"] .t-board {
+  color: #e6eadc;
+}
+
+.t-fill[data-look="chalk"] .t-board-head {
+  border-bottom: 2px dashed rgb(230 234 220 / 0.4);
+}
+
+.t-fill[data-look="chalk"] .t-board-head > span:first-child {
+  padding: 0;
+  background: none;
+}
+
+.t-fill[data-look="chalk"] .t-board-note {
+  color: #9fb59a;
+}
+
+.t-fill[data-look="chalk"] .t-board-lead {
+  color: #fff;
+}
+
+/* The PC: a lit screen, cyan lines under a press-yellow prompt. */
+.t-fill[data-look="screen"] .t-board {
+  color: var(--color-cyan, #46e6e1);
+}
+
+.t-fill[data-look="screen"] .t-board-head {
+  border-bottom: 0;
+}
+
+.t-fill[data-look="screen"] .t-board-head > span:first-child {
+  padding: 0;
+  color: var(--color-acid);
+  background: none;
+}
+
+.t-fill-initials {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--color-ground);
+  background: var(--color-sign-store);
+}
+
+/* A brief over a thing in the room, while it is hovered or focused: a preview only (a click puts
+   it in the panel). A plate of ink in the place's colour, over the thing, never under the panel. */
+.t-brief {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  z-index: 5;
+  display: none;
+  width: 248px;
+  padding: 10px 12px 12px;
+  text-align: left;
+  color: var(--color-text);
+  background: var(--color-ground);
+  border: 2px solid var(--sign);
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.t-target:focus-visible .t-brief {
+  display: grid;
+  gap: 4px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-target:hover .t-brief {
+    display: grid;
+    gap: 4px;
+  }
+}
+
+.t-target:has(.t-brief):is(:hover, :focus-visible) {
+  z-index: 5;
+}
+
+.t-brief-title {
+  font-family: var(--font-pixel);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--color-heading);
+}
+
+.t-brief-line {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1.1;
+  color: #46e6e1;
+}
+
+.t-brief-tagline {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Words on a blank board left in view, in the board's own ink. */
+.t-board-label {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.1;
+  text-align: center;
+  color: #2c1c16;
+}
+
+.t-target[data-look="terminal"] .t-board-label,
+.t-target[data-look="crt"] .t-board-label {
+  color: var(--color-sign-store);
+}
+
+.t-target[data-look="whiteboard"] .t-board-label {
+  color: #1c1a23;
+}
+
+.t-target[data-look="chalk"] .t-board-label {
+  color: #c5cfdb;
+}
+
+/* An arrow from the game at a thing to point at, with what to do on a plate over it. */
+.t-arrow {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.t-arrow-label {
+  padding: 4px 8px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--color-acid);
+  background: var(--color-ground);
+}
+
+.t-arrow-sprite {
+  display: block;
+  overflow: hidden;
+}
+
+/* A panel hung on the right reaches over the arcade's arrow (art x 139) once the stage is narrower
+   than the panel, its 20px inset and the arrow's plate (about 1110px): there the hint would show
+   half under the panel, and the list it points to is beside it anyway. Under 900px the panel
+   moves below the room and the hint comes back. */
+.t-stage {
+  container: stage / inline-size;
+}
+
+@container stage (min-width: 900px) and (max-width: 1110px) {
+  .t-stage[data-panel-side="right"] .t-arrow {
+    display: none;
+  }
+}
+
+/* The plate says what this device does: hover with a mouse, tap on a touch screen. */
+.t-arrow-label[data-input="pointer"] {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-arrow-label[data-input="pointer"] {
+    display: block;
+  }
+
+  .t-arrow-label[data-input="touch"] {
+    display: none;
+  }
+}
+
+/* The title on a plate of the ground colour, always on the side away from the panel (the panel's
+   sign is the chapter's name; the plate is the sentence that goes with it). */
+.t-stage-title {
+  position: absolute;
+  /* Placed against the room's cell, not the whole stage (see .t-stage). All four lines: an end
+     left auto would be the stage's own edge for an absolutely placed item. */
+  grid-area: 1 / 1 / 2 / 2;
+  top: 22px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  /* A long title wraps beside the panel rather than running under it. */
+  max-width: calc(100% - min(var(--panel-w), 100% - 40px) - 68px);
+}
+
+.t-stage-title[data-side="left"] {
+  left: 24px;
+}
+
+.t-stage-title[data-side="right"] {
+  right: 24px;
+}
+
+.t-stage-title .t-title {
+  font-size: 36px;
+  line-height: 52px;
+}
+
+/* The plate is drawn per line, so a title that wraps keeps a ragged edge hugging its words instead
+   of a box as wide as the space it could have taken. 52px lines, 8px above and below the 36px
+   letters: the lines' plates meet with no gap. */
+.t-stage-title .t-title > span {
+  padding: 8px 14px;
+  background: var(--color-ground);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-layer[data-loop] img {
+    animation: none;
+  }
+}
+
+/* ---------- The panel hung over a room (ScenePanel): its sign, a list, one detail at a time ----------
+ * Each room draws it in its own material (data-material, below); this is its structure. Live
+ * (textpanels.ts) it hangs over the room's quiet side and never makes the room taller; without
+ * JavaScript it sits under the room as a plain block with every detail in order. */
+
+.t-panel {
+  position: relative;
+  grid-area: 1 / 1;
+  align-self: start;
+  margin: 20px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: min(var(--panel-w), calc(100% - 40px));
+  color: var(--color-text);
+  background: var(--color-card);
+}
+
+.t-stage[data-panel-side="left"] .t-panel {
+  justify-self: start;
+}
+
+.t-stage[data-panel-side="right"] .t-panel {
+  justify-self: end;
+}
+
+/* Without JavaScript the panel is a plain block under its room, every detail in order. */
+.t-panel:not([data-live]) {
+  grid-area: 2 / 1;
+  width: auto;
+  max-height: none;
+  margin: 0;
+}
+
+.t-panel-body {
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.t-panel:not([data-split]) .t-panel-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.t-items {
+  overflow: hidden auto;
+}
+
+.t-items ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.t-item-head {
+  margin: 0;
+  padding: 10px 14px 4px;
+  font-family: var(--font-pixel);
+  font-size: 19px;
+  line-height: 1;
+}
+
+.t-item {
+  display: grid;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 12px 6px 14px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
+.t-item-name {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.t-item-line {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.t-details {
+  min-height: 0;
+}
+
+/* No panel scrolls but the arcade's (its write-ups are one page each, read in the screen): the
+   others show all of a detail, and the room's stage grows to fit a panel taller than the room. */
+.t-panel[data-material="cabinet"] {
+  max-height: 500px;
+}
+
+.t-panel[data-material="cabinet"] .t-details {
+  overflow: hidden auto;
+}
+
+.t-detail {
+  padding: 10px 18px 14px;
+}
+
+/* A hidden detail takes no room. As specific as each material's own .t-detail padding, which
+   otherwise left every hidden tab's padding stacked under the shown one. */
+.t-detail[hidden],
+.t-panel[data-material] .t-detail[hidden],
+.t-tab-panel[hidden] {
+  padding: 0;
+  border: 0;
+}
+
+.t-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 10px 0 8px;
+}
+
+.t-tab {
+  min-height: 32px;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
+.t-tab[aria-pressed="true"]::before {
+  content: "\25B6\FE0E\00A0";
+}
+
+/* A detail arriving wipes in from the left, in steps. */
+.t-detail.is-wiping {
+  animation: t-wipe 180ms steps(6, end);
+}
+
+@keyframes t-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-detail.is-wiping {
+    animation: none;
+  }
+}
+
+.t-column {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 56px max(16px, 2vw) 0;
+}
+
+.t-subhead {
+  margin: 0 0 16px;
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--color-heading);
+}
+
+/* ---------- The panels' shared parts ---------- */
+
+/* Pixel corners, stepped in whole art pixels (2 css px) or two of them. */
+:root {
+  --step-2: polygon(4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 2px 4px, 2px 2px, 4px 2px);
+  --step-4: polygon(8px 0, calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0 calc(100% - 8px), 0 8px, 4px 8px, 4px 4px, 8px 4px);
+}
+
+/* Each sign's darker neon, for the second line of its border. */
+[data-sign="home"] { --sign-dark: #19788c; }
+[data-sign="school"] { --sign-dark: #602c96; }
+[data-sign="arcade"] { --sign-dark: #961e5a; }
+[data-sign="store"] { --sign-dark: #28783c; }
+[data-sign="trophy-shop"] { --sign-dark: #96781e; }
+[data-sign="post-office"] { --sign-dark: #8c1c24; }
+
+/* The shop's own sign heads its panel: the icon at 4x and the word, neon on ink, double border. */
+.t-sign {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 52px;
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 32px;
+  line-height: 1;
+  color: var(--sign);
+  background: var(--color-ground);
+  box-shadow: inset 0 0 0 2px var(--sign), inset 0 0 0 4px var(--sign-dark), inset 0 0 0 6px var(--color-ground);
+}
+
+.t-sign img {
+  image-rendering: pixelated;
+}
+
+.t-panel .t-project-meta {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.t-panel .t-project-title {
+  margin: 4px 0 2px;
+  font-family: var(--font-pixel);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--color-heading);
+}
+
+.t-panel .t-project-tagline {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-heading);
+}
+
+.t-panel .t-project-prose p,
+.t-panel .t-runner p {
+  margin: 0 0 0.7em;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.t-panel .t-project-prose code {
+  padding: 0 4px;
+  font-size: 0.92em;
+  background: #1c1a23;
+}
+
+.t-panel .t-project-stack {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+/* A write-up is one page: the overview, then each part under a small head with a dashed rule. */
+.t-panel .t-project-part {
+  margin-top: 14px;
+}
+
+.t-part-head {
+  margin: 0 0 8px;
+  padding-top: 10px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  border-top: 2px dashed #33296b;
+}
+
+.t-panel[data-material="cabinet"] .t-part-head {
+  color: #be6eff; /* neon violet: 6:1 on the screen's ink */
+}
+
+/* In a panel the gallery steps through its pictures with its arrows; no strip of thumbnails. */
+.t-panel .t-project-media > div {
+  max-width: 400px;
+}
+
+.t-panel .t-project-media [data-thumbs] {
+  display: none;
+}
+
+/* The gallery inside a panel: flat, its counter in the pixel face. */
+.tsite .holo {
+  background: #07060f;
+}
+
+.tsite .t-project-media .font-mono {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.t-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+/* ---------- Arcade: a cabinet ----------
+ * The PROJECTS sign is its marquee with a row of bulbs under it; the list and the write-up are on
+ * its screen (black glass, stepped corners, faint scan lines); the shown game's buttons sit on its
+ * control deck with the joystick. */
+
+.t-panel[data-material="cabinet"] {
+  padding: 8px 10px 0;
+  color: #c5cfdb;
+  background: #602c96;
+  clip-path: var(--step-2);
+  box-shadow: inset 4px 0 0 #be6eff, inset -4px 0 0 #3c1e50, inset 0 4px 0 #be6eff;
+}
+
+.t-bulbs {
+  flex: none;
+  height: 8px;
+  margin: 5px 4px;
+  background: repeating-linear-gradient(90deg, #ffe24d 0 4px, #96781e 4px 6px, transparent 6px 16px) 6px 0;
+}
+
+/* The screen: its glass is a layer behind it, so its stepped corners never clip what sits on the deck. */
+.t-panel[data-material="cabinet"] .t-panel-body {
+  position: relative;
+  isolation: isolate;
+}
+
+.t-panel[data-material="cabinet"] .t-panel-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: repeating-linear-gradient(#0d0b1a 0 4px, #110e22 4px 6px);
+  clip-path: var(--step-4);
+  box-shadow: inset 0 0 0 4px #1c1a23;
+}
+
+.t-panel[data-material="cabinet"] .t-items {
+  padding: 8px 0;
+  border-right: 2px solid #33296b;
+}
+
+.t-panel[data-material="cabinet"] .t-item-head {
+  color: #46e6e1;
+}
+
+.t-panel[data-material="cabinet"] .t-item {
+  grid-template-columns: 14px 1fr;
+  padding: 5px 10px 5px 8px;
+  color: #b3b6c9;
+}
+
+.t-panel[data-material="cabinet"] .t-item::before {
+  content: "\25B6\FE0E";
+  grid-row: 1;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1.4;
+  color: #ffe24d;
+  visibility: hidden;
+}
+
+.t-panel[data-material="cabinet"] .t-item-name,
+.t-panel[data-material="cabinet"] .t-item-line {
+  grid-column: 2;
+}
+
+.t-panel[data-material="cabinet"] .t-item-line {
+  color: #8c8fa8;
+}
+
+.t-panel[data-material="cabinet"] .t-item[aria-pressed="true"] {
+  color: var(--color-heading);
+  background: #33296b;
+}
+
+.t-panel[data-material="cabinet"] .t-item[aria-pressed="true"]::before {
+  visibility: visible;
+}
+
+.t-panel[data-material="cabinet"] .t-item[aria-pressed="true"] .t-item-line {
+  color: #c5cfdb;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-panel[data-material="cabinet"] .t-item:hover .t-item-name {
+    color: var(--color-heading);
+  }
+}
+
+.t-panel[data-material="cabinet"] .t-project-meta {
+  color: #46e6e1;
+}
+
+/* The control deck: the joystick (the sign's icon), then the shown game's buttons. */
+.t-deck {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 72px;
+  margin: 0 -10px;
+  padding: 0 0 6px 26px;
+  background: #4a3a85;
+  box-shadow: inset 0 4px 0 #6b4f9e, inset 0 -8px 0 #33296b;
+}
+
+.t-deck img {
+  image-rendering: pixelated;
+}
+
+/* Placed on the deck under the screen (72px tall), right of the joystick. */
+.t-panel[data-material="cabinet"] .t-detail .t-actions {
+  position: absolute;
+  right: 8px;
+  bottom: -60px;
+  left: 74px;
+  flex-wrap: nowrap;
+  gap: 18px;
+}
+
+/* On the deck the buttons are arcade buttons: a stepped cap with its lip, the word under it. */
+.t-panel[data-material="cabinet"] .t-actions .t-btn {
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 0;
+  font-size: 16px;
+  color: #c5cfdb;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.t-panel[data-material="cabinet"] .t-actions .t-btn svg {
+  display: none;
+}
+
+.t-panel[data-material="cabinet"] .t-actions .t-btn::before {
+  content: "";
+  width: 40px;
+  height: 32px;
+  clip-path: var(--step-4);
+  background: linear-gradient(var(--cap) 0 26px, var(--cap-lip) 26px);
+}
+
+.t-panel[data-material="cabinet"] .t-actions .t-btn-primary {
+  --cap: #ffe24d;
+  --cap-lip: #96781e;
+}
+
+.t-panel[data-material="cabinet"] .t-actions .t-btn-line {
+  --cap: #46e6e1;
+  --cap-lip: #19788c;
+}
+
+.t-panel[data-material="cabinet"] .t-actions .t-btn:active {
+  translate: 0 2px;
+}
+
+/* The coin-slot plate on the deck: the game's main tools. Only on the cabinet. */
+.t-stack-plate {
+  display: none;
+}
+
+.t-panel[data-material="cabinet"] .t-stack-plate {
+  display: block;
+  margin-left: auto;
+  padding: 8px 10px;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1;
+  white-space: nowrap;
+  color: #ffcd78;
+  background: #1c1a23;
+  box-shadow: inset 0 0 0 2px #686a84;
+}
+
+.t-panel[data-material="cabinet"] .t-actions .t-textlink {
+  font-size: 15px;
+  color: var(--color-heading);
+  text-decoration-color: #46e6e1;
+}
+
+/* ---------- Store (the PC repair shop): a pegboard ----------
+ * A steel-framed pegboard under the TOOLS sign: each group's name on label-maker tape, each tool a
+ * tag hung from a peg. All four groups show at once; pointing at a screen in the shop marks its
+ * group's tape in the sign's green. */
+
+.t-panel[data-material="pegboard"] {
+  padding: 8px;
+  color: #2c1c16;
+  background: #4b4c64;
+  clip-path: var(--step-2);
+  box-shadow: inset 0 4px 0 #686a84, inset 0 -4px 0 #262538;
+}
+
+.t-panel[data-material="pegboard"] .t-sign {
+  margin-bottom: 8px;
+}
+
+.t-panel[data-material="pegboard"] .t-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 22px;
+  padding: 18px 18px 20px;
+  background: #ba8c70 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' shape-rendering='crispEdges'%3E%3Crect x='8' y='8' width='4' height='4' fill='%235c4042'/%3E%3Crect x='8' y='12' width='4' height='2' fill='%23dcbb85'/%3E%3C/svg%3E");
+  box-shadow: inset 0 0 0 2px #8c6256;
+}
+
+.t-panel[data-material="pegboard"] .t-detail {
+  padding: 0;
+}
+
+.t-tape {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 5px 12px 4px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #1c1a23;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 50%, 100% 100%, 0 100%, 4px 50%);
+}
+
+.t-panel[data-material="pegboard"] .t-detail[data-on] .t-tape {
+  color: #10241e;
+  background: var(--color-sign-store);
+}
+
+.t-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A tag on a peg: cream card, ink edge, a darker lip at its foot, the peg above it. */
+.t-tag {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 9px 10px 9px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  color: #2c1c16;
+  background: #ffeebe;
+  box-shadow: inset 0 0 0 2px #2c1c16, inset 0 -4px 0 #dcbb85;
+}
+
+.t-tag::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 10px;
+  background: #4b4c64;
+}
+
+.t-tag img {
+  width: 16px;
+  height: 16px;
+}
+
+.t-tag-initials {
+  width: 16px;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* ---------- School: the chalkboard ----------
+ * Dark green slate in a wood frame, a chalk ledge under it. The list is chalked down its left; the
+ * shown one in yellow chalk, underlined in dashes. Headings in chalk-white pixel face, prose in Plex. */
+
+.t-panel[data-material="chalk"] {
+  padding: 8px 8px 0;
+  color: #c5cfdb;
+  background: #6e482c;
+  clip-path: var(--step-2);
+  box-shadow: inset 4px 4px 0 #99683e, inset -4px 0 0 #4a2e1f;
+}
+
+.t-panel[data-material="chalk"] .t-sign {
+  margin-bottom: 8px;
+}
+
+.t-panel[data-material="chalk"] .t-panel-body {
+  padding: 8px 0;
+  background: #1c3a2a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' shape-rendering='crispEdges'%3E%3Crect x='6' y='10' width='6' height='2' fill='%232c583a'/%3E%3Crect x='30' y='34' width='4' height='2' fill='%232c583a'/%3E%3Crect x='36' y='8' width='2' height='2' fill='%232c583a'/%3E%3C/svg%3E");
+  box-shadow: inset 0 0 0 2px #10241e, inset 0 4px 0 #10241e;
+}
+
+/* The ledge: wood, lit on top, with a stick of chalk and the eraser on it. */
+.t-panel[data-material="chalk"]::after {
+  content: "";
+  flex: none;
+  height: 14px;
+  margin: 0 -8px;
+  background:
+    linear-gradient(#ffffff, #ffffff) no-repeat calc(100% - 64px) 0 / 20px 4px,
+    linear-gradient(#3a3545, #3a3545) no-repeat 48px 0 / 36px 6px,
+    linear-gradient(#99683e 0 6px, #6e482c 6px 10px, #4a2e1f 10px);
+}
+
+.t-panel[data-material="chalk"] .t-items {
+  padding: 6px 0;
+  border-right: 2px dashed #2c583a;
+}
+
+.t-panel[data-material="chalk"] .t-item {
+  color: #b3b6c9;
+}
+
+.t-panel[data-material="chalk"] .t-item-name {
+  justify-self: start;
+  font-size: 24px;
+  padding-bottom: 4px;
+}
+
+.t-panel[data-material="chalk"] .t-item[aria-pressed="true"] {
+  color: #ffe24d;
+}
+
+.t-panel[data-material="chalk"] .t-item[aria-pressed="true"] .t-item-name {
+  background: repeating-linear-gradient(90deg, #ffe24d 0 6px, transparent 6px 10px) left bottom / 100% 2px no-repeat;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-panel[data-material="chalk"] .t-item:hover {
+    color: #ffffff;
+  }
+}
+
+.t-panel[data-material="chalk"] .t-detail {
+  padding: 8px 22px 12px;
+}
+
+.t-panel[data-material="chalk"] .t-prose p {
+  margin: 0 0 0.8em;
+  font-size: 16px;
+  line-height: 1.65;
+  color: #c5cfdb;
+}
+
+.t-facts {
+  display: grid;
+  margin: 0;
+}
+
+.t-facts > div {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 2px dashed #2c583a;
+}
+
+.t-facts dt {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.t-facts dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #c5cfdb;
+}
+
+.t-thesis p {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.t-panel .t-thesis-name {
+  margin: 4px 0 8px;
+  font-family: var(--font-pixel);
+  font-size: 48px;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.t-panel[data-material="chalk"] .t-textlink {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  color: #ffe24d;
+}
+
+/* ---------- Trophy shop: a display case ----------
+ * Navy velvet behind glass in a gilt frame. The list is a column of brass plaques (the shown one
+ * polished); the four certificate plaques open the certificate window. */
+
+.t-panel[data-material="case"] {
+  padding: 10px;
+  color: #ffeebe;
+  background: #b29460;
+  clip-path: var(--step-2);
+  box-shadow: inset 4px 4px 0 #dcb55a, inset -4px -4px 0 #96781e;
+}
+
+.t-panel[data-material="case"] .t-sign {
+  margin-bottom: 10px;
+}
+
+.t-panel[data-material="case"] .t-panel-body {
+  grid-template-columns: 184px minmax(0, 1fr);
+  padding: 8px 0;
+  background: #263f6c;
+  box-shadow: inset 0 0 0 2px #96781e, inset 6px 6px 0 #1a1926;
+}
+
+.t-panel[data-material="case"] .t-items {
+  padding: 2px 0 0 4px;
+}
+
+.t-panel[data-material="case"] .t-item-head {
+  padding: 12px 12px 6px;
+  font-size: 19px;
+  color: #dcb55a;
+}
+
+.t-panel[data-material="case"] .t-items li {
+  padding: 4px 10px;
+}
+
+/* A brass plaque, screwed on at both ends. */
+.t-panel[data-material="case"] .t-item {
+  position: relative;
+  min-height: 38px;
+  padding: 6px 16px;
+  color: #2c1c16;
+  background: #b29460;
+  clip-path: var(--step-2);
+  box-shadow: inset 2px 2px 0 #dcb55a, inset -2px -2px 0 #96781e;
+}
+
+.t-panel[data-material="case"] .t-item::before,
+.t-panel[data-material="case"] .t-item::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1px);
+  width: 2px;
+  height: 2px;
+  background: #96781e;
+}
+
+.t-panel[data-material="case"] .t-item::before {
+  left: 7px;
+}
+
+.t-panel[data-material="case"] .t-item::after {
+  right: 7px;
+}
+
+.t-panel[data-material="case"] .t-item-name {
+  font-size: 22px;
+}
+
+.t-panel[data-material="case"] .t-item[aria-pressed="true"] {
+  background: #dcb55a;
+  box-shadow: inset 2px 2px 0 #ffeebe, inset -2px -2px 0 #b29460;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-panel[data-material="case"] .t-item:hover {
+    background: #dcb55a;
+  }
+}
+
+.t-panel[data-material="case"] .t-detail {
+  padding: 8px 18px 12px 16px;
+}
+
+.t-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.t-list li {
+  display: grid;
+  gap: 0;
+  padding: 6px 0;
+  border-bottom: 2px solid #3c6198;
+}
+
+.t-list li:last-child {
+  border-bottom: 0;
+}
+
+.t-list strong {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.t-list span {
+  font-size: 14px;
+  color: #dcbb85;
+}
+
+.t-plaque-count {
+  margin: 4px 0 12px;
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  line-height: 1;
+  color: #dcb55a;
+}
+
+/* A folder's certificates: in the case, small framed pictures; in the window, with their names. */
+.t-cert-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.t-cert-list button {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
+.t-cert-list img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #ffeebe;
+  border: 4px solid #ffeebe;
+  outline: 2px solid #96781e;
+}
+
+.t-cert-list button:hover img,
+.t-cert-list button:focus-visible img {
+  outline-color: #ffe24d;
+}
+
+.t-cert-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #ffffff;
+}
+
+.t-cert-detail {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #dcbb85;
+}
+
+.t-panel[data-live] .t-cert-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.t-panel[data-live] .t-cert-list :is(.t-cert-title, .t-cert-detail) {
+  display: none;
+}
+
+/* Hovered or focused, a certificate grows over its neighbours (twice its size, from the corner on
+   its side of the case) so it can be read without opening the window; a click still opens it. */
+.t-panel[data-live] .t-cert-list li {
+  position: relative;
+}
+
+.t-panel[data-live] .t-cert-list img {
+  transform-origin: top center;
+  transition: scale 120ms steps(3, end);
+}
+
+.t-panel[data-live] .t-cert-list li:nth-child(3n + 1) img {
+  transform-origin: top left;
+}
+
+.t-panel[data-live] .t-cert-list li:nth-child(3n) img {
+  transform-origin: top right;
+}
+
+.t-panel[data-live] .t-cert-list li:has(button:focus-visible) {
+  z-index: 2;
+}
+
+.t-panel[data-live] .t-cert-list button:focus-visible img {
+  scale: 2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-panel[data-live] .t-cert-list li:hover {
+    z-index: 2;
+  }
+
+  .t-panel[data-live] .t-cert-list button:hover img {
+    scale: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-panel[data-live] .t-cert-list img {
+    transition: none;
+  }
+}
+
+/* The certificate window on the text page: the same case, opened. */
+html:not(.game) .cert-dialog {
+  --ui-bg: #263f6c;
+  --ui-fg: #ffeebe;
+  --ui-line: #dcb55a;
+  --ui-border: 4px;
+  --ui-border-image: none;
+  --ui-shadow: none;
+  --ui-head-bg: #0d0b1a;
+  --ui-kicker: #ffe24d;
+  --ui-mat: #ffeebe;
+  --ui-plate-bg: #b29460;
+  --ui-plate-fg: #2c1c16;
+  --ui-plate-title: #2c1c16;
+  --ui-backdrop: rgb(13 11 26 / 0.86);
+  --ui-title-font: var(--font-pixel);
+  --ui-title-size: 24px;
+  --ui-close-bg: #0d0b1a;
+  --ui-close-fg: #ffeebe;
+  --ui-close-line: #dcb55a;
+}
+
+/* The game hides its panels' close buttons on the page; the window keeps its own. */
+html:not(.game) .cert-dialog .gpanel-close {
+  display: inline-flex;
+}
+
+html:not(.game) .cert-dialog .gpanel-close:hover {
+  color: #ffe24d;
+  border-color: #ffe24d;
+}
+
+html:not(.game) .cert-group {
+  font-size: 24px;
+  letter-spacing: 0.06em;
+}
+
+/* Room under the picture for its plate and the steps. */
+html:not(.game) .cert-frame img {
+  max-height: calc(94dvh - 330px);
+}
+
+.cert-shelf {
+  min-height: 0;
+  padding: 20px;
+  overflow: auto;
+}
+
+.cert-shelf[hidden],
+.cert-large[hidden],
+.cert-step[hidden],
+.cert-count[hidden] {
+  display: none;
+}
+
+.cert-large {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cert-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0 16px 16px;
+}
+
+.cert-step-gap {
+  flex: 1;
+}
+
+.cert-step {
+  min-height: 40px;
+  padding: 4px 14px 6px;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 1;
+  color: #2c1c16;
+  background: #dcb55a;
+  border: 0;
+  box-shadow: inset 0 -4px 0 #96781e;
+}
+
+.cert-step:hover,
+.cert-step:focus-visible {
+  background: #ffe24d;
+}
+
+.cert-count {
+  min-width: 4ch;
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  text-align: center;
+}
+
+/* ---------- Post office: an airmail form ----------
+ * Cream paper inside a border of red and blue chevrons (a pixel tile), a stamp in its corner; the
+ * fields are ruled lines to write on. */
+
+.t-panel[data-material="airmail"] {
+  min-height: 460px; /* as tall as the letter form, whichever tab is out, so the stamp clears the list */
+  padding: 12px;
+  color: #2c1c16;
+  background: #ffeebe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Crect x='0' y='0' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='6' y='0' width='3' height='1' fill='%233c6198'/%3E%3Crect x='0' y='1' width='2' height='1' fill='%23ff463c'/%3E%3Crect x='5' y='1' width='3' height='1' fill='%233c6198'/%3E%3Crect x='11' y='1' width='1' height='1' fill='%23ff463c'/%3E%3Crect x='0' y='2' width='1' height='1' fill='%23ff463c'/%3E%3Crect x='4' y='2' width='3' height='1' fill='%233c6198'/%3E%3Crect x='10' y='2' width='2' height='1' fill='%23ff463c'/%3E%3Crect x='3' y='3' width='3' height='1' fill='%233c6198'/%3E%3Crect x='9' y='3' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='2' y='4' width='3' height='1' fill='%233c6198'/%3E%3Crect x='8' y='4' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='1' y='5' width='3' height='1' fill='%233c6198'/%3E%3Crect x='7' y='5' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='0' y='6' width='3' height='1' fill='%233c6198'/%3E%3Crect x='6' y='6' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='0' y='7' width='2' height='1' fill='%233c6198'/%3E%3Crect x='5' y='7' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='11' y='7' width='1' height='1' fill='%233c6198'/%3E%3Crect x='0' y='8' width='1' height='1' fill='%233c6198'/%3E%3Crect x='4' y='8' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='10' y='8' width='2' height='1' fill='%233c6198'/%3E%3Crect x='3' y='9' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='9' y='9' width='3' height='1' fill='%233c6198'/%3E%3Crect x='2' y='10' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='8' y='10' width='3' height='1' fill='%233c6198'/%3E%3Crect x='1' y='11' width='3' height='1' fill='%23ff463c'/%3E%3Crect x='7' y='11' width='3' height='1' fill='%233c6198'/%3E%3C/svg%3E") 0 0 / 24px 24px;
+  clip-path: var(--step-2);
+}
+
+.t-panel[data-material="airmail"] .t-sign {
+  margin-bottom: 12px;
+}
+
+.t-panel[data-material="airmail"] .t-panel-body {
+  position: relative;
+  grid-template-columns: 176px minmax(0, 1fr);
+  background: #ffeebe;
+  box-shadow: inset 0 0 0 2px #dcbb85;
+}
+
+.t-panel[data-material="airmail"] .t-items {
+  padding: 12px 0;
+  border-right: 2px solid #dcbb85;
+}
+
+.t-panel[data-material="airmail"] .t-item {
+  grid-template-columns: 14px 1fr;
+  color: #3c6198;
+}
+
+.t-panel[data-material="airmail"] .t-item::before {
+  content: "\25B6\FE0E";
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1.5;
+  visibility: hidden;
+}
+
+.t-panel[data-material="airmail"] .t-item-name {
+  grid-column: 2;
+}
+
+.t-panel[data-material="airmail"] .t-item[aria-pressed="true"] {
+  color: #8c1c24;
+}
+
+.t-panel[data-material="airmail"] .t-item[aria-pressed="true"]::before {
+  visibility: visible;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .t-panel[data-material="airmail"] .t-item:hover {
+    color: #8c1c24;
+  }
+}
+
+/* The stamp: the envelope on blue, a white border, its edge perforated. */
+.t-airstamp {
+  position: absolute;
+  bottom: 22px;
+  left: 34px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 72px;
+  background: #3c6198;
+  box-shadow: inset 0 0 0 6px #ffffff;
+  outline: 4px dashed #ffeebe;
+  outline-offset: -2px;
+}
+
+.t-airstamp img {
+  image-rendering: pixelated;
+}
+
+.t-panel[data-material="airmail"] .t-detail {
+  padding: 14px 20px 14px 22px;
+}
+
+.tsite .t-panel[data-material="airmail"] .t-form .field {
+  color: #2c1c16;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid #b29460;
+}
+
+.tsite .t-panel[data-material="airmail"] .t-form .field:focus {
+  border-bottom-color: #3c6198;
+  outline: none;
+}
+
+.tsite .t-panel[data-material="airmail"] .t-form .field-label {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #8c1c24;
+}
+
+.tsite .t-panel[data-material="airmail"] .t-form textarea.field {
+  height: 116px;
+  min-height: 88px;
+  background: repeating-linear-gradient(transparent 0 26px, #dcbb85 26px 28px);
+  line-height: 28px;
+}
+
+.tsite .t-panel[data-material="airmail"] .t-form .font-mono {
+  color: #5c4042;
+}
+
+.t-panel[data-material="airmail"] .t-lines > div {
+  padding: 10px 0;
+  border-bottom: 2px solid #dcbb85;
+}
+
+.t-panel[data-material="airmail"] .t-lines dt {
+  color: #8c1c24;
+}
+
+.t-panel[data-material="airmail"] .t-lines a {
+  color: #263f6c;
+}
+
+/* Testimonials: none yet, and none made up. The note, and COMING SOON rubber-stamped in red. */
+.t-soon p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #2c1c16;
+}
+
+.t-soon .t-soon-stamp {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 4px 12px 6px;
+  font-family: var(--font-pixel);
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c8372d;
+  border: 2px solid currentColor;
+  box-shadow: 0 0 0 2px #fff1d2, 0 0 0 4px currentColor;
+  rotate: -4deg;
+}
+
+/* --- Footer --- */
+
+.t-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  padding: 28px max(16px, calc((100% - 1240px) / 2));
+  background: var(--color-card);
+  border-top: 2px solid var(--color-rule);
+}
+
+/* Wide screens have the sidebar's Change UI at hand; the footer's would be the same button twice. */
+@media (min-width: 1181px) {
+  .t-footer [data-change-ui] {
+    display: none;
+  }
+}
+
+.t-footer p {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  color: var(--color-soft);
+}
+
+/* --- Narrower screens --- */
+
+@media (max-width: 900px) {
+  .t-stage-title .t-title,
+  .t-project-title {
+    font-size: 32px;
+  }
+
+  .t-stage-title .t-title {
+    line-height: 48px;
+  }
+
+  .t-column {
+    padding-top: 36px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* The sign lettering is wide: on a phone the titles step down a size, and a word too long for its
+     cell breaks rather than pushing the page sideways. */
+  .t-stage-title .t-title,
+  .t-project-title {
+    font-size: 24px;
+  }
+
+  .t-stage-title .t-title {
+    line-height: 40px;
+  }
+
+  .t-title,
+  .t-project-title {
+    overflow-wrap: anywhere;
+  }
+
+  .t-facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
+
+/* Code in a write-up keeps a monospace (it is code), the system one: IBM Plex Mono is gone from this page. */
+.tsite code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+/* The contact form's status line, in the reading face. */
+.tsite .t-form .font-mono {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+/* ---------- The rooms on narrower screens ----------
+ * From 900px the panel stays over its room (at most the room's width less 40px), the titles a size
+ * down. Below 900px the room keeps its 2x art and scrolls sideways in its frame (opened at its
+ * focus by textpanels.ts), and the panel follows under it at full width: list first, then detail. */
+
+@media (max-width: 1180px) {
+  .t-stage-title .t-title {
+    font-size: 32px;
+    line-height: 48px;
+  }
+}
+
+@media (max-width: 899px) {
+  .t-stage {
+    display: block;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .t-stage-frame {
+    display: block;
+    overflow: auto hidden;
+    overscroll-behavior-x: contain;
+  }
+
+  .t-stage-art {
+    margin-left: 0;
+  }
+
+  /* Here the whole room scrolls sideways in its frame (opened at its focus), so nothing is cut off. */
+  .t-stage[data-crop] .t-stage-art {
+    clip-path: none;
+  }
+
+  .t-stage-title {
+    top: 16px;
+    left: 16px;
+    right: auto;
+    flex-wrap: wrap;
+    max-width: calc(100% - 32px);
+  }
+
+  .t-stage-title[data-side="right"] {
+    right: auto;
+  }
+
+  /* justify-self also applies in block layout now: the side rule above would shrink the panel to its
+     content (Awards and Contact came out two-thirds wide), so it stretches back here. */
+  .t-stage[data-panel-side] > .t-panel {
+    justify-self: stretch;
+  }
+
+  .t-stage > .t-panel {
+    position: static;
+    width: auto;
+    max-height: none;
+    margin: 0;
+  }
+
+  .t-stage .t-panel[data-material] .t-panel-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .t-stage .t-panel[data-material] .t-items {
+    border-right: 0;
+  }
+
+  .t-stage .t-panel[data-material] .t-details {
+    overflow: visible;
+  }
+
+  .t-airstamp {
+    display: none;
+  }
+}
+
+/* On a phone the deck has room for the two buttons only; the Stack tab lists the stack. The room is
+   a strip of its top 368px (walls, boards, cabinets; most of the floor goes), so the panel's words
+   come sooner: still sideways-scrollable, and every thing to point at stays above the cut (the
+   lowest, the arcade's cabinets and the room's props, end at 364px). */
+@media (max-width: 600px) {
+  .t-stage-frame {
+    height: 368px;
+  }
+
+  .t-panel[data-material="cabinet"] .t-stack-plate {
+    display: none;
+  }
+
+  .t-panel[data-material="cabinet"] .t-actions .t-textlink {
+    min-width: 0;
+    white-space: normal;
+    text-align: left;
+  }
+}
+
+
+/* ---------- The 404 (src/pages/404.astro): a card returned to sender, on the same dark ground ---------- */
+
+html:not([data-playable]),
+html:not([data-playable]) body {
+  background: var(--color-ground);
+}
+
+/* The old site's dot field and vignette stay off here too. */
+html:not([data-playable]) body::before,
+html:not([data-playable]) body::after {
+  display: none;
+}
+
+.t-404 {
+  display: grid;
+  gap: 32px;
+  color: var(--color-text);
+}
+
+.t-404-mark {
+  justify-self: start;
+}
+
+.t-404-card {
+  display: grid;
+  gap: 16px;
+  padding: 40px;
+  background: var(--color-card);
+  border-top: 4px solid var(--sign);
+}
+
+.t-404-card p {
+  margin: 0;
+  max-width: 48ch;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.t-404-postmark {
+  justify-self: start;
+  padding: 6px 10px;
+  font-family: var(--font-pixel);
+  font-size: 20px !important;
+  line-height: 1 !important;
+  color: var(--sign);
+  border: 2px solid currentColor;
+}
+
+.t-404-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .t-404-card {
+    padding: 28px 20px;
+  }
+}
+
+/* The contact form's send button speaks like the other buttons: the pixel label face. */
+.tsite .t-form button[type="submit"] {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* A certificate up close on a phone on its side (both versions): some 360px of height is too
+   little for the picture over its plate and the buttons, and the picture ran under the plate.
+   The picture takes the left, the plate and the buttons stand beside it. (html[data-scene]: above
+   the trophy shop's own short-screen margins, src/pages/credentials.astro.) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .cert-large:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: start;
+    overflow: auto;
+  }
+
+  html[data-scene] .cert-dialog .cert-large .cert-frame {
+    grid-row: 1 / 3;
+    margin-bottom: 16px;
+  }
+
+  html[data-scene] .cert-dialog .cert-large .cert-frame img {
+    max-height: calc(94dvh - 140px);
+  }
+
+  html[data-scene] .cert-dialog .cert-large .cert-plate {
+    align-self: start;
+    min-width: 0;
+    margin: 16px 16px 12px 0;
+  }
+
+  .cert-large .cert-steps {
+    grid-column: 2;
+    align-self: start;
+    margin-left: 0;
+  }
+}
+
+/* A project's Prev / Next: a phone's only (textpanels.ts pageProject). */
+.t-pager {
+  display: none;
+}
+
+/* ---------- Phones (Russell, 2026-11-18) ----------
+ * The rooms and the street are drawn whole, zoomed out to the screen (textpanels.ts fitArt), the
+ * panels' lists are a row of tabs over the detail, the six places are tiles, and the corkboard's
+ * Reach me lines are plain links. The credentials case opens a folder under its own tab. */
+@media (max-width: 600px) {
+  /* A room zoomed to the width: the whole of it, no sideways scrolling. */
+  .t-stage[data-fit] .t-stage-frame {
+    height: auto;
+    overflow: hidden;
+  }
+
+  /* Cropped, not redrawn (Russell, 2026-11-18): each room loses the bottom of its floor (every
+     thing to point at ends by 364px), and his room also loses the sky over its roof (the negative
+     margin takes it off the frame's height too). Lengths are the art's own 2x px: its zoom scales
+     them with it. The street is not a .t-stage, so it keeps all of its art. */
+  .t-stage[data-fit] .t-stage-art {
+    height: 440px;
+  }
+
+  [data-place="home"] .t-stage[data-fit] .t-stage-art {
+    margin-top: -86px;
+  }
+
+  /* Its title stays a plate in the corner, sized to the smaller room. */
+  .t-stage[data-fit] .t-stage-title {
+    top: 8px;
+    left: 8px;
+  }
+
+  .t-stage[data-fit] .t-stage-title .t-title {
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  /* The six places: two columns of tiles, each with its sign's colour down its side. */
+  .t-front-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .t-front-list a {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 12px;
+    font-size: 20px;
+    background: var(--color-card);
+    border: 2px solid var(--color-rule);
+    border-left: 6px solid var(--sign);
+  }
+
+  .t-front-list .t-sq {
+    display: none;
+  }
+
+  /* The postcard's bar sits over a shorter street: a size down. */
+  .t-front-bar {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+  }
+
+  /* Reach me: each line a link that says where it goes. */
+  .t-lines-handle,
+  .t-lines dt {
+    display: none;
+  }
+
+  .t-lines-name {
+    display: inline;
+  }
+
+  .t-panel[data-material] .t-lines > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .t-panel[data-material] .t-lines a {
+    font-size: 17px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  /* The list as tabs: one row that wraps, the picked tab marked as it is wider up. The group
+     heads ("Finished") and the lines under the names give way; each detail says them again. */
+  .t-stage .t-panel[data-live][data-split] .t-panel-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .t-panel[data-live][data-split] .t-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 0;
+  }
+
+  .t-panel[data-live][data-split] :is(.t-item-group, .t-item-group ul) {
+    display: contents;
+  }
+
+  .t-panel[data-live][data-split] .t-item-group li {
+    margin: 0;
+  }
+
+  .t-panel[data-live][data-split] :is(.t-item-head, .t-item-line) {
+    display: none;
+  }
+
+  .t-panel[data-live][data-split] .t-item {
+    width: auto;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 10px;
+  }
+
+  /* The corkboard's sheets end on an empty ruled line, so the last words do not sit on the edge. */
+  .t-panel[data-material="cork"] .t-detail:is([data-detail="letter"], [data-detail="off-the-clock"]) {
+    padding-bottom: 28px;
+  }
+
+  /* A project's pages: Prev, where you are, Next (textpanels.ts pageProject). */
+  .t-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 20px 0 4px;
+    padding-top: 14px;
+    border-top: 2px dashed var(--color-plate-line);
+  }
+
+  .t-pager-btn {
+    min-height: 44px;
+    padding: 0 12px;
+    font-family: var(--font-pixel);
+    font-size: 20px;
+    color: var(--color-heading);
+    background: var(--color-card);
+    border: 2px solid var(--color-rule);
+    box-shadow: 0 3px 0 #000;
+  }
+
+  .t-pager-btn:active {
+    translate: 0 3px;
+    box-shadow: none;
+  }
+
+  .t-pager-btn:disabled {
+    opacity: 0.35;
+  }
+
+  .t-pager-count {
+    flex: 1;
+    font-family: var(--font-pixel);
+    font-size: 18px;
+    text-align: center;
+    color: var(--color-soft);
+  }
+
+  /* The credentials case: tabs and folders flow together, each folder right under its own tab
+     (textpanels.ts orderInline sets the order). Its group head stays, a row of its own. */
+  .t-panel[data-material="case"][data-live] .t-panel-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .t-panel[data-material="case"][data-live] :is(.t-items, .t-details) {
+    display: contents;
+  }
+
+  .t-panel[data-material="case"][data-live] .t-item-head {
+    display: block;
+    flex-basis: 100%;
+    margin: 8px 0 0;
+  }
+
+  .t-panel[data-material="case"][data-live] .t-detail:not([hidden]) {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+}

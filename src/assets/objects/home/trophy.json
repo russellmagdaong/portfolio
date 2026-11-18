@@ -1,0 +1,29 @@
+{
+  "source": "art/objects/home/trophy.aseprite",
+  "width": 20,
+  "height": 22,
+  "columns": 1,
+  "rows": 1,
+  "origin": {
+    "x": 10,
+    "y": 21
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 3,
+      "y": 20,
+      "width": 14,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+---
+/**
+ * The panel hung over a place's room: its shop sign, a list of what is inside, and one detail per
+ * item (each from the named slot of the item's key). Without JavaScript every detail shows, in
+ * order. src/game/textpanels.ts makes it live (data-live): one detail at a time, chosen by resting
+ * the pointer on an item or on a thing in the room, by click or by focus.
+ *
+ * split=false (the store's tools) has no list: every detail shows, and pointing at a thing in the
+ * room marks its group. Each room draws the panel in its own material (data-material); styles:
+ * .t-panel* in src/styles/text.css.
+ */
+import type { ImageMetadata } from 'astro';
+import PanelSign from './PanelSign.astro';
+
+export interface PanelItem {
+  /** The detail's slot name: the spot id it holds where it has one. */
+  key: string;
+  label: string;
+  /** A few words under the label. */
+  line?: string;
+  /** A heading the item sits under in the list ("Finished"). */
+  group?: string;
+  /** A certificate folder: the item is that folder's plaque, and a click opens its window. */
+  cert?: string;
+}
+
+interface Props {
+  place: string;
+  /** The sign's word. */
+  word: string;
+  material: 'cork' | 'chalk' | 'cabinet' | 'pegboard' | 'case' | 'airmail';
+  items: PanelItem[];
+  split?: boolean;
+}
+
+const { place, word, material, items, split = true } = Astro.props;
+const details = await Promise.all(items.map(async (item) => ({ ...item, html: await Astro.slots.render(item.key) })));
+const groups = items.reduce<{ name?: string; items: PanelItem[] }[]>((all, item) => {
+  const last = all.at(-1);
+  if (last && last.name === item.group) last.items.push(item);
+  else all.push({ name: item.group, items: [item] });
+  return all;
+}, []);
+const idOf = (key: string) => `t-${place}-${key}`;
+// The cabinet's control deck carries the sign's icon as its joystick; the airmail form, as its stamp.
+const logos = import.meta.glob<{ default: ImageMetadata }>('../../assets/sign-logos/*.png', { eager: true });
+const logo = logos[`../../assets/sign-logos/${place}.png`]?.default;
+---
+
+<div class="t-panel" data-panel data-material={material} data-split={split ? '' : undefined} data-sign={place}>
+  <PanelSign place={place} word={word} />
+  {material === 'cabinet' && <div class="t-bulbs" aria-hidden="true" />}
+  <div class="t-panel-body">
+    {
+      split && (
+        <div class="t-items">
+          {groups.map((g) => (
+            <div class="t-item-group">
+              {g.name && <p class="t-item-head">{g.name}</p>}
+              <ul>
+                {g.items.map((item, i) => (
+                  <li>
+                    <button type="button" class="t-item" data-item={item.key} aria-controls={idOf(item.key)} data-cert-category={item.cert} aria-pressed={i === 0 && g === groups[0] ? 'true' : 'false'}>
+                      <span class="t-item-name">{item.label}</span>
+                      {item.line && <span class="t-item-line">{item.line}</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    <div class="t-details" aria-live="off">
+      {details.map((d) => <div class="t-detail" id={idOf(d.key)} data-detail={d.key} set:html={d.html} />)}
+    </div>
+  </div>
+  {
+    material === 'airmail' && logo && (
+      <div class="t-airstamp" aria-hidden="true">
+        <img src={logo.src} alt="" width={logo.width * 4} height={logo.height * 4} />
+      </div>
+    )
+  }
+  {
+    material === 'cabinet' && (
+      <div class="t-deck" aria-hidden="true">
+        {logo && <img src={logo.src} alt="" width={logo.width * 4} height={logo.height * 4} />}
+      </div>
+    )
+  }
+</div>

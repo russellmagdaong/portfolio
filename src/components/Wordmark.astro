@@ -1,0 +1,26 @@
+---
+/**
+ * The site's mark: RUSSM in the sign lettering (--font-title). Sizes are the lettering's crisp ones.
+ */
+import { site } from '../data/site';
+
+interface Props {
+  size?: 16 | 24 | 32 | 48 | 64;
+  class?: string;
+}
+
+const { size = 32, class: className } = Astro.props;
+---
+
+<span class:list={['wordmark', className]} style={`font-size: ${size}px`}>{site.handle}</span>
+
+<style>
+  .wordmark {
+    font-family: var(--font-title);
+    font-weight: 400;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--color-heading);
+    white-space: nowrap;
+  }
+</style>

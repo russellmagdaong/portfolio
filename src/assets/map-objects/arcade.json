@@ -1,0 +1,35 @@
+{
+  "source": "art/map-objects/arcade.aseprite",
+  "width": 58,
+  "height": 48,
+  "columns": 1,
+  "rows": 2,
+  "origin": {
+    "x": 29,
+    "y": 47
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    },
+    "hover": {
+      "row": 1,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 1,
+      "y": 46,
+      "width": 56,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

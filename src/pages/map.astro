@@ -1,0 +1,25 @@
+---
+// The street (the hub): every place, side by side under the skyway.
+import Game from '../layouts/Game.astro';
+import { places } from '../game/places';
+import { hubConfig } from '../game/config';
+---
+
+<Game
+  title="The street"
+  description="The street: Russell's room, the school, the arcade, the PC repair shop, the trophy shop and the post office."
+  config={hubConfig()}
+  here={places.map((p) => ({ id: p.id, label: p.label }))}
+>
+  <!-- The text version of the street: where every place goes. -->
+  <ul class="text-only glist mt-8">
+    {
+      places.map((p) => (
+        <li>
+          <a href={p.path} class="text-cyan">{p.label}</a>
+          <span class="text-muted"> · {p.title}</span>
+        </li>
+      ))
+    }
+  </ul>
+</Game>

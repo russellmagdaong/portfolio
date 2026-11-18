@@ -5,8 +5,14 @@ agents, Codex) look like one place. How the files are set up is in [README.md](R
 
 ## The place
 
-A made-up neighbourhood in Manila, at night. Warm windows and sodium streetlights against a deep violet sky,
-neon over the shops, wires everywhere. It is lived in and a little cluttered, never grim.
+**Cyberpunk Manila**: a made-up Manila neighbourhood, at night, a few decades from now. The old barangay is
+still there (sari-sari stores, jeepneys, tangled wires, corrugated roofs) but tech has been bolted onto it: neon
+and holographic signs stacked over the shops, LED strips on jeepneys, screens in windows, cables and junction
+boxes everywhere, wet streets that reflect the signs. It is lived in, a little cluttered and friendly, never grim
+or dystopian, and still clearly Filipino, not a generic Tokyo or Blade Runner copy.
+
+The mood comes from the contrast: **warm, homely, low-tech** close up (sodium light, wood, plants, plastic
+chairs) against **cold neon and hologram glow** above and behind it (pink, cyan, violet).
 
 The point of view and density come from the Scott Pilgrim game: side-on, slightly from above, every surface busy
 with small things. Take the **view and the density only**. Its levels, characters, signs and Toronto are not to be
@@ -16,6 +22,12 @@ Things that belong here (pick, don't use all of them at once): sari-sari stores 
 hanging in it, jeepneys and tricycles, electric posts with tangled wires, capiz-shell windows, corrugated roofs
 with rust, potted plants on every ledge, a karinderya with pots on the counter, a basketball hoop nailed to a
 post, banderitas (fiesta bunting), plastic chairs, stray cats, a water tank on a roof.
+
+The cyberpunk layer on top (again, pick a few per scene): jeepneys with LED trim and a glowing route display,
+neon and hologram signs in English, a vending machine glowing in a corner, satellite dishes and antennas crowding
+the rooftops, a drone or two, an elevated rail or skyway in the far layer, puddles reflecting neon, banderitas
+made of small LED flags, a sari-sari store with a card reader and a screen menu, CRT and flat screens stacked in
+windows, exposed cables and junction boxes on posts.
 
 ## Pixel scale
 
@@ -56,6 +68,12 @@ post, banderitas (fiesta bunting), plastic chairs, stray cats, a water tank on a
   note on the `_guide` layer so whoever touches the scene next keeps it.
 - Light from above unless a source says otherwise. Floors get pools of light under lamps.
 - Neon throws its colour onto the wall right around the tube (one ring of the dim shade), no further.
+- **Each scene gets one neon or hologram colour as its accent** (for example the arcade pink and cyan, the
+  store green), as well as the warm main light. Two neon colours per screen at most, or it turns to noise.
+- **Wet ground:** streets and outdoor floors may show reflections of the signs above, as broken horizontal
+  strokes of the dim neon shade, mirrored under the sign. Indoor floors stay dry.
+- **Holograms:** draw them in `holo` colours with every other row skipped (a scanline gap), and give them a
+  1-row flicker offset in one frame of their animation.
 - Russell's colours are fixed, so the floor band he walks over must stay mid-dark (concrete 3 to 5, wood 2 to 3),
   so his black outline and khaki trousers read against it.
 
@@ -68,6 +86,27 @@ post, banderitas (fiesta bunting), plastic chairs, stray cats, a water tank on a
 - Distance flattens colour: `far` uses only the sky colours and concrete 1-3; `mid` goes up to concrete 4;
   the near layers use the full range. The brightest colours (sodium 5, neon tubes, white) are for light sources
   and small glints only.
+
+## Density (the first pass was too simple)
+
+The two mood references are `art/_work/refs/skyline-rain.png` (fogged towers, vertical neon, a monorail, rain)
+and `art/_work/refs/market-street.png` (a street crammed with shopfronts, vending machines, lit-box signs, pipes,
+posters and wet tiles). Study them; never trace or copy them, and keep them in `_work/`. What makes them work:
+
+- **Depth by fog.** Three or more skyline layers, each further one flatter, bluer and lower in contrast, until the
+  last is a silhouette barely darker than the sky. Lit windows get fewer and dimmer with distance.
+- **Many small lights.** Rows of lit windows in uneven patterns (some off, some a different warmth), red blinking
+  lights on antennas, small cyan and green status LEDs on walls and machines.
+- **No empty surfaces.** Every wall has something at three sizes: big (a sign, a shutter, a window), medium
+  (an AC unit, a vent, a poster, a pipe run, a vending machine) and small (stickers, bolts, cables, a meter,
+  a crack, a drip stain). Wall panels show seams and slightly different shades.
+- **Sign clutter.** Several signs per shopfront at different sizes, some lit, some dead or half-lit.
+- **Wet world.** Rain as thin diagonal streaks on a `front` or `sky` layer, puddles that reflect the signs, a
+  sheen line along the top edges of things.
+- **Overhead clutter.** Wires, cables, a canopy edge or a pipe crossing the top of the frame in front of
+  everything.
+- **Readable despite it all:** keep the floor band calmer than the walls, and keep a quiet area around every
+  `object:` thing so it stands out (its outline and glint do the rest).
 
 ## Lines and shading
 
@@ -84,8 +123,10 @@ post, banderitas (fiesta bunting), plastic chairs, stray cats, a water tank on a
 - Signs are hand-painted in style: blocky, slightly uneven, painted, not printed.
 - Use a pixel alphabet: **3x5 capitals** for small text, **5x7** for big signs, 1 px between letters.
   Keep one alphabet per size across all scenes (copy the letters from a scene that has them).
-- Tagalog and Taglish signs are welcome: "SARI-SARI STORE", "BAWAL TUMAMBAY DITO", "PASADA", jeepney route boards
-  ("QUIAPO - CUBAO").
+- **Signs are in English** (Russell, 2026-11-16). Manila comes through in what is shown (jeepneys, sari-sari
+  goods, banderitas), not in sign language. Place names may stay as they are (a route board "QUIAPO - CUBAO").
+- Neon signs can also be **vertical** (letters stacked, as on the tall tower in `skyline-rain`) and lit-box signs
+  can carry a small picture next to the word (as "BEST TASTE" in `market-street`).
 - **No real brands, logos, trademarks or real businesses.** Invent names.
 - Text the visitor has to read (project names, descriptions, links) goes in the HTML panels, not in the art.
   Building names on signs are fine.

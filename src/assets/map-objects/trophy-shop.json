@@ -1,0 +1,35 @@
+{
+  "source": "art/map-objects/trophy-shop.aseprite",
+  "width": 54,
+  "height": 37,
+  "columns": 1,
+  "rows": 2,
+  "origin": {
+    "x": 27,
+    "y": 36
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    },
+    "hover": {
+      "row": 1,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 2,
+      "y": 35,
+      "width": 50,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

@@ -5,7 +5,10 @@ Agreed with Russell on 2026-11-15. Keep this file up to date as phases finish (s
 ## The idea
 
 The site becomes a small 2D pixel game:
-- A **top-down town map** of a made-up Manila neighbourhood at night works as the dashboard.
+- ~~A top-down town map~~ **Changed 2026-11-16: the map is replaced by a front-view hub**, a side-on street in a made-up **cyberpunk Manila** at night (see `art/BRIEF.md`), which works as the dashboard.
+  - It is drawn in `art/hub.aseprite`, from Codex's concept D (a market under a skyway), with the six destinations as `art/hub-objects/<id>.aseprite`.
+  - Russell walks on two levels, the sidewalk and the upper landings, joined by a footbridge between Home and School and by two stairways. The slices are set out in `art/README.md`, "The hub".
+  - The top-down sprite (`russell-map.aseprite`) and the `map*.aseprite` files are no longer used; the hub uses the side-on sprite.
 - Each building on the map opens a **side-on scene** for one part of the portfolio.
 - The scenes use the Scott Pilgrim game as the reference for point of view and environment building: side-on, slightly from above, with a visible floor you can move along in depth, and dense street detail. Take the view and the density from it, not its levels, characters or Toronto. The place is original.
 - The player is a pixel sprite of Russell.
@@ -25,17 +28,20 @@ All content comes from `src/data/site.ts` and `src/content/projects/`, as it doe
 
 ## Controls
 
-**Map:**
-- Click or tap a building: the player walks there along the paths and goes in.
-- Arrows/WASD move between buildings; Enter or Space goes in.
+Changed after Russell's phase 3 review (2026-11-16): the map is click-only, the wheel no longer walks, there is no scroll bar, running is the default, and most content is shown in the scene instead of in panels.
+
+**The hub (/map), from 2026-11-16:**
+- The same controls as a scene, with the side-on sprite: A/D or arrows run, Shift walks, **W at the foot of a stairway climbs it and S at the top goes down**; click or tap the ground to run there (it takes the stairs if the spot is on the other level).
+- Click or tap one of the six destinations (or its name tag, or a "Go to" button): he runs to its `door:` and goes in. **E** at a door goes in.
+- The **Home** button (and Esc) runs him to Home's door and in. Leaving any place puts him outside its door on the hub.
 
 **Scenes:**
-- A/D or ←/→ walk; W/S or ↑/↓ move along the floor's depth; Shift runs; **Space jumps**.
-- **Mouse wheel / trackpad walks too:** scroll down = walk right, scroll up = walk left (the sprite turns to face the way it moves).
-- Scenes are wider than the screen. Each has a **pixel-art scroll bar** at the bottom; **dragging it makes the player run**.
-- Things that open show a key prompt when the player is near. E or Enter opens them; clicking or tapping one walks the player up to it and opens it.
-- Content opens in HTML panels. With the pointer over a panel, the wheel scrolls the panel, not the player.
-- **Leaving:** walk out the exit, press Esc, or use the **Exit button**, which walks the sprite to the exit and goes back to the map. The Exit button is for mouse and phone users.
+- A/D or ←/→ **run** (the default); hold **Shift to walk**; W/S or ↑/↓ move along the floor's depth; **Space jumps**.
+- Click or tap the floor: an arrow marks the spot and the player runs there, **finding a way round** anything in the way (crates, counters).
+- **Most content is part of the scene, readable without opening anything** (`show:<id>` slices): the poster, the PC screen, boards, shelves, plaques, framed certificates. On a phone held upright it is shown under the scene instead.
+- **Props** (`prop:<id>` slices) show a card when pointed at or walked up to: the interests are props (guitar = music, console = games, camera = video, CTF flag, hackathon trophy).
+- **Only arcade-style things open a panel** (`object:<id>`): the project cabinets, the runner cabinet, the mirror, the post office counter (the form). They show a key prompt when the player is near; E or Enter opens them; clicking one runs the player to it and opens it.
+- **Leaving:** walk out the exit, press Esc, or use the **Exit button**, which hurries the sprite to the exit and back to the map.
 
 **Phones get the game:**
 - Tap the floor to walk, tap a thing to open it, Exit button to leave.
@@ -81,9 +87,13 @@ Aseprite is at `C:\aseprite\build\bin\aseprite.exe` (self-built 1.3.16, not on P
   - slice `body` = the runner game's hit box while he is up; slice `slide` = the hit box while he slides.
   - Frames edited by hand in Aseprite are kept when `scripts/sprite/build-russell.lua` runs again.
 - `art/russell-map.aseprite`: the top-down map sprite (Russell drew it himself, 2026-11-16).
-- `art/map.aseprite`:
-  - one slice per building (`building:arcade`, user data `scene=arcade`);
+- `art/map.aseprite`: only the background (ground, roads, paths, and scenery nobody can use). Interactive things are **not** painted into it.
+  - one slice per building spot (`building:arcade`, user data `scene=arcade`) marking where its sprite goes, plus its door point;
   - slices for the points on the paths.
+- `art/map-objects/<id>.aseprite`: **every interactive map element is its own sprite**, drawn on top of the background by the engine. That covers the six buildings plus anything else on the map you can click or that reacts (for example a jeepney or a sign).
+  - Tags for states: `idle`, `hover` (highlight or outline when selected or pointed at), and optional `open` or animated loops (a flickering sign, a door opening).
+  - A transparent background, with a `base` slice marking the point that sits on the map spot, so a sprite can be moved or swapped without repainting the background.
+  - Each exports its own sheet + JSON. The engine places it at its `building:` slice and sorts it by depth (`base` y) so the player can walk behind it.
 - `art/scenes/<scene>.aseprite`:
   - layers by depth; layer user data like `speed=0.3` for background layers that move more slowly;
   - slices: `spawn`, `exit`, `floor` (where you can walk), `platform` (things you can jump onto), and `object:<id>` with user data naming what it opens (for example `opens=project:odin`).
@@ -117,16 +127,16 @@ Aseprite is at `C:\aseprite\build\bin\aseprite.exe` (self-built 1.3.16, not on P
 
 ## Model and effort per phase
 
-Revised 2026-11-16: phase 1 used about 40% of Russell's Fable allowance, so Fable is kept for drawing only.
+Revised again 2026-11-16: Fable used too much of Russell's session limit, so **everything now runs on Opus 5.5 at high**. Codex writes the art concepts. Fable is for a rare rescue only, when a piece keeps failing on Opus.
 
 | Phase | Model | Effort |
 |---|---|---|
-| 1, review fixes | Fable 5.2 | high (all of Russell's notes in one message) |
+| 1, review fixes | Opus 5.5 | high (all of Russell's notes in one message) |
 | 2. Aseprite setup | Opus 5.5 | medium |
 | 3. Engine with placeholders | Opus 5.5 | high |
-| 4. Home and Arcade | Fable 5.2 draws the scenes and the mirror; Opus 5.5 does the wiring (slices to engine, panels, runner cabinet) | high |
+| 4. Home and Arcade | Opus 5.5 draws (from Codex's concepts) and wires them | high |
 | 5. Content | Opus 5.5 | medium |
-| 5. Other scenes and map art | Opus 5.5 draws to the art brief; Fable 5.2 only reworks a scene that falls short. No parallel helper agents | high |
+| 5. Other scenes | Opus 5.5 draws from Codex's concepts. No parallel helper agents | high |
 | 6. Polish | Opus 5.5 | high |
 
 To use less Fable:
@@ -161,7 +171,7 @@ Each phase ends with screenshots for Russell. Use headless Edge as described in 
 
 - [x] 1. Sprite (2026-11-16: Russell redrew the map sprite himself and moved on to phase 2)
 - [x] 2. Aseprite setup (2026-11-16: `art/palette.gpl`, `npm run art`, `scripts/art/new-scene.lua`, `art/README.md` and `art/BRIEF.md`)
-- [ ] 3. Engine with placeholders
+- [ ] 3. Engine with placeholders (2026-11-16: built, reviewed by Russell, and reworked to his notes: click-only scattered map, run by default, pathfinding with a destination arrow, content shown in the scenes, props with cards, turn flip and shadow fixed; waiting on his second look)
 - [ ] 4. Home and Arcade art
-- [ ] 5. Other scenes, map art, content
+- [ ] 5. Other scenes, map art, content (2026-11-16: content done: NOVA added as "now building", ODIN marked defended, project texts rewritten, the arcade split into NOW BUILDING and FINISHED. The type was reworked too: Press Start 2P for big titles only, at 16 or 24 px; Jersey 10 for all UI labels; Plex Sans for reading. Scene art is drawn, and Russell will keep touching it up himself)
 - [ ] 6. Polish

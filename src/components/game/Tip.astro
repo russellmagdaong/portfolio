@@ -1,0 +1,18 @@
+---
+/**
+ * The card a prop shows when it is pointed at or he stands at it (the scene's
+ * prop:<id> slice with tip=<id>). In the text version, the tips are a list.
+ * Put them inside <Tips>.
+ */
+interface Props {
+  id: string;
+  title: string;
+}
+
+const { id, title } = Astro.props;
+---
+
+<li class="tip" data-tip={id}>
+  <h3>{title}</h3>
+  <slot />
+</li>

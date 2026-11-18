@@ -1,0 +1,324 @@
+---
+// Tools: the computer shop. Each group of tools has a board of its own in the room: the games on a
+// CRT television, the web on a monitor's browser, the backend on a terminal, the rest on a whiteboard.
+import Game from '../layouts/Game.astro';
+import Show from '../components/game/Show.astro';
+import { tools } from '../data/site';
+import { url } from '../lib/url';
+import { sceneConfig } from '../game/config';
+
+const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const initials = (name: string) => name.replace(/[^A-Za-z]/g, '').slice(0, 2);
+// The logos are single-colour SVGs used as masks, so they all take one colour.
+const mask = (icon: string) => {
+  const image = `url(${url(`/icons/${icon}.svg`)}) center / contain no-repeat`;
+  return `-webkit-mask: ${image}; mask: ${image};`;
+};
+// Show ids match the show:tools-<group> slices in art/scenes/store.aseprite. Each slice's `look`
+// (crt, browser, terminal, whiteboard) picks its style below, and each slice is sized to its list at
+// 7 art pixels a letter (scripts/art/draw/store.lua): after changing a group in src/data/site.ts,
+// the text still fits (it shrinks), but resize the slice to keep the board snug.
+---
+
+<Game title="Tools" config={sceneConfig('store')}>
+  {
+    tools.map((group) => (
+      <Show id={`tools-${slug(group.group)}`} title={group.group} look="shelf" fit={7}>
+        <ul class="show-goods tool-list" data-accent="cyan">
+          {group.items.map((item) => (
+            <li>
+              {item.icon ? (
+                <span class="show-icon bg-accent" style={mask(item.icon)} />
+              ) : (
+                <span class="show-icon text-accent grid place-items-center font-mono uppercase">{initials(item.name)}</span>
+              )}
+              <span>{item.name}</span>
+            </li>
+          ))}
+        </ul>
+      </Show>
+    ))
+  }
+</Game>
+
+<style is:global>
+  /* ---------- The four boards in the room ----------
+     Colours are from art/palette.gpl. Sizes are in em, so they follow the fitted letter size. */
+  .show.in-world:has(> .tool-list) {
+    padding: calc(var(--px) * 2) calc(var(--px) * 3);
+    line-height: 1;
+    text-shadow: none;
+    cursor: default;
+  }
+
+  .show.in-world:has(> .tool-list) .show-heading {
+    margin: 0 0 0.3em;
+    font-size: 1.34em;
+    white-space: nowrap;
+  }
+
+  .show.in-world .tool-list {
+    /* The logos take their board's colour (set on each look below), not the list's cyan, which
+       vanished on the whiteboard. */
+    --accent: inherit;
+    display: grid;
+    justify-content: start;
+    gap: 0.3em 0.9em;
+  }
+
+  .show.in-world .tool-list li {
+    gap: 0.3em;
+    white-space: nowrap;
+  }
+
+  .show.in-world .tool-list .show-icon {
+    width: 1.17em;
+    height: 1.17em;
+    font-size: 1em;
+    line-height: 1;
+  }
+
+  /* An icon with no logo (GDScript): its two letters, in the pixel font. */
+  .show.in-world .tool-list .show-icon.font-mono {
+    font-family: var(--font-pixel);
+    font-size: 0.84em;
+    width: 1.4em;
+    height: 1.4em;
+    box-shadow: inset 0 0 0 calc(var(--px) * 0.5) currentColor;
+  }
+
+  @keyframes tool-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* Games: the television. A game's menu in phosphor green, a yellow title, scan lines, and a
+     cursor that blinks beside the first entry. */
+  .show.in-world[data-look='crt'] {
+    --accent: #7cf05a;
+    color: #7cf05a;
+    background: repeating-linear-gradient(to bottom, transparent 0 var(--px), rgb(0 0 0 / 0.28) var(--px) calc(var(--px) * 2));
+  }
+
+  .show.in-world[data-look='crt'] .show-heading {
+    color: #ffe24d;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .show.in-world[data-look='crt'] .tool-list li::before {
+    content: '';
+    width: 0.34em;
+    height: 0.5em;
+    margin-right: 0.1em;
+    background: #ffe24d;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    visibility: hidden;
+  }
+
+  .show.in-world[data-look='crt'] .tool-list li:first-child::before {
+    visibility: visible;
+    animation: tool-blink 0.9s steps(1, end) infinite;
+  }
+
+  /* Web: the page in the monitor's browser. Dark type on white, a blue rule under the title, each
+     tool a tag with its logo in a colour of its own. */
+  .show.in-world[data-look='browser'] {
+    --accent: #3c6198;
+    color: #172146;
+  }
+
+  .show.in-world[data-look='browser'] .show-heading {
+    padding-bottom: 0.14em;
+    color: #0d0b1a;
+    border-bottom: var(--px) solid #3c6198;
+  }
+
+  .show.in-world[data-look='browser'] .tool-list {
+    grid-template-columns: repeat(2, max-content);
+    gap: 0.25em 0.4em;
+  }
+
+  .show.in-world[data-look='browser'] .tool-list li {
+    padding: 0.14em 0.34em 0.14em 0.25em;
+    background: #e3e8f0;
+    box-shadow: inset 0 calc(var(--px) * -0.5) 0 #b3b6c9;
+  }
+
+  .show.in-world[data-look='browser'] .tool-list li:nth-child(2) {
+    --accent: #19788c;
+  }
+
+  .show.in-world[data-look='browser'] .tool-list li:nth-child(3) {
+    --accent: #602c96;
+  }
+
+  .show.in-world[data-look='browser'] .tool-list li:nth-child(4) {
+    --accent: #3264aa;
+  }
+
+  /* Backend and data: the wall terminal. A prompt before the title, the list in two columns in
+     green with amber logos, a block cursor after the last entry. */
+  .show.in-world[data-look='terminal'] {
+    --accent: #ffa040;
+    color: #7cf05a;
+  }
+
+  .show.in-world[data-look='terminal'] .show-heading {
+    color: #e4ffd9;
+  }
+
+  .show.in-world[data-look='terminal'] .show-heading::before {
+    content: '$ ls ';
+    color: #28783c;
+  }
+
+  .show.in-world[data-look='terminal'] .tool-list {
+    grid-template-columns: repeat(2, max-content);
+  }
+
+  .show.in-world[data-look='terminal'] .tool-list::after {
+    content: '';
+    align-self: center;
+    width: 0.5em;
+    height: 0.84em;
+    background: #7cf05a;
+    animation: tool-blink 1s steps(1, end) infinite;
+  }
+
+  /* Also comfortable in: the whiteboard. Blue marker, the title in red with a red line under it,
+     the three side by side, each logo in a different marker. */
+  .show.in-world[data-look='whiteboard'] {
+    --accent: #8c1c24;
+    color: #263f6c;
+  }
+
+  .show.in-world[data-look='whiteboard'] .show-heading {
+    width: max-content;
+    padding-bottom: 0.1em;
+    color: #8c1c24;
+    border-bottom: var(--px) solid #ff463c;
+  }
+
+  .show.in-world[data-look='whiteboard'] .tool-list {
+    grid-auto-flow: column;
+    gap: 0 0.8em;
+  }
+
+  .show.in-world[data-look='whiteboard'] .tool-list li:nth-child(2) {
+    --accent: #2c583a;
+  }
+
+  .show.in-world[data-look='whiteboard'] .tool-list li:nth-child(3) {
+    --accent: #3c6198;
+  }
+
+  /* ---------- Popups in the shop: a window on the wall terminal (DB-01) ----------
+     On top of the store block under "Scene themes" in src/styles/game.css: the same --ui-*
+     variables, set again here (with :root, so these win) to match the room as it is drawn now:
+     the terminal's black case, green type, amber keys, a red close button like its title bar's. */
+  html.game[data-scene='store']:root {
+    --ui-bg: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.3) 2px 4px), #0d0b1a;
+    --ui-head-bg: #262538;
+    --ui-line: #35354c;
+    --ui-shadow: 0 0 0 6px #1a1926, 0 0 0 8px #4b4c64, 0 10px 0 8px #000;
+    --ui-rule: #28783c;
+    --ui-fg: #b6e8ad;
+    --ui-strong: #e4ffd9;
+    --ui-muted: #6fa27a;
+    --ui-title: #7cf05a;
+    --ui-title-font: var(--font-pixel);
+    --ui-title-size: 30px;
+    --ui-head-fg: #7cf05a;
+    --ui-kicker: #ffa040;
+    --ui-accent: #7cf05a;
+    --ui-close-bg: #8c1c24;
+    --ui-close-fg: #fff;
+    --ui-close-line: #ff463c;
+    --ui-field-bg: #08130d;
+    --ui-field-fg: #e4ffd9;
+    --ui-field-line: #28783c;
+    --ui-backdrop: rgb(13 11 26 / 0.88);
+    --ui-mat: #000;
+    --ui-plate-bg: #262538;
+    --ui-plate-fg: #b6e8ad;
+    --ui-plate-title: #7cf05a;
+  }
+
+  /* The title as a command at the prompt, with the block cursor after it. */
+  html.game[data-scene='store'] .gpanel-head {
+    align-items: center;
+    padding: 8px 10px 8px 14px;
+  }
+
+  html.game[data-scene='store'] .gpanel-title {
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+  }
+
+  html.game[data-scene='store'] .gpanel-title::before {
+    content: '$ ';
+    color: #28783c;
+  }
+
+  html.game[data-scene='store'] .gpanel-title::after {
+    content: '';
+    display: inline-block;
+    width: 0.5em;
+    height: 0.8em;
+    margin-left: 0.25em;
+    vertical-align: -0.08em;
+    background: #7cf05a;
+    animation: tool-blink 1s steps(1, end) infinite;
+  }
+
+  html.game[data-scene='store'] .gpanel-close:hover {
+    color: #fff;
+    background: #ff463c;
+    border-color: #fff;
+  }
+
+  html.game[data-scene='store'] .gpanel .keycap {
+    color: #ffa040;
+    background: #1a1926;
+  }
+
+  html.game[data-scene='store'] .controls-more {
+    border-top-style: dashed;
+  }
+
+  /* The key prompt and the Exit tag over him: the same green on black. */
+  html.game[data-scene='store'] .prompt {
+    color: #7cf05a;
+    background: #0d0b1a;
+    box-shadow:
+      0 0 0 2px #1a1926,
+      0 4px 0 2px #000;
+  }
+
+  html.game[data-scene='store'] .prompt kbd {
+    color: #0d0b1a;
+    background: #7cf05a;
+  }
+
+  html.game[data-scene='store'] .prompt.exit-tag:is(:hover, :focus-visible) {
+    color: #0d0b1a;
+    background: #7cf05a;
+    border-color: #7cf05a;
+  }
+
+  html.game[data-scene='store'] .prompt.exit-tag:is(:hover, :focus-visible) kbd {
+    color: #7cf05a;
+    background: #0d0b1a;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .show.in-world .tool-list::after,
+    .show.in-world .tool-list li::before,
+    html.game[data-scene='store'] .gpanel-title::after {
+      animation: none !important;
+    }
+  }
+</style>

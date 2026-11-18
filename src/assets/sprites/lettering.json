@@ -1,0 +1,20 @@
+{
+  "source": "art/lettering.aseprite",
+  "width": 192,
+  "height": 112,
+  "columns": 1,
+  "rows": 1,
+  "origin": {
+    "x": 96,
+    "y": 112
+  },
+  "tags": {
+    "default": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": []
+}

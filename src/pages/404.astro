@@ -1,18 +1,22 @@
 ---
-import Base from '../layouts/Base.astro';
+import Game from '../layouts/Game.astro';
 import Icon from '../components/Icon.astro';
-import { url } from '../lib/url';
+import Wordmark from '../components/Wordmark.astro';
+import { MAP_PATH } from '../game/places';
+import { site } from '../data/site';
 ---
 
-<Base title="Page not found">
-  <section class="container-page grid min-h-[72dvh] place-items-center py-16 text-center">
-    <div>
-      <p class="font-mono text-sm tracking-[0.22em] text-magenta uppercase">Error: signal lost</p>
-      <h1 class="glitch mt-6 font-display text-[clamp(4rem,22vw,10rem)] leading-none text-white" data-text="404">
-        404
-      </h1>
-      <p class="mt-4 text-lg text-fg">This page doesn't exist.</p>
-      <a href={url('/')} class="btn btn-solid mt-8" data-accent="acid"><Icon name="play" />Back to start</a>
+<Game title="Page not found">
+  <section class="t-404" data-sign="post-office">
+    <a href="/" class="t-404-mark" aria-label={`${site.name}, home`}><Wordmark size={24} /></a>
+    <div class="t-404-card">
+      <h1 class="t-title">Nobody lives here</h1>
+      <p>This page doesn't exist. Every place is on the street.</p>
+      <p class="t-404-postmark">Returned to sender</p>
+      <div class="t-404-actions">
+        <a href={MAP_PATH} class="t-btn t-btn-primary"><Icon name="play" class="size-4" />The street</a>
+        <a href="/" class="t-textlink">Home</a>
+      </div>
     </div>
   </section>
-</Base>
+</Game>

@@ -1,0 +1,303 @@
+{
+  "source": "art/scenes/home.aseprite",
+  "width": 680,
+  "height": 270,
+  "layers": [
+    {
+      "name": "sky",
+      "image": "sky.png",
+      "x": 0,
+      "y": 0,
+      "width": 680,
+      "height": 270,
+      "frames": 1,
+      "data": {
+        "speed": 0.1
+      }
+    },
+    {
+      "name": "far",
+      "image": "far.png",
+      "x": 0,
+      "y": 58,
+      "width": 680,
+      "height": 82,
+      "frames": 1,
+      "data": {
+        "speed": 0.3
+      }
+    },
+    {
+      "name": "mid",
+      "image": "mid.png",
+      "x": 0,
+      "y": 93,
+      "width": 680,
+      "height": 49,
+      "frames": 1,
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "lights",
+      "image": "lights.png",
+      "x": 172,
+      "y": 97,
+      "width": 385,
+      "height": 17,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 40,
+      "y": 52,
+      "width": 539,
+      "height": 88,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "back",
+      "image": "back.png",
+      "x": 0,
+      "y": 45,
+      "width": 680,
+      "height": 132,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "posters",
+      "image": "posters.png",
+      "x": 3,
+      "y": 96,
+      "width": 141,
+      "height": 53,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "image": "floor.png",
+      "x": 0,
+      "y": 176,
+      "width": 680,
+      "height": 94,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "props",
+      "image": "props.png",
+      "x": 7,
+      "y": 63,
+      "width": 650,
+      "height": 126,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "bed",
+      "image": "bed.png",
+      "x": 28,
+      "y": 142,
+      "width": 128,
+      "height": 75,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "bedends",
+      "image": "bedends.png",
+      "x": 48,
+      "y": 150,
+      "width": 111,
+      "height": 56,
+      "frames": 1,
+      "data": {
+        "sort": 206
+      }
+    },
+    {
+      "name": "couch",
+      "image": "couch.png",
+      "x": 293,
+      "y": 189,
+      "width": 68,
+      "height": 26,
+      "frames": 1,
+      "data": {
+        "sort": 208
+      }
+    },
+    {
+      "name": "front",
+      "image": "front.png",
+      "x": 4,
+      "y": 196,
+      "width": 579,
+      "height": 74,
+      "frames": 1,
+      "data": {
+        "speed": 1.2,
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "floor",
+      "x": 0,
+      "y": 176,
+      "width": 680,
+      "height": 49,
+      "data": {}
+    },
+    {
+      "name": "spawn",
+      "x": 68,
+      "y": 207,
+      "width": 8,
+      "height": 2,
+      "data": {}
+    },
+    {
+      "name": "exit",
+      "x": 668,
+      "y": 176,
+      "width": 12,
+      "height": 49,
+      "data": {
+        "to": "map"
+      }
+    },
+    {
+      "name": "show:corkboard",
+      "x": 48,
+      "y": 95,
+      "width": 96,
+      "height": 64,
+      "data": {
+        "look": "wall"
+      }
+    },
+    {
+      "name": "object:mirror",
+      "x": 164,
+      "y": 138,
+      "width": 30,
+      "height": 44,
+      "data": {
+        "opens": "mirror",
+        "prompt": "De-pixelate"
+      }
+    },
+    {
+      "name": "show:poster",
+      "x": 214,
+      "y": 100,
+      "width": 96,
+      "height": 64,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "show:pc",
+      "x": 330,
+      "y": 108,
+      "width": 84,
+      "height": 56,
+      "data": {
+        "look": "screen"
+      }
+    },
+    {
+      "name": "prop:guitar",
+      "x": 434,
+      "y": 146,
+      "width": 14,
+      "height": 36,
+      "data": {
+        "tip": "music"
+      }
+    },
+    {
+      "name": "prop:console",
+      "x": 468,
+      "y": 166,
+      "width": 24,
+      "height": 16,
+      "data": {
+        "tip": "games"
+      }
+    },
+    {
+      "name": "prop:camera",
+      "x": 498,
+      "y": 156,
+      "width": 16,
+      "height": 26,
+      "data": {
+        "tip": "video"
+      }
+    },
+    {
+      "name": "prop:flag",
+      "x": 520,
+      "y": 142,
+      "width": 14,
+      "height": 40,
+      "data": {
+        "tip": "ctf"
+      }
+    },
+    {
+      "name": "prop:trophy",
+      "x": 540,
+      "y": 162,
+      "width": 14,
+      "height": 20,
+      "data": {
+        "tip": "hackathons"
+      }
+    },
+    {
+      "name": "platform",
+      "x": 296,
+      "y": 196,
+      "width": 62,
+      "height": 18,
+      "data": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "reflect",
+      "x": 168,
+      "y": 142,
+      "width": 22,
+      "height": 36,
+      "data": {}
+    },
+    {
+      "name": "platform",
+      "x": 50,
+      "y": 192,
+      "width": 106,
+      "height": 14,
+      "data": {
+        "depth": 23
+      }
+    }
+  ]
+}

@@ -1,0 +1,276 @@
+---
+// About: the school. The text and the profile are on its boards; its popups are styled at the bottom.
+import Game from '../layouts/Game.astro';
+import Show from '../components/game/Show.astro';
+import Tips from '../components/game/Tips.astro';
+import Tip from '../components/game/Tip.astro';
+import { getEntry } from 'astro:content';
+import { about } from '../data/site';
+import { sceneConfig } from '../game/config';
+
+// The thesis on the bookshelf (prop:thesis in art/scenes/school.aseprite) shows this card.
+const thesis = await getEntry('projects', 'odin');
+if (!thesis) throw new Error('src/content/projects/odin.md is missing');
+---
+
+<Game title="About" config={sceneConfig('school')}>
+  <Show id="about" title="About me" note="4th year · FEU Tech" fit>
+    {about.paragraphs.map((paragraph, i) => <p class:list={['show-p', { 'show-lead': i === 0 }]}>{paragraph}</p>)}
+  </Show>
+
+  <Show id="profile" title="Profile" note="DOST-SEI scholar" fit>
+    <dl class="show-stats">
+      {
+        about.stats.map((stat) => (
+          <div>
+            <dt>{stat.label}</dt>
+            <dd>{stat.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </Show>
+
+  <Tips title="On the bookshelf">
+    <Tip id="thesis" title={`My thesis: ${thesis.data.title}`}>
+      <p>{thesis.data.tagline}</p>
+      {thesis.data.meta && <p>{thesis.data.meta}</p>}
+    </Tip>
+  </Tips>
+</Game>
+
+<style is:global>
+  /* The school's boards in the room: the title on a dark wooden label, a rule under it, a note on
+     the right. Colours are from art/palette.gpl (wood 2, sodium 4, rust dark). */
+  .show:is([data-show='about'], [data-show='profile']).in-world .show-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin: 0 0 0.35em;
+    padding-bottom: 0.2em;
+    border-bottom: var(--px) solid rgb(74 46 31 / 0.45);
+  }
+
+  :is([data-show='about'], [data-show='profile']).in-world .show-heading-text {
+    padding: 0.08em 0.3em 0.04em;
+    background: #4a2e1f;
+    color: #ffcd78;
+    box-shadow: var(--px) var(--px) 0 rgb(13 11 26 / 0.35);
+  }
+
+  :is([data-show='about'], [data-show='profile']).in-world .show-note {
+    margin-left: auto;
+    font-size: 0.5em;
+    color: #833b1d;
+    white-space: nowrap;
+  }
+
+  [data-show='about'].in-world .show-lead {
+    font-size: 1.15em;
+    color: #4a2e1f;
+  }
+
+  /* The About board is the chalkboard (look=chalk on its slice): chalk-white text, a yellow-chalk
+     title underlined in chalk instead of the wooden label. */
+  .show.in-world[data-look='chalk'] {
+    color: #e6eadc;
+    cursor: default;
+  }
+
+  .show.in-world[data-look='chalk'] .show-heading {
+    border-bottom-color: rgb(230 234 220 / 0.4);
+    border-bottom-style: dashed;
+  }
+
+  .show.in-world[data-look='chalk'] .show-heading-text {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: #ffcd78;
+  }
+
+  .show.in-world[data-look='chalk'] .show-note {
+    color: #9fb59a;
+  }
+
+  .show.in-world[data-look='chalk'] .show-lead {
+    color: #fff;
+  }
+
+  /* ---------- Popups in the classroom ----------
+     On top of the school block under "Scene themes" in src/styles/game.css: the same --ui-*
+     variables, set again here (with :root, so these win) to match the room as it is drawn now.
+     A panel (Controls) is the chalkboard: green slate in a wooden frame, chalk writing, a yellow
+     chalk title over a dashed chalk line, the chalk tray under it. The card over the thesis is a
+     library card pinned up. The key prompt and the Exit tag are the wooden EXIT plaque by the door.
+     Colours are from art/palette.gpl (leaf 2, wood 1-4, sodium 4, khaki). */
+  html.game[data-scene='school']:root {
+    --ui-bg:
+      radial-gradient(ellipse 60% 30% at 28% 22%, rgb(255 255 255 / 0.06), transparent 70%),
+      radial-gradient(ellipse 50% 24% at 74% 68%, rgb(255 255 255 / 0.045), transparent 70%),
+      #1c3a2a;
+    --ui-head-bg: transparent;
+    --ui-line: #6e482c;
+    --ui-border: 6px;
+    --ui-shadow: 0 0 0 2px #2c1c16, inset 0 0 0 2px rgb(0 0 0 / 0.3);
+    --ui-rule: rgb(230 234 220 / 0.3);
+    --ui-fg: #e6eadc;
+    --ui-strong: #fff;
+    --ui-muted: #9fb59a;
+    --ui-title: #ffcd78;
+    --ui-title-font: var(--font-pixel);
+    --ui-title-size: 34px;
+    --ui-head-fg: #ffcd78;
+    --ui-kicker: #9fb59a;
+    --ui-accent: #ffcd78;
+    --ui-close-bg: #4a2e1f;
+    --ui-close-fg: #ffeebe;
+    --ui-close-line: #996840;
+    --ui-field-bg: #142b20;
+    --ui-field-fg: #fff;
+    --ui-field-line: #9fb59a;
+    --ui-backdrop: rgb(20 16 12 / 0.85);
+  }
+
+  html.game[data-scene='school'] .gpanel[data-open] {
+    position: relative;
+    margin-bottom: 16px; /* room for the tray */
+  }
+
+  /* The chalk tray under the board, with three pieces of chalk on it. */
+  html.game[data-scene='school'] .gpanel[data-open]::after {
+    content: '';
+    position: absolute;
+    left: -14px;
+    right: -14px;
+    bottom: -20px;
+    height: 14px;
+    background:
+      linear-gradient(#fff, #fff) 30px 0 / 18px 4px no-repeat,
+      linear-gradient(#ffcd78, #ffcd78) 58px 0 / 12px 4px no-repeat,
+      linear-gradient(#ff4f9a, #ff4f9a) 80px 0 / 8px 4px no-repeat,
+      linear-gradient(#dcbb85, #dcbb85) 0 4px / 100% 2px no-repeat,
+      linear-gradient(#996840, #996840) 0 6px / 100% 6px no-repeat,
+      linear-gradient(#2c1c16, #2c1c16) 0 12px / 100% 2px no-repeat;
+    pointer-events: none;
+  }
+
+  html.game[data-scene='school'] .gpanel-head {
+    align-items: center;
+    margin: 0 16px;
+    padding: 12px 0 8px;
+    border-bottom: 2px dashed rgb(230 234 220 / 0.4);
+  }
+
+  html.game[data-scene='school'] .gpanel-title {
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  /* The notebook margin of the first theme is gone: the writing starts at the board's edge. */
+  html.game[data-scene='school'] :is(.gpanel-body, .cert-plate) {
+    padding-left: 16px;
+  }
+
+  html.game[data-scene='school'] .gpanel-close:hover {
+    color: #4a2e1f;
+    background: #ffcd78;
+    border-color: #ffeebe;
+  }
+
+  /* Keys: filled in with the side of the chalk. */
+  html.game[data-scene='school'] .gpanel .keycap {
+    color: #1c3a2a;
+    background: #e6eadc;
+    border-color: #e6eadc;
+  }
+
+  html.game[data-scene='school'] .controls-more {
+    border-top-style: dashed;
+  }
+
+  /* The card over the thesis: a cream library card, a red line under its title, a pin at the top. */
+  html.game[data-scene='school'] .tip-card {
+    padding: 14px 14px 10px;
+    color: #2b2a3a;
+    background: #fbf1d8;
+    border: 2px solid #2c1c16;
+    box-shadow:
+      inset 0 0 0 2px #fffaf0,
+      0 4px 0 #000;
+  }
+
+  html.game[data-scene='school'] .tip-card::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: calc(50% - 5px);
+    width: 10px;
+    height: 10px;
+    background: #ff463c;
+    box-shadow:
+      inset 2px 2px 0 #ffeebe,
+      inset -2px -2px 0 #8c1c24,
+      0 2px 0 #2c1c16;
+  }
+
+  html.game[data-scene='school'] .tip-card h3 {
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    color: #833b1d;
+    border-bottom: 2px solid #d9584a;
+  }
+
+  html.game[data-scene='school'] .tip-card p {
+    margin: 0;
+  }
+
+  html.game[data-scene='school'] .tip-card p + p {
+    margin-top: 4px;
+    color: #6b5a4a;
+  }
+
+  /* The key prompt and the Exit tag over him: the wooden plaque, amber letters. */
+  html.game[data-scene='school'] .prompt {
+    color: #ffcd78;
+    background: #4a2e1f;
+    border-color: #996840;
+    box-shadow:
+      0 0 0 2px #2c1c16,
+      0 4px 0 2px #000;
+  }
+
+  html.game[data-scene='school'] .prompt kbd {
+    color: #4a2e1f;
+    background: #ffcd78;
+  }
+
+  html.game[data-scene='school'] .prompt.exit-tag:is(:hover, :focus-visible) {
+    color: #4a2e1f;
+    background: #ffcd78;
+    border-color: #996840;
+  }
+
+  html.game[data-scene='school'] .prompt.exit-tag:is(:hover, :focus-visible) kbd {
+    color: #ffcd78;
+    background: #4a2e1f;
+  }
+
+  /* A phone held upright (the same test as the upright layout in game.css): the panel is a sheet
+     under the scene, so no tray, and its title bar stays solid while the sheet scrolls under it. */
+  @media (orientation: portrait) and (max-width: 820px) {
+    html.game[data-scene='school'] .gpanel[data-open] {
+      margin-bottom: 0;
+    }
+
+    html.game[data-scene='school'] .gpanel[data-open]::after {
+      display: none;
+    }
+
+    html.game[data-scene='school'] .gpanel-head {
+      margin: 0;
+      padding: 12px 16px 8px;
+      background: #1c3a2a;
+    }
+  }
+</style>

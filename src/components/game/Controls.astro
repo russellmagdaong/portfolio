@@ -1,0 +1,72 @@
+---
+// How to play: on the corkboard at home (compact) and in the Controls panel (the ? button).
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+
+const rows = [
+  { keys: ['A', 'D', '←', '→'], what: 'Run' },
+  { keys: ['W', 'S', '↑', '↓'], what: 'Move to the back or the front' },
+  { keys: ['Shift'], what: 'Hold to walk' },
+  { keys: ['Space'], what: 'Jump (onto crates and counters too)' },
+  { keys: ['E', 'Enter'], what: 'Use the cabinet or thing you are at, or go out the door' },
+  { keys: ['Esc'], what: 'Close a panel. In a room: warp to the street. On the street: warp home' },
+];
+---
+
+{
+  compact ? (
+    <ul class="cork-list" data-input="keys">
+      {/* No arrow glyphs here: the wall's pixel font has none. */}
+      <li><b>A D</b> or <b>arrows</b> run · <b>Shift</b> walk</li>
+      <li><b>W S</b> back and front</li>
+      <li><b>Space</b> jump · <b>E</b> use</li>
+      <li><b>Click</b> the floor to go there</li>
+      <li>The <b>door</b>: out to the street</li>
+      <li><b>Esc</b>: warp to the street (or home)</li>
+    </ul>
+  ) : null
+}
+{
+  compact ? (
+    <ul class="cork-list" data-input="touch">
+      <li><b>Tap</b> the floor to run there</li>
+      <li><b>Hold</b> and <b>drag</b> to steer</li>
+      <li><b>Tap</b> a thing to go and use it</li>
+      <li>The <b>door</b>: out to the street</li>
+      <li><b>Back to street</b>: warp out</li>
+    </ul>
+  ) : (
+    <div class="controls">
+      {/* A phone has no keys: what a finger does comes first there (src/styles/game.css, data-input). */}
+      <ul class="controls-more controls-touch" data-input="touch">
+        <li><strong>Tap the floor</strong> and he runs there, around anything in the way. <strong>Hold and drag</strong> to steer.</li>
+        <li><strong>Tap a cabinet</strong> and he goes to it and opens it. Tap a board or a prop and he walks over to read it.</li>
+        <li>At the <strong>door</strong>, an <strong>Exit</strong> button shows over him: tap it to go back out. Anywhere else, <strong>Back to street</strong> (bottom left) warps straight out.</li>
+        <li>On the <strong>street</strong>, tap a place to go in. <strong>Home</strong> (bottom left) warps you back to your room. Tap the <strong>jeepney</strong> to switch to the text version.</li>
+        <li>Turn the phone on its side for a wider view of each room.</li>
+      </ul>
+      <ul class="controls-keys" data-input="keys">
+        {rows.map((row) => (
+          <li>
+            <span class="controls-caps">
+              {row.keys.map((key) => (
+                <kbd class="keycap text-acid">{key}</kbd>
+              ))}
+            </span>
+            <span>{row.what}</span>
+          </li>
+        ))}
+      </ul>
+      <ul class="controls-more" data-input="keys">
+        <li><strong>Click or tap</strong> the floor and he runs there, around anything in the way. Click a cabinet to go to it and use it. Hold and drag to steer.</li>
+        <li><strong>Point at a prop</strong> (or walk up to it) to read about it.</li>
+        <li>Walk to the <strong>door</strong> and an <strong>Exit</strong> button shows over you: click it or press <strong>E</strong> to go back out to the street.</li>
+        <li>Far from the door? <strong>Back to street</strong> (bottom left) or <strong>Esc</strong> warps you straight out to the street.</li>
+        <li>On the <strong>street</strong>, click a place to go in, or walk to its door and press <strong>E</strong>. <strong>Home</strong> (bottom left) or <strong>Esc</strong> warps you back to your room.</li>
+        <li>The <strong>Change UI</strong> button (or the jeepney on the street) lets you switch to the text version, an ordinary page. Wherever you are stays where you are.</li>
+      </ul>
+    </div>
+  )
+}

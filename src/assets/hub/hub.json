@@ -1,0 +1,312 @@
+{
+  "source": "art/hub.aseprite",
+  "width": 480,
+  "height": 270,
+  "layers": [
+    {
+      "name": "sky",
+      "image": "sky.png",
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 270,
+      "frames": 1,
+      "data": {
+        "speed": 0.1
+      }
+    },
+    {
+      "name": "far",
+      "image": "far.png",
+      "x": 40,
+      "y": 8,
+      "width": 440,
+      "height": 139,
+      "frames": 1,
+      "data": {
+        "speed": 0.3
+      }
+    },
+    {
+      "name": "skyway",
+      "image": "skyway.png",
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 222,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "buildings",
+      "image": "buildings.png",
+      "x": 9,
+      "y": 70,
+      "width": 462,
+      "height": 140,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "rail",
+      "image": "rail.png",
+      "x": 101,
+      "y": 134,
+      "width": 283,
+      "height": 71,
+      "frames": 1,
+      "data": {
+        "stair": true
+      }
+    },
+    {
+      "name": "street",
+      "image": "street.png",
+      "x": 0,
+      "y": 41,
+      "width": 480,
+      "height": 229,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "reflections",
+      "image": "reflections.png",
+      "x": 0,
+      "y": 219,
+      "width": 480,
+      "height": 50,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "jeepney",
+      "image": "jeepney.png",
+      "x": 0,
+      "y": 193,
+      "width": 88,
+      "height": 42,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "sort": 230
+      }
+    },
+    {
+      "name": "front",
+      "image": "front.png",
+      "x": 182,
+      "y": 132,
+      "width": 118,
+      "height": 10,
+      "frames": 1,
+      "data": {
+        "over": true
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 0,
+      "y": 0,
+      "width": 475,
+      "height": 270,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "door:school",
+      "x": 353,
+      "y": 139,
+      "width": 6,
+      "height": 4,
+      "data": {
+        "level": "upper"
+      }
+    },
+    {
+      "name": "door:home",
+      "x": 113,
+      "y": 139,
+      "width": 6,
+      "height": 4,
+      "data": {
+        "level": "upper"
+      }
+    },
+    {
+      "name": "door:post-office",
+      "x": 304,
+      "y": 211,
+      "width": 6,
+      "height": 4,
+      "data": {
+        "level": "street"
+      }
+    },
+    {
+      "name": "door:trophy-shop",
+      "x": 275,
+      "y": 211,
+      "width": 6,
+      "height": 4,
+      "data": {
+        "level": "street"
+      }
+    },
+    {
+      "name": "door:arcade",
+      "x": 215,
+      "y": 211,
+      "width": 6,
+      "height": 4,
+      "data": {
+        "level": "street"
+      }
+    },
+    {
+      "name": "door:store",
+      "x": 170,
+      "y": 211,
+      "width": 6,
+      "height": 4,
+      "data": {
+        "level": "street"
+      }
+    },
+    {
+      "name": "building:post-office",
+      "x": 288,
+      "y": 144,
+      "width": 46,
+      "height": 66,
+      "data": {
+        "scene": "post-office",
+        "level": "street"
+      }
+    },
+    {
+      "name": "building:school",
+      "x": 301,
+      "y": 82,
+      "width": 67,
+      "height": 59,
+      "data": {
+        "scene": "school",
+        "level": "upper"
+      }
+    },
+    {
+      "name": "building:store",
+      "x": 150,
+      "y": 144,
+      "width": 46,
+      "height": 66,
+      "data": {
+        "scene": "store",
+        "level": "street"
+      }
+    },
+    {
+      "name": "building:arcade",
+      "x": 196,
+      "y": 144,
+      "width": 45,
+      "height": 66,
+      "data": {
+        "scene": "arcade",
+        "level": "street"
+      }
+    },
+    {
+      "name": "building:home",
+      "x": 96,
+      "y": 80,
+      "width": 91,
+      "height": 61,
+      "data": {
+        "scene": "home",
+        "level": "upper"
+      }
+    },
+    {
+      "name": "building:trophy-shop",
+      "x": 242,
+      "y": 144,
+      "width": 46,
+      "height": 66,
+      "data": {
+        "scene": "trophy-shop",
+        "level": "street"
+      }
+    },
+    {
+      "name": "jeep",
+      "x": 6,
+      "y": 193,
+      "width": 80,
+      "height": 42,
+      "data": {}
+    },
+    {
+      "name": "spawn",
+      "x": 118,
+      "y": 210,
+      "width": 6,
+      "height": 4,
+      "data": {
+        "level": "street"
+      }
+    },
+    {
+      "name": "stairs:school",
+      "x": 331,
+      "y": 141,
+      "width": 55,
+      "height": 69,
+      "data": {
+        "lower": "street",
+        "upper": "upper",
+        "up": "left"
+      }
+    },
+    {
+      "name": "stairs:home",
+      "x": 98,
+      "y": 141,
+      "width": 55,
+      "height": 69,
+      "data": {
+        "lower": "street",
+        "upper": "upper",
+        "up": "right"
+      }
+    },
+    {
+      "name": "floor",
+      "x": 97,
+      "y": 138,
+      "width": 288,
+      "height": 6,
+      "data": {
+        "level": "upper"
+      }
+    },
+    {
+      "name": "floor",
+      "x": 0,
+      "y": 208,
+      "width": 480,
+      "height": 10,
+      "data": {
+        "level": "street"
+      }
+    }
+  ]
+}

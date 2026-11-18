@@ -1,0 +1,154 @@
+---
+/**
+ * The mirror at home. It starts as Russell's sprite, standing idle in the glass; the button
+ * de-pixelates it into his photo (the photo in blocks of 16, 8, 4 and 2 pixels, then the photo
+ * itself) and back again.
+ */
+import type { ImageMetadata } from 'astro';
+import { getImage } from 'astro:assets';
+import sheet from '../assets/sprites/russell.png';
+import sprite from '../assets/sprites/russell.json';
+
+interface Props {
+  photo: ImageMetadata;
+  alt: string;
+}
+
+const { photo, alt } = Astro.props;
+const image = await getImage({ src: photo, width: 720, format: 'webp' });
+const height = Math.round((photo.height / photo.width) * 720);
+const idle = sprite.tags.idle;
+---
+
+<div class="mirror" data-mirror data-accent="acid">
+  <div class="mirror-frame">
+    <canvas
+      data-mirror-canvas
+      data-sheet={sheet.src}
+      data-cell={`${sprite.width},${sprite.height},${idle.row},${idle.frames}`}
+      data-durations={idle.durations.join(',')}
+      width="720"
+      height={height}
+      role="img"
+      aria-label={`${alt}, as his pixel sprite`}></canvas>
+    <img data-mirror-photo src={image.src} width="720" height={height} alt={alt} hidden />
+  </div>
+  <button type="button" class="btn btn-solid mirror-btn" data-mirror-toggle aria-pressed="false">De-pixelate</button>
+</div>
+
+<script>
+  // Step 0 is the sprite; then the photo in blocks of this many pixels, ending on the photo itself.
+  const STEPS = [0, 16, 8, 4, 2, 1];
+  const STEP_MS = 140;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const load = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+
+  document.querySelectorAll<HTMLElement>('[data-mirror]').forEach(async (mirror) => {
+    const canvas = mirror.querySelector<HTMLCanvasElement>('[data-mirror-canvas]')!;
+    const photo = mirror.querySelector<HTMLImageElement>('[data-mirror-photo]')!;
+    const button = mirror.querySelector<HTMLButtonElement>('[data-mirror-toggle]')!;
+    const ctx = canvas.getContext('2d')!;
+    const small = document.createElement('canvas');
+    const sctx = small.getContext('2d')!;
+    const [cw, ch, row, frames] = canvas.dataset.cell!.split(',').map(Number);
+    const durations = canvas.dataset.durations!.split(',').map(Number);
+    let step = 0;
+    let timer: number | undefined;
+    let frame = 0;
+    let frameTimer: number | undefined;
+
+    const sheet = await load(canvas.dataset.sheet!);
+    if (!photo.complete || !photo.naturalWidth) await new Promise((r) => photo.addEventListener('load', r, { once: true }));
+
+    // The box round every idle frame, so he stands still in the glass while he breathes.
+    const probe = document.createElement('canvas');
+    probe.width = cw * frames;
+    probe.height = ch;
+    const pctx = probe.getContext('2d', { willReadFrequently: true })!;
+    pctx.drawImage(sheet, 0, row * ch, cw * frames, ch, 0, 0, cw * frames, ch);
+    const data = pctx.getImageData(0, 0, probe.width, ch).data;
+    let x0 = cw, y0 = ch, x1 = 0, y1 = 0;
+    for (let y = 0; y < ch; y++)
+      for (let x = 0; x < probe.width; x++)
+        if (data[(y * probe.width + x) * 4 + 3] > 0) {
+          const cx = x % cw;
+          x0 = Math.min(x0, cx); x1 = Math.max(x1, cx + 1); y0 = Math.min(y0, y); y1 = Math.max(y1, y + 1);
+        }
+    const bw = x1 - x0;
+    const bh = y1 - y0;
+
+    // The backdrop is the photo's own: its top corner, so sprite and photo share one wall.
+    pctx.clearRect(0, 0, 1, 1);
+    pctx.drawImage(photo, 0, 0, 1, 1, 0, 0, 1, 1);
+    const [r, g, b] = pctx.getImageData(0, 0, 1, 1).data;
+    const backdrop = `rgb(${r} ${g} ${b})`;
+
+    const drawSprite = () => {
+      // Whole-number scale, so every sprite pixel is a clean square.
+      const scale = Math.max(1, Math.floor(Math.min((canvas.height * 0.88) / bh, (canvas.width * 0.9) / bw)));
+      const w = bw * scale;
+      const h = bh * scale;
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = backdrop;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(sheet, frame * cw + x0, row * ch + y0, bw, bh, Math.round((canvas.width - w) / 2), canvas.height - h - Math.round(canvas.height * 0.04), w, h);
+    };
+
+    const animate = () => {
+      window.clearTimeout(frameTimer);
+      if (step !== 0) return;
+      drawSprite();
+      if (reduced) return;
+      frameTimer = window.setTimeout(() => {
+        frame = (frame + 1) % frames;
+        animate();
+      }, durations[frame] ?? 100);
+    };
+
+    const draw = () => {
+      const block = STEPS[step];
+      canvas.hidden = block === 1;
+      photo.hidden = block !== 1;
+      if (block === 0) return animate();
+      if (block === 1) return;
+      // Shrink the photo, then blow it back up without smoothing: square blocks.
+      const w = Math.max(1, Math.round(canvas.width / block));
+      const h = Math.max(1, Math.round(canvas.height / block));
+      small.width = w;
+      small.height = h;
+      sctx.imageSmoothingEnabled = true;
+      sctx.drawImage(photo, 0, 0, w, h);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(small, 0, 0, w, h, 0, 0, canvas.width, canvas.height);
+    };
+
+    const go = (to: number) => {
+      window.clearTimeout(timer);
+      window.clearTimeout(frameTimer);
+      const dir = Math.sign(to - step);
+      const tick = () => {
+        if (step !== to) step += dir;
+        draw();
+        if (step !== to) timer = window.setTimeout(tick, STEP_MS);
+      };
+      if (reduced) {
+        step = to;
+        draw();
+      } else tick();
+      const clear = to === STEPS.length - 1;
+      button.textContent = clear ? 'Pixelate' : 'De-pixelate';
+      button.setAttribute('aria-pressed', String(clear));
+      canvas.setAttribute('aria-label', canvas.getAttribute('aria-label')!.replace(/, .*$/, clear ? ', as a photo' : ', as his pixel sprite'));
+    };
+
+    button.addEventListener('click', () => go(step === STEPS.length - 1 ? 0 : STEPS.length - 1));
+    draw();
+  });
+</script>

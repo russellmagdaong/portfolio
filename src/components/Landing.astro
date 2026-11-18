@@ -1,0 +1,93 @@
+---
+/**
+ * The mode chooser: the first page of a visit opens on a screen split in two, the text version on
+ * one side and the game on the other (src/game/landing.ts runs it, src/styles/landing.css draws it).
+ * It only shows with JavaScript (html.choosing, set in src/layouts/Game.astro before the first
+ * paint), so without it the page is the plain text version as before.
+ *
+ * Each side previews what it gives: the text side's card is the back of the postcard (stamp and
+ * postmark), the game side has the street itself, drawn live behind it.
+ */
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import { site } from '../data/site';
+import type { HubConfig } from '../game/types';
+import Wordmark from './Wordmark.astro';
+
+interface Props {
+  /** The street, drawn live behind the game side. Left out on the street itself (it uses game-config). */
+  street?: HubConfig;
+}
+
+const { street } = Astro.props;
+const streetJson = street ? JSON.stringify(street).replace(/</g, '\\u003c') : '';
+const heading = 'Choose your mode';
+const pics = import.meta.glob<{ default: ImageMetadata }>('../assets/pics/*', { eager: true });
+const photo = pics[`../assets/pics/${site.photos[0]}`]?.default;
+---
+
+<div class="landing" data-landing data-lean="game" role="dialog" aria-modal="true" aria-labelledby="landing-title" data-keys-own>
+  <!-- Text: the left (top on a phone) -->
+  <div class="landing-side landing-text" data-side="text">
+    <div class="landing-card landing-card-postcard" data-sign="home" data-landing-postcard>
+      {photo && <Image src={photo} width={120} alt="" class="landing-postcard-stamp" aria-hidden="true" />}
+      <h2 class="landing-head" data-type>In a rush?</h2>
+      <p class="landing-kicker landing-kicker-post">
+        Text mode
+        <span class="landing-postcard-postmark" data-postmark aria-hidden="true">{site.postmark}</span>
+      </p>
+      <p class="landing-copy">
+        Want a plain ol' portfolio? Same projects, tools and certificates, on one page you can scroll, skim and
+        Ctrl+F. No controls to learn.
+      </p>
+      <button type="button" class="landing-go" data-choose="text">
+        <span class="landing-cursor" aria-hidden="true"></span>
+        Keep it simple
+        <span class="landing-arrows" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <p class="landing-last" hidden>Your pick last time</p>
+    </div>
+  </div>
+
+  <!-- Game: the right (bottom on a phone) -->
+  <div class="landing-side landing-game" data-side="game">
+    <canvas class="landing-street" data-landing-street aria-hidden="true"></canvas>
+    <div class="landing-scan" aria-hidden="true"></div>
+    <div class="landing-card">
+      <h2 class="landing-head landing-neon">Got time to play?</h2>
+      <p class="landing-kicker">Game mode</p>
+      <p class="landing-copy">
+        Walk a neon Manila street as pixel-me. Every building holds a piece of my portfolio: projects in the arcade,
+        awards in the trophy shop, and a post office to say hi.
+      </p>
+      <button type="button" class="landing-go" data-choose="game">
+        <span class="landing-cursor" aria-hidden="true"></span>
+        Press start
+        <span class="landing-arrows" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <p class="landing-last" hidden>Your pick last time</p>
+    </div>
+  </div>
+
+  <div class="landing-seam" aria-hidden="true"></div>
+
+  <header class="landing-top">
+    <p class="landing-logo"><Wordmark size={24} /></p>
+    <h1 id="landing-title" class="landing-title" aria-label={heading}>
+      {
+        [...heading].map((ch, i) => (
+          <span aria-hidden="true" style={`--i: ${i}`}>
+            {ch === ' ' ? ' ' : ch}
+          </span>
+        ))
+      }
+    </h1>
+  </header>
+
+  <p class="landing-hint">
+    <span class="landing-keys"><kbd>←</kbd><kbd>→</kbd> pick · <kbd>Enter</kbd> start · </span>You can <b>switch</b> any
+    time from the button up top
+  </p>
+
+  {street && <script type="application/json" data-landing-street-config set:html={streetJson} />}
+</div>

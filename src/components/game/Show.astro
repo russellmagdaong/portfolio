@@ -1,0 +1,41 @@
+---
+/**
+ * Content that is part of the scene: a poster, a board, a screen, a shelf. In the
+ * game it is laid over the scene's show:<id> slice (src/game/world.ts), so it is
+ * read there with no window to open. In the text version it is a section of the page.
+ * Keep it short: it has to fit the slice. No scripts that look for it by id.
+ */
+interface Props {
+  id: string;
+  title: string;
+  /** How it looks in the scene: dark text on paper, a lit screen, or labels on a shelf. */
+  look?: 'paper' | 'screen' | 'shelf' | 'wall';
+  /**
+   * Size the text to fill the board: in the game the letters grow or shrink with the
+   * board until the text just fits, so it never overflows at any window size or zoom.
+   * A number caps the letter size, in art pixels (default 8).
+   */
+  fit?: boolean | number;
+  /** A small line shown at the right of the board's painted title (in the game only). */
+  note?: string;
+}
+
+const { id, title, look = 'paper', fit = false, note } = Astro.props;
+---
+
+<section class="show-home gpanel" data-show-home={id} aria-labelledby={`show-${id}-title`}>
+  <header class="gpanel-head">
+    <h2 id={`show-${id}-title`} class="gpanel-title">{title}</h2>
+  </header>
+  <div
+    class="show gpanel-body"
+    data-show={id}
+    data-look={look}
+    data-fit={fit === false ? undefined : fit === true ? '' : String(fit)}
+  >
+    <p class="show-heading" aria-hidden="true">
+      <span class="show-heading-text">{title}</span>{note && <span class="show-note">{note}</span>}
+    </p>
+    <slot />
+  </div>
+</section>

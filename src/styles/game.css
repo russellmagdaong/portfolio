@@ -1,0 +1,1642 @@
+/*
+ * The pixel town (src/layouts/Game.astro).
+ *
+ * html.game   the game is showing: the scene fills the window, content opens in panels
+ * otherwise   the text version (also what shows without JavaScript): an ordinary page
+ */
+
+:root {
+  --ink: #0d0b1a;
+  --night: #171433;
+  /* HUD plates: steel signage from the street (tokens in global.css). */
+  --hud-bg: var(--color-plate);
+  --hud-line: var(--color-plate-line);
+  --hud-edge: var(--color-plate-edge);
+  --hud-fg: var(--color-plate-label);
+  --px-shadow: 0 3px 0 #000;
+
+  /*
+   * The look of panels and popups: every .gpanel, the card over a prop (.tip-card) and the
+   * certificate popup (.cert-dialog) are drawn from these. These are the defaults (home, the
+   * street, the text version); each scene changes them under "Scene themes" near the end.
+   */
+  --ui-bg: var(--ink); /* the body: any background value (a colour, or colour plus patterns) */
+  --ui-head-bg: #262538; /* the title bar: concrete 2 */
+  --ui-line: var(--hud-line); /* the border */
+  --ui-border: 2px;
+  --ui-border-image: none; /* a patterned border (the post office's airmail stripes) */
+  --ui-shadow: 0 0 0 2px #000, 0 6px 0 #000; /* rings round the border, and the drop under it */
+  --ui-rule: var(--color-line); /* lines between rows inside */
+  --ui-fg: var(--color-fg); /* body text */
+  --ui-strong: #fff; /* bold text, lead lines, values */
+  --ui-muted: var(--color-muted);
+  --ui-title: var(--color-plate-label);
+  --ui-title-font: var(--font-title);
+  --ui-title-size: 24px;
+  --ui-head-fg: var(--ui-title); /* the title bar's text, when it differs from the title colour */
+  --ui-kicker: var(--color-cyan);
+  --ui-accent: var(--color-acid); /* pointed at, focused */
+  --ui-close-bg: var(--ink);
+  --ui-close-fg: var(--color-fg);
+  --ui-close-line: var(--hud-line);
+  --ui-field-bg: var(--color-void);
+  --ui-field-fg: #fff;
+  --ui-field-line: var(--color-line);
+  --ui-backdrop: rgb(5 5 8 / 0.88); /* behind a popup */
+  --ui-mat: #000; /* round a certificate's picture */
+  --ui-plate-bg: var(--night); /* the plate under it, with its title and details */
+  --ui-plate-fg: var(--color-fg);
+  --ui-plate-title: var(--color-acid);
+}
+
+/* ---------- The game ---------- */
+
+html.game,
+html.game body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* The arcade-tube dots of the old site stay off behind the game. */
+html.game body::before,
+html.game body::after {
+  display: none;
+}
+
+html.game body {
+  background: var(--ink);
+}
+
+html.game .shell {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  outline: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html:not(.game) .stage,
+html:not(.game) .here,
+html:not(.game) .game-only {
+  display: none;
+}
+
+html.game .stage {
+  grid-area: 1 / 1;
+}
+
+.stage canvas {
+  position: absolute;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Russell and what stands in front of him, above the boards (src/game/scene.ts). */
+.stage-front {
+  pointer-events: none;
+}
+
+/* The key prompt over the thing in reach, and the name tag over a building. */
+.prompt,
+.map-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -100%);
+  margin: 0;
+  padding: 5px 10px 6px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--color-acid);
+  background: var(--ink);
+  border: 2px solid currentColor;
+  box-shadow: var(--px-shadow);
+  pointer-events: none;
+}
+
+.map-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: #fff;
+  border-color: var(--color-acid);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.map-label[hidden],
+.prompt[hidden] {
+  display: none;
+}
+
+/* The way out of a scene, over him at the door: a prompt you can click. */
+.prompt.exit-tag {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.prompt.exit-tag:focus-visible,
+.prompt.exit-tag:active {
+  color: var(--ink);
+  background: var(--color-acid);
+  border-color: var(--color-acid);
+  outline: none;
+}
+
+.map-label {
+  gap: 2px;
+  padding: 7px 12px 8px;
+}
+
+.map-label strong {
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--color-acid);
+}
+
+.map-label span {
+  font-size: 20px;
+  color: var(--color-fg);
+}
+
+.map-label em {
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 20px;
+  color: var(--color-muted);
+}
+
+/* A key to press, drawn as a keycap. */
+.prompt kbd,
+.map-label kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4em;
+  height: 1.4em;
+  margin-right: 0.35em;
+  padding: 0 0.25em;
+  font: inherit;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--color-acid);
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.3);
+}
+
+.map-label kbd {
+  font-size: 20px;
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  position: absolute;
+  left: max(0.75rem, env(safe-area-inset-left));
+  right: max(0.75rem, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.hud-top {
+  top: max(0.75rem, env(safe-area-inset-top));
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.hud-bottom {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.hud-where {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 7px 12px 8px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--hud-fg);
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-line);
+  border-top-color: var(--hud-edge);
+  box-shadow: var(--px-shadow);
+}
+
+.hud-name {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+/* The place name, in the sign lettering, set off from the site's name by a thin rule. */
+.hud-where > span {
+  padding-left: 0.75rem;
+  font-family: var(--font-title);
+  font-size: 16px;
+  text-transform: uppercase;
+  color: var(--hud-fg);
+  border-left: 2px solid var(--hud-line);
+}
+
+.hud-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.hud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--hud-fg);
+  text-decoration: none;
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-line);
+  border-top-color: var(--hud-edge);
+  box-shadow: var(--px-shadow);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hud-btn:hover {
+    border-color: var(--hud-fg);
+    color: #fff;
+  }
+}
+
+.hud-btn:active {
+  translate: 0 2px;
+  box-shadow: 0 1px 0 #000;
+}
+
+.hud-btn:focus-visible,
+.here-btn:focus-visible {
+  outline: 2px solid var(--color-acid);
+  outline-offset: 2px;
+}
+
+.gpanel-close:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.hud-exit {
+  height: 40px;
+  padding: 0 8px 0 8px;
+}
+
+/* The key that does the same, on the button: Esc warps out from anywhere. */
+.hud-key {
+  display: inline-grid;
+  place-items: center;
+  height: 24px;
+  margin-left: 4px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--color-acid);
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.3);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hud-btn:hover .hud-key {
+    color: var(--ink);
+  }
+}
+
+.hud-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Nothing to press on a phone: no Esc on the buttons either (the close button keeps its cross). */
+@media (pointer: coarse) {
+  .hud-key,
+  .gpanel-close > span {
+    display: none;
+  }
+
+  .hud-exit {
+    padding-right: 12px;
+  }
+}
+
+/* ---------- Content in the scene (src/game/world.ts) ---------- */
+
+/* --px is the size of one art pixel in CSS pixels, so the text grows with the art. */
+.world {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.show.in-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  /* Boards never scroll: each is sized in the art to hold its text. */
+  overflow: hidden;
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  /* Everything in the room is pixel lettering. Jersey 10 is drawn on a 10-unit grid, so at
+     5 art pixels its own pixels are half an art pixel: crisp at every whole-number scale. */
+  font-family: var(--font-pixel);
+  font-size: max(15px, calc(var(--px) * 5));
+  line-height: 1.12;
+  color: var(--ink);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* A board sized to its text (<Show fit>): src/game/world.ts sets --fs, the letter size in art
+   pixels, to the largest that fits, so the text fills the board at any window size or zoom. */
+.show.in-world[data-fit] {
+  font-size: calc(var(--px) * var(--fs, 5));
+}
+
+.show.in-world[data-fit] .show-heading {
+  font-size: 1.5em;
+}
+
+/* A note beside a board's painted title (<Show note>); the text version leaves it out. */
+.show-note {
+  display: none;
+}
+
+.show.in-world .show-note {
+  display: inline;
+}
+
+/* Jersey 10 has one weight: emphasis is colour instead of bold. */
+.show.in-world :is(strong, b, dd, .show-frame-title) {
+  font-weight: 400;
+  color: #6b2a10;
+}
+
+.show.in-world[data-look='screen'] :is(strong, b) {
+  color: var(--color-acid);
+}
+
+.show.in-world[data-look='shelf'] :is(strong, b),
+.show.in-world[data-look='wall'] :is(strong, b) {
+  color: var(--color-acid);
+}
+
+/* Painted straight on the wall: cream letters with a dark edge, no board. */
+.show.in-world[data-look='wall'] {
+  color: #fbe6c2;
+  text-shadow:
+    0 calc(var(--px) * 0.5) 0 rgb(0 0 0 / 0.55);
+  cursor: default;
+}
+
+.show.in-world[data-look='wall'] .show-heading {
+  color: #ffcd78;
+}
+
+.show.in-world a,
+.show.in-world button {
+  cursor: pointer;
+}
+
+/* The title painted at the top of a poster or board; the text version has a heading instead. */
+.show-heading {
+  display: none;
+}
+
+.show.in-world .show-heading {
+  display: block;
+  margin: 0 0 0.4em;
+  font-family: var(--font-pixel);
+  font-size: max(20px, calc(var(--px) * 7.5));
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.show.in-world[data-look='screen'] {
+  color: var(--color-cyan);
+}
+
+.show.in-world[data-look='screen'] .show-heading {
+  color: var(--color-acid);
+}
+
+.show.in-world[data-look='shelf'] {
+  color: #fff;
+  text-shadow: 0 1px 0 #000;
+}
+
+.show.in-world[data-look='shelf'] .show-heading {
+  color: var(--color-acid);
+}
+
+/* The card over a prop. */
+.tip-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -100%);
+  width: max-content;
+  max-width: min(20rem, 80vw);
+  padding: 10px 12px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  border: var(--ui-border) solid var(--ui-accent);
+  border-image: var(--ui-border-image);
+  box-shadow: var(--px-shadow);
+  pointer-events: none;
+}
+
+.tip-card[hidden] {
+  display: none;
+}
+
+.tip-card h3 {
+  margin: 0 0 4px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--ui-title);
+}
+
+.tip-card ul {
+  margin: 6px 0 0;
+  padding-left: 1.1em;
+  font-size: 0.82rem;
+  color: var(--ui-muted);
+}
+
+/* In the game, the text version's places for shows and tips stay empty and hidden. */
+html.game .show-home,
+html.game .tips {
+  display: none;
+}
+
+/* ---------- Panels and the Here list ---------- */
+
+html.game .dock {
+  grid-area: 1 / 1;
+  position: relative;
+  min-height: 0;
+  pointer-events: none;
+}
+
+html.game .panels {
+  position: absolute;
+  top: calc(max(0.75rem, env(safe-area-inset-top)) + 48px);
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 52px);
+  width: min(36rem, calc(100% - 1.5rem));
+  pointer-events: auto;
+}
+
+html.game:not([data-panel-open]) .panels {
+  display: none;
+}
+
+html.game .text-head,
+html.game .text-only {
+  display: none;
+}
+
+html.game [data-panel]:not([data-open]) {
+  display: none;
+}
+
+html.game .gpanel[data-open] {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  animation: panel-in 160ms steps(4, end);
+}
+
+@keyframes panel-in {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+.gpanel {
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  border: var(--ui-border) solid var(--ui-line);
+  border-image: var(--ui-border-image);
+  box-shadow: var(--ui-shadow);
+}
+
+.gpanel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 14px 16px 12px;
+  border-bottom: 2px solid var(--ui-line);
+  background: var(--ui-head-bg);
+}
+
+/* What kind of thing this is, under its title (a label above a heading would upstage it). */
+.gpanel-kicker {
+  margin: 6px 0 0;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ui-kicker);
+}
+
+.gpanel-title {
+  margin: 0;
+  font-family: var(--ui-title-font);
+  font-size: var(--ui-title-size);
+  line-height: 1.5;
+  color: var(--ui-head-fg);
+  outline: none;
+}
+
+.gpanel-close {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ui-close-fg);
+  background: var(--ui-close-bg);
+  border: 2px solid var(--ui-close-line);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gpanel-close:hover {
+    color: var(--ui-accent);
+    border-color: var(--ui-accent);
+  }
+}
+
+html:not(.game) .gpanel-close {
+  display: none;
+}
+
+.gpanel-body {
+  padding: 18px 16px 22px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+/* The Here list: the things in this place, as buttons. Top left in the game, under the place name. */
+html.game .here {
+  position: absolute;
+  top: calc(max(0.75rem, env(safe-area-inset-top)) + 52px);
+  left: max(0.75rem, env(safe-area-inset-left));
+  max-width: 15rem;
+  pointer-events: auto;
+}
+
+.here-title {
+  margin: 0 0 6px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-fg);
+  text-shadow:
+    0 2px 0 #000,
+    2px 0 0 #000,
+    -2px 0 0 #000,
+    0 -2px 0 #000;
+}
+
+.here ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.here-btn {
+  padding: 6px 10px 7px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--color-fg);
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-line);
+  box-shadow: var(--px-shadow);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .here-btn:hover {
+    color: var(--color-acid);
+    border-color: var(--color-acid);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .prompt.exit-tag:hover {
+    color: var(--ink);
+    background: var(--color-acid);
+    border-color: var(--color-acid);
+  }
+}
+
+/* Taps fire at once (no wait for a double-tap zoom), and a finger gets the press a mouse would. */
+.hud-btn,
+.here-btn,
+.gpanel-close,
+.prompt.exit-tag,
+.map-label {
+  touch-action: manipulation;
+}
+
+.here-btn:active,
+.gpanel-close:active {
+  translate: 0 2px;
+  box-shadow: 0 1px 0 #000;
+}
+
+/* Change UI under the scene: only on a phone held upright (below), where the HUD has no room for it. */
+.dock-switch {
+  display: none;
+}
+
+/* ---------- Phones held upright: the scene on top, the text below ---------- */
+
+@media (orientation: portrait) and (max-width: 820px) {
+  html.game .shell {
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  html.game .stage {
+    grid-area: 1 / 1;
+    /* About 270 art pixels tall at the phone's usual scale, so there are no empty bands. */
+    height: min(60dvh, 92vw);
+  }
+
+  html.game .dock {
+    grid-area: 2 / 1;
+    overflow: auto;
+    overscroll-behavior: contain;
+    pointer-events: auto;
+    background: var(--ink);
+    border-top: 2px solid var(--hud-line);
+  }
+
+  html.game .panels {
+    position: static;
+    width: auto;
+  }
+
+  /* What is on the walls is read here, under the scene, unless a panel is open. */
+  html.game:not([data-panel-open]) .panels {
+    display: block;
+  }
+
+  html.game .show-home,
+  html.game .tips {
+    display: block;
+    border-width: 0 0 2px;
+    box-shadow: none;
+  }
+
+  html.game[data-panel-open] .show-home,
+  html.game[data-panel-open] .tips {
+    display: none;
+  }
+
+  html.game .gpanel[data-open] {
+    max-height: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  html.game .gpanel-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  html.game .gpanel-body {
+    overflow: visible;
+  }
+
+  html.game .here {
+    position: static;
+    max-width: none;
+    padding: 14px 16px 18px;
+  }
+
+  html.game[data-panel-open] .here {
+    display: none;
+  }
+
+  .hud-text {
+    display: none;
+  }
+
+  html.game .dock-switch {
+    display: block;
+    padding: 0 16px 20px;
+  }
+
+  html.game[data-panel-open] .dock-switch {
+    display: none;
+  }
+
+  .hud-where > span {
+    display: none;
+  }
+}
+
+/* Short windows (a phone on its side): smaller HUD. */
+@media (max-height: 500px) {
+  .hud-btn {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 7px;
+  }
+
+  .hud-where {
+    padding: 6px 8px;
+  }
+
+  html.game .here {
+    display: none;
+  }
+
+  html.game .panels {
+    /* Clear of the HUD's buttons, with room for the arcade cabinet's frame, which stands out
+       past the panel's edge. */
+    top: calc(max(0.5rem, env(safe-area-inset-top)) + 54px);
+    bottom: calc(max(0.5rem, env(safe-area-inset-bottom)) + 44px);
+  }
+
+  /* The boards are sized in the art for 5-pixel letters. A phone on its side shows the art at
+     two CSS pixels a pixel, where the 15px floor made the text half as big again as its board
+     and it ran off the bottom: here the letters keep to the art's own size. */
+  /* A phone on its side has some 300px for a panel: the head takes one line, not three. */
+  html.game header.gpanel-head,
+  html.game[data-scene] header.gpanel-head {
+    align-items: center;
+    padding: 6px 10px;
+  }
+
+  html.game .gpanel-head > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 12px;
+  }
+
+  html.game .gpanel-kicker {
+    margin: 0;
+  }
+
+  .show.in-world:not([data-fit]) {
+    font-size: calc(var(--px) * 5);
+  }
+
+  .show.in-world .show-heading {
+    font-size: calc(var(--px) * 7.5);
+  }
+
+  .show.in-world[data-fit] .show-heading {
+    font-size: 1.5em;
+  }
+}
+
+/* ---------- The text version ---------- */
+
+html:not(.game) .panels {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 5rem;
+}
+
+html:not(.game) .gpanel {
+  margin-top: 2rem;
+}
+
+html:not(.game) .gpanel-wide {
+  max-width: none;
+}
+
+/* The group headings of the text version ("Now building", "Finished"). In the game the arcade's
+   own signs say the same. */
+.text-group {
+  margin: 3rem 0 -0.75rem;
+  padding-bottom: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-cyan);
+  border-bottom: 2px solid var(--hud-line);
+}
+
+/* The line under a project's title: what kind of project, and when. */
+.gmeta {
+  margin: -4px 0 16px;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ui-muted);
+}
+
+/* ---------- Content inside panels ---------- */
+
+.gtext {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ui-fg);
+}
+
+.gtext > * + * {
+  margin-top: 0.9rem;
+}
+
+.gtext strong {
+  color: var(--ui-strong);
+}
+
+.glead {
+  font-size: 1.15rem;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--ui-strong);
+}
+
+.gstats {
+  display: grid;
+  gap: 0;
+  margin: 1.25rem 0 0;
+}
+
+.gstats > div {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--ui-rule);
+}
+
+.gstats dt {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-muted);
+  padding-top: 0.2rem;
+}
+
+.gstats dd {
+  margin: 0;
+  color: var(--ui-strong);
+}
+
+.glinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.glist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.glist > li {
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--ui-rule);
+}
+
+.gtools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gtools li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid var(--ui-rule);
+  color: var(--ui-strong);
+}
+
+.controls-keys {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.controls-keys li {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.controls-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.controls-more {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--ui-rule);
+  list-style: none;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.controls-more strong {
+  color: var(--ui-strong);
+}
+
+/* How to play, by what the visitor has: keys and a mouse, or a finger (Controls.astro). A laptop
+   with a touch screen still has a fine pointer, so it gets the keys. */
+:is(.cork-list, .controls > ul)[data-input="touch"] {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  :is(.cork-list, .controls > ul)[data-input="keys"] {
+    display: none;
+  }
+
+  :is(.cork-list, .controls > ul)[data-input="touch"] {
+    display: block;
+  }
+
+  .controls > ul[data-input="touch"] {
+    display: grid;
+  }
+}
+
+.controls-touch {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (max-width: 480px) {
+  .controls-keys li,
+  .gstats > div {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+}
+
+/* ---------- Going from page to page: a stepped pixel wipe ---------- */
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: none;
+}
+
+::view-transition-new(root) {
+  animation: pixel-wipe 420ms steps(12, end) both;
+}
+
+@keyframes pixel-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
+  html.game .gpanel[data-open] {
+    animation: none;
+  }
+}
+
+/* ---------- What goes inside a <Show> (sized in em, so it scales with the art) ---------- */
+
+.show-p + .show-p {
+  margin-top: 0.6em;
+}
+
+.show-stats {
+  display: grid;
+  gap: 0.35em;
+  margin: 0;
+}
+
+.show-stats > div {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 0.6em;
+}
+
+.show-stats dt {
+  opacity: 0.7;
+}
+
+.show-stats dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.show-goods,
+.show-list,
+.show-links,
+.show-frames,
+.pc-lines,
+.cork-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.show-goods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 0.9em;
+}
+
+.show-goods li,
+.show-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.show-icon {
+  display: inline-grid;
+  width: 1.5em;
+  height: 1.5em;
+  flex-shrink: 0;
+  font-size: 1em;
+}
+
+/* Two columns, so a long list fits its board without scrolling. */
+.show-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35em 1em;
+}
+
+.show-cols li + li {
+  margin-top: 0 !important;
+}
+
+.show-list li + li,
+.pc-lines li + li,
+.cork-list li + li {
+  margin-top: 0.35em;
+}
+
+.show-links {
+  display: grid;
+  gap: 0.4em;
+}
+
+.show-links a {
+  color: inherit;
+}
+
+/* The post office's Find me board: two by two, so all four fit the board. */
+.show.in-world .show-links-grid {
+  grid-template-columns: repeat(2, max-content);
+  gap: 0.7em 1.4em;
+}
+
+.show-frames {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7em, 1fr));
+  gap: 0.6em;
+}
+
+.show-frames button {
+  display: grid;
+  gap: 0.15em;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
+.show-frames img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 0.25em solid #4a2e1f;
+  background: #fff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .show-frames button:hover img {
+    border-color: var(--color-acid);
+  }
+}
+
+.show-frame-title {
+  font-weight: 600;
+  font-size: 0.85em;
+  line-height: 1.25;
+}
+
+.show-frame-detail {
+  font-size: 0.75em;
+  opacity: 0.7;
+  line-height: 1.25;
+}
+
+/* In the game, a framed certificate shows just its picture and a one-line title; the rest is in its
+   tooltip and in the enlarged view. Fixed-height pictures keep every wall's frames inside it. */
+.show.in-world .show-frame-detail {
+  display: none;
+}
+
+.show.in-world .show-frames {
+  grid-template-columns: repeat(auto-fill, minmax(6.5em, 1fr));
+  gap: 0.5em;
+}
+
+.show.in-world .show-frames img {
+  height: 4.6em;
+  aspect-ratio: auto;
+}
+
+.show.in-world .show-frame-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9em;
+}
+
+.pc-lines {
+  white-space: pre-wrap;
+}
+
+/* The text version: the same blocks as ordinary sections. */
+html:not(.game) .show-home,
+html:not(.game) .tips {
+  margin-top: 2rem;
+}
+
+html:not(.game) .show {
+  color: var(--color-fg);
+}
+
+html:not(.game) .show-frames {
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}
+
+html:not(.game) .tip h3 {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--color-acid);
+}
+
+html:not(.game) .tip ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+/* A certificate enlarged while pointed at (CertificateDialog.astro). */
+.cert-zoom {
+  position: fixed;
+  z-index: 40;
+  border: 3px solid var(--ui-accent);
+  background: #fff;
+  box-shadow: 0 6px 0 #000;
+  pointer-events: none;
+  animation: panel-in 120ms steps(3, end);
+}
+
+.cert-zoom[hidden] {
+  display: none;
+}
+
+/* The mirror at home (Mirror.astro). */
+.mirror {
+  display: grid;
+  gap: 14px;
+}
+
+.mirror-frame {
+  /* As big as the window allows with the button under it (the photo is 2:3). */
+  justify-self: center;
+  width: min(100%, calc((100dvh - 290px) * 0.667));
+  border: 4px solid var(--hud-line);
+  box-shadow: 0 0 0 2px #000;
+  background: #000;
+}
+
+.mirror-frame canvas,
+.mirror-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.mirror-btn {
+  justify-self: center;
+  min-width: 16rem;
+  height: 4rem;
+  font-size: 30px;
+}
+
+/* A quiet panel (the mirror): in the game only the close button shows in its head; the title
+   stays for screen readers. */
+html.game .gpanel-quiet .gpanel-head {
+  justify-content: flex-end;
+  padding: 10px 12px;
+  border-bottom: 0;
+  background: none;
+}
+
+html.game .gpanel-quiet .gpanel-kicker,
+html.game .gpanel-quiet .gpanel-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+html.game .gpanel-quiet .gpanel-body {
+  padding-top: 0;
+}
+
+/* ---------- A certificate up close (CertificateDialog.astro) ---------- */
+
+.cert-dialog {
+  width: min(92vw, 60rem);
+  max-width: none;
+  max-height: 94dvh;
+  margin: auto;
+  padding: 8px;
+  overflow: visible;
+  color: var(--ui-fg);
+  background: none;
+  border: 0;
+}
+
+.cert-dialog::backdrop {
+  background: var(--ui-backdrop);
+}
+
+.cert-dialog[open] {
+  animation: panel-in 160ms steps(4, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cert-dialog[open] {
+    animation: none;
+  }
+}
+
+.cert-box {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(94dvh - 16px);
+  background: var(--ui-bg);
+  border: var(--ui-border) solid var(--ui-line);
+  border-image: var(--ui-border-image);
+  box-shadow: var(--ui-shadow);
+}
+
+.cert-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 10px 12px 10px 16px;
+  background: var(--ui-head-bg);
+  border-bottom: 2px solid var(--ui-line);
+}
+
+.cert-group {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-kicker);
+}
+
+.cert-frame {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  margin: 16px 16px 0;
+  padding: 10px;
+  background: var(--ui-mat);
+}
+
+.cert-frame img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(94dvh - 250px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.cert-plate {
+  margin: 12px 16px 16px;
+  padding: 10px 14px 12px;
+  color: var(--ui-plate-fg);
+  background: var(--ui-plate-bg);
+}
+
+.cert-title {
+  margin: 0;
+  font-family: var(--ui-title-font);
+  font-size: var(--ui-title-size);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ui-plate-title);
+}
+
+.cert-detail {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+/* Inside a panel, the shared pieces from global.css follow the panel's look. */
+html.game .gpanel .chip {
+  color: var(--ui-fg);
+}
+
+html.game .gpanel .field {
+  color: var(--ui-field-fg);
+  background: var(--ui-field-bg);
+  border-color: var(--ui-field-line);
+}
+
+html.game .gpanel .field:focus {
+  border-color: var(--ui-accent);
+}
+
+html.game .gpanel .field-label {
+  color: var(--ui-muted);
+}
+
+/* ---------- Scene themes ----------
+ *
+ * Each scene gives its panels, its prop cards and its popups a look of its own by setting the
+ * --ui-* variables (listed with their defaults at the top of this file). Game.astro puts the
+ * scene's id on <html> as data-scene. The themes apply in the game only; the text version keeps
+ * the default look. Colours are from art/palette.gpl where it has them.
+ */
+
+/* School (/about): a page of a ruled notebook in a wooden frame, its title on a wooden label like
+   the boards in the classroom. */
+html.game[data-scene='school'] {
+  --ui-bg:
+    linear-gradient(90deg, transparent 26px, #d9584a 26px 28px, transparent 28px),
+    repeating-linear-gradient(to bottom, transparent 0 25px, #bcd0de 25px 27px),
+    #fbf1d8;
+  --ui-head-bg: #4a2e1f;
+  --ui-line: #2c1c16;
+  --ui-shadow: 0 0 0 4px #6e482c, 0 0 0 6px #2c1c16, 0 10px 0 6px #000;
+  --ui-rule: #d6c7a6;
+  --ui-fg: #2b2a3a;
+  --ui-strong: #172146;
+  --ui-muted: #6b5a4a;
+  --ui-title: #833b1d;
+  --ui-head-fg: #ffcd78;
+  --ui-kicker: #e8d6b0;
+  --ui-accent: #ffcd78;
+  --ui-close-bg: #2c1c16;
+  --ui-close-fg: #fbe6c2;
+  --ui-close-line: #996840;
+  --ui-field-bg: #fffaf0;
+  --ui-field-fg: #2b2a3a;
+  --ui-field-line: #996840;
+  --ui-backdrop: rgb(28 20 16 / 0.85);
+  --ui-mat: #fffaf0;
+  --ui-plate-bg: #4a2e1f;
+  --ui-plate-fg: #fbe6c2;
+  --ui-plate-title: #ffcd78;
+}
+
+/* The writing starts right of the notebook's red margin line. */
+html.game[data-scene='school'] :is(.gpanel-body, .cert-plate) {
+  padding-left: 42px;
+}
+
+/* The thesis card on the bookshelf: a plain index card with its red top line. */
+html.game[data-scene='school'] .tip-card {
+  background: #fbf1d8;
+  border-color: #2c1c16;
+  box-shadow:
+    inset 0 4px 0 #d9584a,
+    var(--px-shadow);
+}
+
+/* PC repair shop (/tools): a window on one of the shop's old monitors: a beige plastic bezel,
+   a dark screen with faint scan lines and green phosphor text, a green title bar. */
+html.game[data-scene='store'] {
+  --ui-bg: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.22) 2px 3px), #0f1f17;
+  --ui-head-bg: #28783c;
+  --ui-line: #10241a;
+  --ui-shadow: 0 0 0 6px #c5bea8, 0 0 0 8px #6f6a5c, 0 10px 0 8px #000;
+  --ui-rule: #24503a;
+  --ui-fg: #b6e8ad;
+  --ui-strong: #e4ffd9;
+  --ui-muted: #6fa27a;
+  --ui-title: #7cf05a;
+  --ui-head-fg: #eaffdf;
+  --ui-kicker: #c8ffb5;
+  --ui-accent: #7cf05a;
+  --ui-close-bg: #c5bea8;
+  --ui-close-fg: #1a1a22;
+  --ui-close-line: #6f6a5c;
+  --ui-field-bg: #08130d;
+  --ui-field-fg: #e4ffd9;
+  --ui-field-line: #24503a;
+  --ui-backdrop: rgb(8 14 11 / 0.88);
+  --ui-mat: #000;
+  --ui-plate-bg: #10241a;
+  --ui-plate-fg: #b6e8ad;
+  --ui-plate-title: #7cf05a;
+}
+
+/* Arcade (/projects): a cabinet's screen: black glass with scan lines in a neon pink frame with a
+   cyan inner ring, the title on a marquee with a row of bulbs under it. */
+html.game[data-scene='arcade'] {
+  --ui-bg: repeating-linear-gradient(to bottom, transparent 0 3px, rgb(255 255 255 / 0.025) 3px 4px), #0d0b1a;
+  --ui-head-bg:
+    radial-gradient(circle, #ffe24d 0 1.5px, transparent 2px) 4px calc(100% - 2px) / 12px 6px repeat-x,
+    #2a1747;
+  --ui-line: #ff4f9a;
+  --ui-shadow: 0 0 0 2px #0d0b1a, 0 0 0 4px #46e6e1, 0 0 0 6px #000, 0 10px 0 6px #000;
+  --ui-rule: #3a2a5c;
+  --ui-fg: #dcd6f0;
+  --ui-strong: #fff;
+  --ui-muted: #a08fc8;
+  --ui-title: #ffe24d;
+  --ui-kicker: #46e6e1;
+  --ui-accent: #ff4f9a;
+  --ui-close-bg: #0d0b1a;
+  --ui-close-fg: #46e6e1;
+  --ui-close-line: #46e6e1;
+  --ui-backdrop: rgb(13 11 26 / 0.9);
+  --ui-plate-bg: #2a1747;
+  --ui-plate-title: #ffe24d;
+}
+
+html.game[data-scene='arcade'] :is(.gpanel-head, .cert-head) {
+  padding-bottom: 18px;
+}
+
+/* Trophy shop (/credentials): the gallery's navy and gold: a navy card in a gilt frame, its title
+   on an engraved brass plate. A certificate up close hangs on a cream mat in the same frame, its
+   name on a brass plate under it, as in a museum. */
+html.game[data-scene='trophy-shop'] {
+  --ui-bg: #1d2446;
+  --ui-head-bg: #dcb55a;
+  --ui-line: #78501e;
+  --ui-shadow: 0 0 0 2px #ffcd78, 0 0 0 5px #b07d2c, 0 0 0 7px #2c1c16, 0 10px 0 7px #000;
+  --ui-rule: #39406a;
+  --ui-fg: #ece2c8;
+  --ui-strong: #fff3d6;
+  --ui-muted: #a9a3b8;
+  --ui-title: #ffcd78;
+  --ui-head-fg: #2c1c16;
+  --ui-kicker: #4a2e1f;
+  --ui-accent: #ffcd78;
+  --ui-close-bg: #2c1c16;
+  --ui-close-fg: #ffcd78;
+  --ui-close-line: #78501e;
+  --ui-backdrop: rgb(10 12 28 / 0.9);
+  --ui-mat: #f2e8d0;
+  --ui-plate-bg: #dcb55a;
+  --ui-plate-fg: #2c1c16;
+  --ui-plate-title: #2c1c16;
+}
+
+html.game[data-scene='trophy-shop'] .cert-frame {
+  margin: 24px 24px 0;
+  box-shadow:
+    0 0 0 2px #78501e,
+    0 0 0 5px #dcb55a,
+    0 0 0 7px #2c1c16;
+}
+
+html.game[data-scene='trophy-shop'] .cert-plate {
+  align-self: center;
+  min-width: min(28rem, calc(100% - 32px));
+  margin-top: 20px;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0 2px #b07d2c,
+    0 3px 0 #2c1c16;
+}
+
+/* Post office (/contact): an airmail envelope: cream paper inside a red and blue striped border,
+   the title bar a darker band of paper, inked in mail red. */
+html.game[data-scene='post-office'] {
+  --ui-bg: #f6eed9;
+  --ui-head-bg: #eadfc2;
+  --ui-line: #c8372d;
+  --ui-border: 8px;
+  --ui-border-image: repeating-linear-gradient(-45deg, #c8372d 0 10px, #f6eed9 10px 16px, #2d4f9e 16px 26px, #f6eed9 26px 32px) 8;
+  --ui-shadow: 0 0 0 2px #2b2a3a, 0 8px 0 2px rgb(0 0 0 / 0.75);
+  --ui-rule: #d8c9a6;
+  --ui-fg: #2b2a3a;
+  --ui-strong: #172146;
+  --ui-muted: #6c6276;
+  --ui-title: #b02a22;
+  --ui-kicker: #2d4f9e;
+  --ui-accent: #c8372d;
+  --ui-close-bg: #f6eed9;
+  --ui-close-fg: #b02a22;
+  --ui-close-line: #b02a22;
+  --ui-field-bg: #fffaf0;
+  --ui-field-fg: #2b2a3a;
+  --ui-field-line: #b8a98a;
+  --ui-backdrop: rgb(23 20 51 / 0.85);
+  --ui-mat: #fffaf0;
+  --ui-plate-bg: #eadfc2;
+  --ui-plate-fg: #2b2a3a;
+  --ui-plate-title: #b02a22;
+}
+
+/* The Send button in mail red. */
+html.game[data-scene='post-office'] .gpanel [data-accent] {
+  --accent: #c8372d;
+}
+
+html.game[data-scene='post-office'] .gpanel .btn-solid {
+  color: #fff;
+}

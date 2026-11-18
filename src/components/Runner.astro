@@ -189,11 +189,12 @@ const PLAYER_X = 76;
       deck: color('deck'),
     };
     // One frame of the sprite sheet, in screen pixels, and where the middle of his artwork is
-    // in the strip. Both follow from how the markup sized and placed the sprite.
-    const frameWidth = player.offsetWidth;
-    const frameHeight = player.offsetHeight;
+    // in the strip. Both follow from how the markup sized and placed the sprite. They are read
+    // from its style, not measured, because the game may start out of sight (in a closed panel).
+    const frameWidth = parseFloat(player.style.width);
+    const frameHeight = parseFloat(player.style.height);
     const scale = frameWidth / sprite.width;
-    const playerX = player.offsetLeft + sprite.anchor * scale;
+    const playerX = parseFloat(player.style.left) + sprite.anchor * scale;
     // The part of him that can hit something, as a box: how far it reaches behind and in front of
     // the column he stands on, and how tall it is from his feet. It is about where his body is,
     // so a trailing arm or leg does not count. Sliding, he is longer and much lower. The boxes

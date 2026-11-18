@@ -20,6 +20,9 @@ local OUT = assert(app.params["out"], "pass --script-param out=<folder>")
 local NAME = assert(app.params["name"], "pass --script-param name=<name>")
 local MODE = app.params["mode"] or "sprite"
 local PALETTE = app.params["palette"]
+-- The file named as the source in the JSON (a room exported from its still and anim files
+-- put together names its still file).
+local SOURCE = app.params["source"] or FILE
 
 local pc = app.pixelColor
 local spr = Sprite { fromFile = FILE }
@@ -240,22 +243,23 @@ local function exportSprite()
   end
   sheet:saveAs(OUT .. "/" .. NAME .. ".png")
 
-  -- Where he stands: the middle of the bottom edge of the `feet` slice, or
-  -- the bottom of the drawing in the middle of the canvas when there is none.
+  -- The origin, the point that sits on the ground: the middle of the bottom
+  -- edge of the `feet` slice (characters) or the `base` slice (map objects),
+  -- or the bottom of the drawing in the middle of the canvas when there is none.
   local origin
   for _, s in ipairs(spr.slices) do
-    if s.name == "feet" then
+    if s.name == "feet" or s.name == "base" then
       local b = s.bounds
       origin = object { "x", b.x + b.width // 2 - box.x, "y", b.y + b.height - box.y }
     end
   end
   if not origin then
     origin = object { "x", spr.width // 2 - box.x, "y", box.height }
-    print(("  note: no `feet` slice, so he stands at %d,%d of the frame (bottom middle)"):format(origin.x, origin.y))
+    print(("  note: no `feet` or `base` slice, so it stands at %d,%d of the frame (bottom middle)"):format(origin.x, origin.y))
   end
 
   writeJson(OUT .. "/" .. NAME .. ".json", object {
-    "source", FILE:gsub("\\", "/"),
+    "source", SOURCE:gsub("\\", "/"),
     "width", box.width, "height", box.height,
     "columns", columns, "rows", #rows,
     "origin", origin,
@@ -317,7 +321,7 @@ local function exportLayers()
   for i, layer in ipairs(spr.layers) do layer.isVisible = wasVisible[i] end
 
   writeJson(OUT .. "/" .. NAME .. ".json", object {
-    "source", FILE:gsub("\\", "/"),
+    "source", SOURCE:gsub("\\", "/"),
     "width", spr.width, "height", spr.height,
     "layers", layers,
     "slices", exportedSlices(0, 0),

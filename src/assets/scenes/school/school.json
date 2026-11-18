@@ -1,0 +1,316 @@
+{
+  "source": "art/scenes/school.aseprite",
+  "width": 672,
+  "height": 270,
+  "layers": [
+    {
+      "name": "sky",
+      "image": "sky.png",
+      "x": 0,
+      "y": 0,
+      "width": 672,
+      "height": 270,
+      "frames": 1,
+      "data": {
+        "speed": 0.1
+      }
+    },
+    {
+      "name": "far",
+      "image": "far.png",
+      "x": 100,
+      "y": 95,
+      "width": 572,
+      "height": 65,
+      "frames": 1,
+      "data": {
+        "speed": 0.3
+      }
+    },
+    {
+      "name": "mid",
+      "image": "mid.png",
+      "x": 200,
+      "y": 75,
+      "width": 280,
+      "height": 83,
+      "frames": 1,
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 236,
+      "y": 60,
+      "width": 220,
+      "height": 96,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "back",
+      "image": "back.png",
+      "x": 0,
+      "y": 0,
+      "width": 672,
+      "height": 176,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "flicker",
+      "image": "flicker.png",
+      "x": 290,
+      "y": 39,
+      "width": 48,
+      "height": 3,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "clock",
+      "image": "clock.png",
+      "x": 27,
+      "y": 76,
+      "width": 7,
+      "height": 9,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "fan1",
+      "image": "fan1.png",
+      "x": 109,
+      "y": 44,
+      "width": 41,
+      "height": 2,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "fan2",
+      "image": "fan2.png",
+      "x": 351,
+      "y": 44,
+      "width": 41,
+      "height": 2,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "fan3",
+      "image": "fan3.png",
+      "x": 552,
+      "y": 44,
+      "width": 41,
+      "height": 2,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "drips",
+      "image": "drips.png",
+      "x": 418,
+      "y": 77,
+      "width": 42,
+      "height": 61,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "image": "floor.png",
+      "x": 0,
+      "y": 176,
+      "width": 672,
+      "height": 94,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "glow",
+      "image": "glow.png",
+      "x": 296,
+      "y": 189,
+      "width": 37,
+      "height": 30,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "props",
+      "image": "props.png",
+      "x": 14,
+      "y": 127,
+      "width": 657,
+      "height": 56,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "water",
+      "image": "water.png",
+      "x": 594,
+      "y": 139,
+      "width": 5,
+      "height": 10,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "umbrella",
+      "image": "umbrella.png",
+      "x": 18,
+      "y": 177,
+      "width": 8,
+      "height": 4,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "furniture",
+      "image": "furniture.png",
+      "x": 70,
+      "y": 143,
+      "width": 397,
+      "height": 46,
+      "frames": 1,
+      "data": {
+        "sort": 189
+      }
+    },
+    {
+      "name": "spin",
+      "image": "spin.png",
+      "x": 365,
+      "y": 145,
+      "width": 87,
+      "height": 30,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "sort": 189
+      }
+    },
+    {
+      "name": "desk",
+      "image": "desk.png",
+      "x": 438,
+      "y": 142,
+      "width": 225,
+      "height": 72,
+      "frames": 1,
+      "data": {
+        "sort": 204
+      }
+    },
+    {
+      "name": "desktop",
+      "image": "desktop.png",
+      "x": 653,
+      "y": 178,
+      "width": 2,
+      "height": 5,
+      "frames": 20,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "sort": 204
+      }
+    },
+    {
+      "name": "front",
+      "image": "front.png",
+      "x": 38,
+      "y": 90,
+      "width": 567,
+      "height": 180,
+      "frames": 1,
+      "data": {
+        "speed": 1.2,
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "prop:thesis",
+      "x": 500,
+      "y": 113,
+      "width": 20,
+      "height": 19,
+      "data": {
+        "tip": "thesis"
+      }
+    },
+    {
+      "name": "floor",
+      "x": 0,
+      "y": 176,
+      "width": 672,
+      "height": 49,
+      "data": {}
+    },
+    {
+      "name": "spawn",
+      "x": 28,
+      "y": 196,
+      "width": 8,
+      "height": 2,
+      "data": {}
+    },
+    {
+      "name": "exit",
+      "x": 0,
+      "y": 176,
+      "width": 12,
+      "height": 49,
+      "data": {
+        "to": "map"
+      }
+    },
+    {
+      "name": "show:about",
+      "x": 48,
+      "y": 60,
+      "width": 200,
+      "height": 104,
+      "data": {
+        "look": "chalk"
+      }
+    },
+    {
+      "name": "show:profile",
+      "x": 268,
+      "y": 60,
+      "width": 132,
+      "height": 104,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "platform",
+      "x": 628,
+      "y": 196,
+      "width": 32,
+      "height": 18,
+      "data": {
+        "depth": 10
+      }
+    }
+  ]
+}

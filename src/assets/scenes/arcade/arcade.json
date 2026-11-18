@@ -1,0 +1,203 @@
+{
+  "source": "art/scenes/arcade.aseprite",
+  "width": 640,
+  "height": 270,
+  "layers": [
+    {
+      "name": "sky",
+      "image": "sky.png",
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 270,
+      "frames": 1,
+      "data": {
+        "speed": 0.1
+      }
+    },
+    {
+      "name": "far",
+      "image": "far.png",
+      "x": 300,
+      "y": 84,
+      "width": 300,
+      "height": 76,
+      "frames": 1,
+      "data": {
+        "speed": 0.3
+      }
+    },
+    {
+      "name": "mid",
+      "image": "mid.png",
+      "x": 440,
+      "y": 107,
+      "width": 174,
+      "height": 75,
+      "frames": 1,
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 460,
+      "y": 96,
+      "width": 95,
+      "height": 80,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "back",
+      "image": "back.png",
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 176,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "lights",
+      "image": "lights.png",
+      "x": 0,
+      "y": 53,
+      "width": 638,
+      "height": 81,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "image": "floor.png",
+      "x": 0,
+      "y": 176,
+      "width": 640,
+      "height": 94,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "props",
+      "image": "props.png",
+      "x": 17,
+      "y": 92,
+      "width": 615,
+      "height": 103,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "life",
+      "image": "life.png",
+      "x": 29,
+      "y": 54,
+      "width": 502,
+      "height": 139,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "tape",
+      "image": "tape.png",
+      "x": 509,
+      "y": 165,
+      "width": 131,
+      "height": 60,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "front",
+      "image": "front.png",
+      "x": 149,
+      "y": 231,
+      "width": 344,
+      "height": 39,
+      "frames": 1,
+      "data": {
+        "speed": 1.2,
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "object:nova",
+      "x": 464,
+      "y": 142,
+      "width": 26,
+      "height": 40,
+      "data": {
+        "opens": "nova",
+        "prompt": "Play"
+      }
+    },
+    {
+      "name": "floor",
+      "x": 0,
+      "y": 176,
+      "width": 504,
+      "height": 49,
+      "data": {}
+    },
+    {
+      "name": "spawn",
+      "x": 28,
+      "y": 196,
+      "width": 8,
+      "height": 2,
+      "data": {}
+    },
+    {
+      "name": "exit",
+      "x": 0,
+      "y": 176,
+      "width": 12,
+      "height": 49,
+      "data": {
+        "to": "map"
+      }
+    },
+    {
+      "name": "object:odin",
+      "x": 64,
+      "y": 142,
+      "width": 30,
+      "height": 40,
+      "data": {
+        "opens": "odin",
+        "prompt": "Play"
+      }
+    },
+    {
+      "name": "object:tako",
+      "x": 124,
+      "y": 142,
+      "width": 30,
+      "height": 40,
+      "data": {
+        "opens": "tako",
+        "prompt": "Play"
+      }
+    },
+    {
+      "name": "object:algebrawl",
+      "x": 184,
+      "y": 142,
+      "width": 30,
+      "height": 40,
+      "data": {
+        "opens": "algebrawl",
+        "prompt": "Play"
+      }
+    }
+  ]
+}

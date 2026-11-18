@@ -1,0 +1,423 @@
+---
+/**
+ * The text version: the whole portfolio as one postcard from a made-up Manila. Its front is the
+ * game's own street (PostcardFront); its back is a letter from Russell (PostcardBack); then one
+ * chapter per place (Chapter). Styles: src/styles/text.css. Script: src/game/textsite.ts.
+ *
+ * Every page renders it, so it is the same page wherever the visitor is: it opens at the section
+ * for this page's place, and the address follows the section being read.
+ *
+ * The page and the game name the same places and things: each section has data-place (a scene's
+ * id, or 'street'), and each thing in it data-spot (the panel, board or prop card it is in the
+ * room; on the street, a building). Switching versions keeps his place (src/game/spot.ts), so keep
+ * these in step with the slices in art/scenes/<scene>.aseprite.
+ */
+import type { ImageMetadata } from 'astro';
+import { Image, getImage } from 'astro:assets';
+import { getCollection, render } from 'astro:content';
+import Icon from '../Icon.astro';
+import Gallery from '../Gallery.astro';
+import ContactForm from '../ContactForm.astro';
+import CertificateDialog from '../CertificateDialog.astro';
+import { about, achievements, certificates, contact, organizations, signWords, site, socials, tools } from '../../data/site';
+import { hubConfig } from '../../game/config';
+import { MAP_PATH, places } from '../../game/places';
+import PostcardFront from './PostcardFront.astro';
+import PostcardBack from './PostcardBack.astro';
+import Chapter from './Chapter.astro';
+import Wordmark from '../Wordmark.astro';
+import Sidebar from './Sidebar.astro';
+import ScenePanel from './ScenePanel.astro';
+import { url } from '../../lib/url';
+
+// --- Projects, in the arcade's order ---
+const projects = await Promise.all(
+  (await getCollection('projects'))
+    .sort((a, b) => a.data.order - b.data.order)
+    .map(async (project) => ({ project, Content: (await render(project)).Content })),
+);
+const ordered = [
+  ...projects.filter(({ project }) => project.data.status === 'shipped'),
+  ...projects.filter(({ project }) => project.data.status === 'building'),
+];
+const thesis = projects.find(({ project }) => project.id === 'odin')?.project;
+// The arcade's list: finished games, then what is being built (the runner minigame with them).
+const projectItems = [
+  ...ordered.map(({ project }) => ({
+    key: project.id,
+    label: project.data.title,
+    line: project.data.line,
+    group: project.data.status === 'building' ? 'Now building' : 'Finished',
+  })),
+  { key: 'runner', label: 'Runner', line: 'The minigame on this site', group: 'Now building' },
+];
+// A write-up's paragraphs, for its tabs: the first is the overview, the rest say how it works.
+// The write-ups are plain prose; inline `code` is the only markup they use.
+const paragraphsOf = (body = '') =>
+  body
+    .trim()
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\s*\n\s*/g, ' '))
+    .filter(Boolean)
+    .map((p) => p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`([^`]+)`/g, '<code>$1</code>'));
+
+// --- Pictures ---
+const certFiles = import.meta.glob<{ default: ImageMetadata }>('../../assets/certificates/*/*.jpg', { eager: true });
+const certImage = (folder: string, file: string) => {
+  const found = certFiles[`../../assets/certificates/${folder}/${file}.jpg`];
+  if (!found) throw new Error(`Certificate image not found: ${folder}/${file}.jpg`);
+  return found.default;
+};
+
+// --- The street (the postcard's front) and the place this page is for ---
+const hub = hubConfig();
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const here = places.find((p) => p.path === path)?.id ?? (path === MAP_PATH ? 'street' : 'home');
+
+// --- Small helpers ---
+const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const initials = (name: string) => name.replace(/[^A-Za-z]/g, '').slice(0, 2);
+const external = (href: string) => (href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {});
+// Each place's section on the text page: its slug (the #sec- id) and its name in the nav.
+const sectionOf: Record<string, { slug: string; label: string }> = {
+  home: { slug: 'home', label: 'Home' },
+  street: { slug: 'street', label: 'Street' },
+  school: { slug: 'about', label: 'About' },
+  arcade: { slug: 'projects', label: 'Projects' },
+  store: { slug: 'tools', label: 'Tools' },
+  'trophy-shop': { slug: 'credentials', label: 'Credentials' },
+  'post-office': { slug: 'contact', label: 'Contact' },
+};
+const nav = ['home', 'school', 'arcade', 'store', 'trophy-shop', 'post-office'].map((place) => ({ place, ...sectionOf[place] }));
+// About goes past the letter: the letter already opens with the first paragraph, its P.S. covers the
+// third, and it states what he is open to, his thesis and what he is building now.
+// The store's pegboard: one group of tools per screen in the shop.
+const toolItems = tools.map((group) => ({ key: `tools-${slug(group.group)}`, label: group.group }));
+const aboutLede = about.paragraphs.slice(1, 2);
+const aboutFacts = about.stats.filter((s) => !['Open to', 'Thesis', 'Now building'].includes(s.label));
+const aboutItems = [
+  { key: 'about', label: 'About me' },
+  { key: 'profile', label: 'Profile' },
+  ...(thesis ? [{ key: 'thesis', label: 'Thesis' }] : []),
+];
+// The classroom's chalkboard and paper board carry what the game writes on them (src/pages/about.astro).
+const schoolBoards = {
+  about: { board: { heading: 'About me', note: '4th year · FEU Tech', text: about.paragraphs } },
+  profile: { board: { heading: 'Profile', note: 'DOST-SEI scholar', facts: about.stats.map((s) => ({ term: s.label, value: s.value })) } },
+};
+// The trophy shop's case: the two lists, then one plaque per certificate folder. A click on a plaque
+// shows its certificates in the case (each grows when hovered; a click on one opens it large).
+const credItems = [
+  { key: 'achievements', label: 'Awards' },
+  { key: 'organizations', label: 'Organizations' },
+  ...certificates.map((g) => ({ key: `certs-${g.folder}`, label: g.label, group: 'Certificates' })),
+];
+const certCount = (g: (typeof certificates)[number]) => `${g.label} · ${g.items.length}`;
+// The frames on the trophy shop's wall: each holds the first certificate of its folder.
+const certFills = Object.fromEntries(
+  await Promise.all(
+    certificates
+      .filter((g) => g.items.length > 0)
+      .map(async (g) => [`certs-${g.folder}`, { image: (await getImage({ src: certImage(g.folder, g.items[0].file), width: 360 })).src }] as const),
+  ),
+);
+// The big frame by the door (the game's Awards board) was empty: wide, the panel covers it, but a
+// phone shows the whole room. It holds the ACM TechSprint award, which no other frame shows.
+const awardFrame = certificates.find((g) => g.folder === 'hackathons')?.items.find((i) => i.file === 'acm-techsprint-2026');
+if (awardFrame) certFills.achievements = { image: (await getImage({ src: certImage('hackathons', awardFrame.file), width: 360 })).src };
+// The PC repair shop's screens: each shows its group's logos (initials where a tool has none).
+const toolFills = Object.fromEntries(
+  tools.map((group) => [
+    `tools-${slug(group.group)}`,
+    { icons: group.items.map((item) => ({ src: item.icon ? url(`/icons/${item.icon}.svg`) : undefined, label: item.name })) },
+  ]),
+);
+// The arcade's cabinets: hovered, each shows a brief of its game (a click shows it in the panel).
+const briefs = Object.fromEntries(
+  ordered.map(({ project }) => [project.id, { title: project.data.title, line: project.data.line, tagline: project.data.tagline }]),
+);
+// The post office: the form at the counter, the socials on the board by the door.
+const contactItems = [
+  { key: 'contact', label: 'Send a letter' },
+  { key: 'socials', label: 'Socials' },
+  { key: 'testimonials', label: 'Testimonials' },
+];
+---
+
+<div class="tsite" data-text-site>
+  <a class="t-skip" href="#sec-home">Skip to content</a>
+
+  <PostcardFront hub={hub} here={here} chapters={sectionOf} />
+
+  <!-- ---------- The nav: slides in once the street is out of view ---------- -->
+  <header class="t-header" data-t-header>
+    <a href="#sec-home" class="t-header-mark" data-goto="home" aria-label="Russell Magdaong: to the top of the letter"><Wordmark size={24} /></a>
+    <button type="button" class="t-menu-toggle" data-menu-toggle aria-expanded="false" aria-controls="t-nav">Menu</button>
+    <nav id="t-nav" class="t-nav" aria-label="Sections">
+      {
+        nav.map((n) => (
+          <a href={`#sec-${n.slug}`} data-goto={n.place} data-sign={n.place}>
+            <i class="t-sq" aria-hidden="true" />
+            {n.label}
+          </a>
+        ))
+      }
+      <button type="button" class="t-btn t-btn-primary" data-change-ui>
+        <Icon name="swap" class="size-4" />
+        Change UI
+      </button>
+    </nav>
+  </header>
+
+  <!-- ---------- The sidebar: on wide screens it replaces the nav bar ---------- -->
+  <Sidebar items={nav.map(({ place, slug }) => ({ place, slug }))} />
+
+  <PostcardBack />
+
+  <Chapter
+    id="sec-about"
+    place="school"
+    title="About me"
+    plate={false}
+    names={Object.fromEntries(aboutItems.map((i) => [i.key, i.label]))}
+    fills={schoolBoards}
+  >
+    <ScenePanel slot="panel" place="school" word={signWords.school} material="chalk" items={aboutItems}>
+      <div slot="about" class="t-prose" data-spot="about">
+        {aboutLede.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+      <dl slot="profile" class="t-facts" data-spot="profile">
+        {
+          aboutFacts.map((stat) => (
+            <div>
+              <dt>{stat.label}</dt>
+              <dd>{stat.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      {
+        thesis && (
+          <div slot="thesis" class="t-thesis" data-spot="thesis">
+            <p class="t-thesis-name">{thesis.data.title}</p>
+            <p>
+              {thesis.data.tagline} {thesis.data.meta}
+            </p>
+            <a href="#sec-projects" class="t-textlink" data-goto="arcade" data-goto-spot="odin">
+              My thesis, {thesis.data.title}
+            </a>
+          </div>
+        )
+      }
+    </ScenePanel>
+  </Chapter>
+
+  <Chapter
+    id="sec-projects"
+    place="arcade"
+    title="Things I've built"
+    only={projectItems.map((i) => i.key)}
+    names={Object.fromEntries(projectItems.map((i) => [i.key, `${i.label}: ${i.line ?? ''}`]))}
+    briefs={briefs}
+  >
+    <ScenePanel slot="panel" place="arcade" word={signWords.arcade} material="cabinet" items={projectItems}>
+      {
+        ordered.map(({ project }) => {
+          const [overview, ...how] = paragraphsOf(project.body);
+          return (
+            <article slot={project.id} class="t-project" data-spot={project.id} aria-labelledby={`t-${project.id}-title`}>
+              {(project.data.meta || project.data.status === 'building') && (
+                <p class="t-project-meta">{[project.data.meta, project.data.status === 'building' && 'now building'].filter(Boolean).join(' · ')}</p>
+              )}
+              <h3 id={`t-${project.id}-title`} class="t-project-title">
+                {project.data.title}
+              </h3>
+              <p class="t-project-tagline">{project.data.tagline}</p>
+              {/* One page that scrolls in the cabinet's screen: overview, how it works, screens, stack. */}
+              <div class="t-project-prose t-project-part">
+                {overview && <p set:html={overview} />}
+              </div>
+              {how.length > 0 && (
+                <section class="t-project-prose t-project-part">
+                  <h4 class="t-part-head">How it works</h4>
+                  {how.map((p) => <p set:html={p} />)}
+                </section>
+              )}
+              <section class="t-project-media t-project-part">
+                <h4 class="t-part-head">Screens</h4>
+                <Gallery images={project.data.gallery} label={project.data.title} />
+              </section>
+              {project.data.stack.length > 0 && (
+                <section class="t-project-part">
+                  <h4 class="t-part-head">Stack</h4>
+                  <p class="t-project-stack">{project.data.stack.join(' · ')}</p>
+                </section>
+              )}
+              <div class="t-actions">
+                {project.data.play && (
+                  <a href={project.data.play} {...external(project.data.play)} class="t-btn t-btn-primary">
+                    <Icon name="play" class="size-4" />
+                    Play it
+                  </a>
+                )}
+                {project.data.source && (
+                  <a href={project.data.source} {...external(project.data.source)} class="t-btn t-btn-line">
+                    <Icon name="source" class="size-4" />
+                    Source
+                  </a>
+                )}
+                {project.data.stack.length > 0 && <span class="t-stack-plate">{project.data.stack.slice(0, 3).join(' · ')}</span>}
+                <button type="button" class="t-textlink" data-play={`arcade:${project.id}`}>
+                  Find it in the arcade
+                </button>
+              </div>
+            </article>
+          );
+        })
+      }
+      <div slot="runner" class="t-runner" data-spot="runner">
+        <h3 class="t-project-title">Runner</h3>
+        <p class="t-project-tagline">The minigame on this site.</p>
+        <p>Jump over the crates, slide under the signs, see how far you get. It only runs in the arcade.</p>
+        <div class="t-actions">
+          <button type="button" class="t-btn t-btn-line" data-play="arcade:runner">
+            <Icon name="play" class="size-4" />
+            Play it in the arcade
+          </button>
+        </div>
+      </div>
+    </ScenePanel>
+  </Chapter>
+
+  <Chapter id="sec-tools" place="store" title="Tools I reach for" only={[]} fills={toolFills}>
+    <ScenePanel slot="panel" place="store" word={signWords.store} material="pegboard" items={toolItems} split={false}>
+      {
+        tools.map((group) => (
+          <div slot={`tools-${slug(group.group)}`} class="t-toolgroup" data-spot={`tools-${slug(group.group)}`}>
+            <h3 class="t-tape">{group.group}</h3>
+            <ul class="t-tags">
+              {group.items.map((item) => (
+                <li class="t-tag">
+                  {item.icon ? (
+                    <img src={url(`/icons/${item.icon}.svg`)} alt="" width="16" height="16" />
+                  ) : (
+                    <span class="t-tag-initials" aria-hidden="true">
+                      {initials(item.name)}
+                    </span>
+                  )}
+                  {item.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </ScenePanel>
+  </Chapter>
+
+  <Chapter
+    id="sec-credentials"
+    place="trophy-shop"
+    title="Awards and certificates"
+    plate={false}
+    only={[]}
+    fills={certFills}
+  >
+    <ScenePanel slot="panel" place="trophy-shop" word={signWords['trophy-shop']} material="case" items={credItems}>
+      <ul slot="achievements" class="t-list" data-spot="achievements">
+        {
+          achievements.map((item) => (
+            <li>
+              <strong>{item.title}</strong>
+              {item.detail && <span>{item.detail}</span>}
+            </li>
+          ))
+        }
+      </ul>
+      <ul slot="organizations" class="t-list">
+        {
+          organizations.map((org) => (
+            <li>
+              <strong>{org.role}</strong>
+              <span>
+                {org.group} · {org.years}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+      {
+        certificates.map((group) => (
+          <div slot={`certs-${group.folder}`} class="t-plaque-detail">
+            <p class="t-plaque-count">{certCount(group)}</p>
+            <div data-cert-grid={group.folder} data-cert-label={group.label}>
+              <div class="t-certs" data-spot={`certs-${group.folder}`}>
+                <ul class="t-cert-list">
+                  {group.items.map((item) => (
+                    <li>
+                      <button
+                        type="button"
+                        data-cert-open={certImage(group.folder, item.file).src}
+                        data-cert-title={item.title}
+                        data-cert-detail={item.detail}
+                        data-cert-group={group.label}
+                      >
+                        <Image src={certImage(group.folder, item.file)} width={320} alt="" />
+                        <span class="t-cert-title">{item.title}</span>
+                        <span class="t-cert-detail">{item.detail}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </ScenePanel>
+  </Chapter>
+
+  <Chapter
+    id="sec-contact"
+    place="post-office"
+    title={contact.heading.replace(/\.$/, '')}
+    only={contactItems.map((i) => i.key)}
+    names={Object.fromEntries(contactItems.map((i) => [i.key, i.label]))}
+  >
+    <ScenePanel slot="panel" place="post-office" word={signWords['post-office']} material="airmail" items={contactItems}>
+      <div slot="contact" class="t-form" data-spot="contact">
+        <ContactForm />
+      </div>
+      <dl slot="socials" class="t-lines" data-spot="socials">
+        {
+          socials.map((social) => (
+            <div>
+              <dt>{social.label}</dt>
+              <dd>
+                <a href={social.href} {...external(social.href)}>
+                  <Icon name={social.icon} class="size-4" />
+                  {social.handle}
+                </a>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      <div slot="testimonials" class="t-soon">
+        <p>Kind words from people I have worked with are still in the post.</p>
+        <p class="t-soon-stamp">Coming soon</p>
+      </div>
+    </ScenePanel>
+  </Chapter>
+
+  <footer class="t-footer">
+    <Wordmark size={24} />
+    <p>{site.postmark}</p>
+    <button type="button" class="t-btn t-btn-line" data-change-ui>
+      <Icon name="swap" class="size-4" />
+      Change UI
+    </button>
+  </footer>
+
+  <CertificateDialog />
+</div>

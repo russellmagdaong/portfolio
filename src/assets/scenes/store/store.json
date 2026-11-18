@@ -1,0 +1,211 @@
+{
+  "source": "art/scenes/store.aseprite",
+  "width": 624,
+  "height": 270,
+  "layers": [
+    {
+      "name": "sky",
+      "image": "sky.png",
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 270,
+      "frames": 1,
+      "data": {
+        "speed": 0.1
+      }
+    },
+    {
+      "name": "far",
+      "image": "far.png",
+      "x": 434,
+      "y": 97,
+      "width": 190,
+      "height": 63,
+      "frames": 1,
+      "data": {
+        "speed": 0.3
+      }
+    },
+    {
+      "name": "mid",
+      "image": "mid.png",
+      "x": 474,
+      "y": 107,
+      "width": 150,
+      "height": 69,
+      "frames": 1,
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 464,
+      "y": 60,
+      "width": 155,
+      "height": 90,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "back",
+      "image": "back.png",
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 176,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "lights",
+      "image": "lights.png",
+      "x": 25,
+      "y": 39,
+      "width": 583,
+      "height": 110,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "image": "floor.png",
+      "x": 0,
+      "y": 176,
+      "width": 624,
+      "height": 94,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "props",
+      "image": "props.png",
+      "x": 19,
+      "y": 84,
+      "width": 602,
+      "height": 100,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "life",
+      "image": "life.png",
+      "x": 83,
+      "y": 104,
+      "width": 451,
+      "height": 70,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "boxes",
+      "image": "boxes.png",
+      "x": 583,
+      "y": 185,
+      "width": 34,
+      "height": 29,
+      "frames": 1,
+      "data": {
+        "sort": 204
+      }
+    },
+    {
+      "name": "front",
+      "image": "front.png",
+      "x": 119,
+      "y": 234,
+      "width": 330,
+      "height": 36,
+      "frames": 1,
+      "data": {
+        "speed": 1.2,
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "platform",
+      "x": 584,
+      "y": 196,
+      "width": 32,
+      "height": 18,
+      "data": {
+        "depth": 10
+      }
+    },
+    {
+      "name": "show:tools-also-comfortable-in",
+      "x": 478,
+      "y": 110,
+      "width": 87,
+      "height": 28,
+      "data": {
+        "look": "whiteboard"
+      }
+    },
+    {
+      "name": "show:tools-backend-and-data",
+      "x": 340,
+      "y": 100,
+      "width": 95,
+      "height": 46,
+      "data": {
+        "look": "terminal"
+      }
+    },
+    {
+      "name": "show:tools-web",
+      "x": 166,
+      "y": 102,
+      "width": 96,
+      "height": 42,
+      "data": {
+        "look": "browser"
+      }
+    },
+    {
+      "name": "show:tools-games",
+      "x": 64,
+      "y": 107,
+      "width": 45,
+      "height": 36,
+      "data": {
+        "look": "crt"
+      }
+    },
+    {
+      "name": "exit",
+      "x": 0,
+      "y": 176,
+      "width": 12,
+      "height": 49,
+      "data": {
+        "to": "map"
+      }
+    },
+    {
+      "name": "spawn",
+      "x": 28,
+      "y": 196,
+      "width": 8,
+      "height": 2,
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "x": 0,
+      "y": 176,
+      "width": 624,
+      "height": 49,
+      "data": {}
+    }
+  ]
+}

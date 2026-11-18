@@ -1,0 +1,383 @@
+---
+// Projects: the arcade. The finished projects come first from the door, under the FINISHED
+// board; NOVA, what Russell is building now, is the last cabinet, under NOW BUILDING, next to
+// the corner where more machines are being fixed up. A project's `status` in its Markdown file
+// decides which. The panels open as the cabinet he walked up to (the styles at the bottom).
+// Pointing the mouse at a cabinet shows a little window over it (its <template data-peek>): the
+// game's screen, its one-line pitch and the click that plays it.
+import { getCollection, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import Game from '../layouts/Game.astro';
+import Panel from '../components/game/Panel.astro';
+import Gallery from '../components/Gallery.astro';
+import Icon from '../components/Icon.astro';
+import Runner from '../components/Runner.astro';
+import { sceneConfig } from '../game/config';
+
+const all = await Promise.all(
+  (await getCollection('projects'))
+    .sort((a, b) => a.data.order - b.data.order)
+    .map(async (project) => ({ project, Content: (await render(project)).Content })),
+);
+// In the order of the room, left to right.
+const groups = [
+  { id: 'finished', title: 'Finished', kicker: 'Finished', items: all.filter(({ project }) => project.data.status === 'shipped') },
+  { id: 'now-building', title: 'Now building', kicker: 'Now building', items: all.filter(({ project }) => project.data.status === 'building') },
+].filter((group) => group.items.length > 0);
+
+const here = [
+  ...groups.flatMap((group) =>
+    group.items.map(({ project }) => ({
+      id: project.id,
+      label: group.id === 'now-building' ? `${project.data.title} · now building` : project.data.title,
+    })),
+  ),
+  { id: 'runner', label: 'Runner minigame' },
+];
+---
+
+<Game title="Projects" config={sceneConfig('arcade')} here={here}>
+  {
+    groups.map((group) => (
+      <>
+        <h2 class="text-only text-group">{group.title}</h2>
+        {group.items.map(({ project, Content }) => (
+          <Panel id={project.id} kicker={group.kicker} title={project.data.title}>
+            {project.data.meta && <p class="gmeta" data-status={project.data.status}>{project.data.meta}</p>}
+            <div data-accent="cyan">
+              <Gallery images={project.data.gallery} label={project.data.title} />
+            </div>
+            <div class="gtext mt-5">
+              <p class="glead">{project.data.tagline}</p>
+              <div class="prose-card">
+                <Content />
+              </div>
+            </div>
+            <ul class="mt-5 flex flex-wrap gap-2">
+              {project.data.stack.map((item) => (
+                <li class="chip">{item}</li>
+              ))}
+            </ul>
+            {(project.data.play || project.data.source) && (
+              <div class="glinks" data-accent="cyan">
+                {project.data.play && (
+                  <a href={project.data.play} target="_blank" rel="noopener noreferrer" class="btn btn-solid" data-accent="acid">
+                    <Icon name="play" />
+                    Play it
+                  </a>
+                )}
+                {project.data.source && (
+                  <a href={project.data.source} target="_blank" rel="noopener noreferrer" class="btn btn-line panel">
+                    <Icon name="source" />
+                    Source
+                  </a>
+                )}
+              </div>
+            )}
+          </Panel>
+        ))}
+      </>
+    ))
+  }
+
+  {
+    groups.flatMap((group) =>
+      group.items.map(({ project }) => {
+        // The first picture is the logo; the window shows the game itself.
+        const screen = project.data.gallery[1] ?? project.data.gallery[0];
+        return (
+          <template data-peek={project.id}>
+            <div class="peek" data-cab={project.id}>
+              <p class="peek-bar">
+                <span class="peek-name">{project.data.title}</span>
+                <span class="peek-buttons" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </p>
+              <div class="peek-screen">
+                <Image src={screen.src} width={320} alt="" loading="eager" />
+                {group.id === 'now-building' && <span class="peek-badge">Now building</span>}
+              </div>
+              <p class="peek-text">{project.data.tagline}</p>
+              <p class="peek-play">Click to play</p>
+            </div>
+          </template>
+        );
+      }),
+    )
+  }
+
+  <h2 class="text-only text-group">Minigame</h2>
+  <Panel id="runner" kicker="Minigame" title="Runner">
+    <p class="gtext mb-4">Jump over the crates, slide under the signs. How far can you get?</p>
+    <div class="-mx-4">
+      <Runner />
+    </div>
+  </Panel>
+</Game>
+
+<style is:global>
+  /* The arcade's panels (game only; the text version is untouched). The scene's base look is the
+     arcade block under "Scene themes" in src/styles/game.css; this adds what only this page has:
+     each panel is the cabinet he walked up to, in that cabinet's colours (art/objects/arcade/),
+     with a lit marquee, the screen, and the control deck along the bottom. */
+  html.game[data-scene='arcade'] .gpanel {
+    --cab: #33296b; /* the cabinet's side */
+    --cab-lit: #6b4f9e; /* its lit edge */
+    --cab-title: #ffe24d; /* its lettering */
+    --ui-line: var(--cab-lit);
+    --ui-head-bg: var(--cab);
+    --ui-head-fg: var(--cab-title);
+    --ui-title-size: 22px;
+    --ui-kicker: #dcd6f0;
+    --ui-shadow: 0 0 0 2px #0d0b1a, 0 0 0 8px var(--cab), 0 0 0 10px #0d0b1a, 0 10px 0 10px #000;
+    --ui-plate-title: var(--cab-title);
+    --ui-close-fg: var(--cab-title);
+    --ui-close-line: var(--cab-title);
+  }
+  html.game[data-scene='arcade'] :is(#odin, .peek[data-cab='odin']) {
+    --cab: #833b1d;
+    --cab-lit: #c8642e;
+    --cab-title: #ffcd78;
+  }
+  html.game[data-scene='arcade'] :is(#tako, .peek[data-cab='tako']) {
+    --cab: #33296b;
+    --cab-lit: #6b4f9e;
+    --cab-title: #46e6e1;
+  }
+  html.game[data-scene='arcade'] :is(#algebrawl, .peek[data-cab='algebrawl']) {
+    --cab: #1c3a2a;
+    --cab-lit: #4c7d48;
+    --cab-title: #ffcd78;
+  }
+  html.game[data-scene='arcade'] :is(#nova, .peek[data-cab='nova']) {
+    --cab: #263f6c;
+    --cab-lit: #5c83b8;
+    --cab-title: #46e6e1;
+  }
+
+  /* The marquee: the title lit from behind, a row of bulbs chasing under it. */
+  html.game[data-scene='arcade'] .gpanel-head {
+    position: relative;
+    padding-bottom: 22px;
+    background:
+      linear-gradient(to bottom, rgb(255 255 255 / 0.1) 0 2px, transparent 2px),
+      var(--cab);
+    border-bottom-color: #0d0b1a;
+  }
+  html.game[data-scene='arcade'] .gpanel-head::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 10px;
+    background:
+      radial-gradient(circle, #ffe24d 0 2px, transparent 2.5px) 0 50% / 36px 10px repeat-x,
+      radial-gradient(circle, #96781e 0 2px, transparent 2.5px) 0 50% / 12px 10px repeat-x,
+      #0d0b1a;
+  }
+  html.game[data-scene='arcade'] .gpanel-title {
+    text-shadow:
+      2px 2px 0 #0d0b1a,
+      0 0 14px color-mix(in srgb, var(--cab-title) 70%, transparent);
+  }
+  /* The line over the title is the cabinet's status lamp: steady for a finished game, blinking
+     for the one being built. */
+  html.game[data-scene='arcade'] .gpanel-kicker::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    background: #7cf05a;
+    box-shadow: 0 0 0 2px #0d0b1a;
+  }
+  html.game[data-scene='arcade'] .gpanel:has([data-status='building']) .gpanel-kicker::before {
+    background: #46e6e1;
+  }
+
+  /* The screen: the glass darkens toward its edges. */
+  html.game[data-scene='arcade'] .gpanel-body {
+    box-shadow:
+      inset 0 0 0 2px #000,
+      inset 0 0 48px rgb(0 0 0 / 0.55);
+  }
+  html.game[data-scene='arcade'] .gpanel .chip {
+    border-color: var(--cab-lit);
+  }
+
+  /* The control deck: the stick and the three buttons of the cabinets in the room. */
+  html.game[data-scene='arcade'] .gpanel[data-open]::after {
+    content: 'CREDIT 01';
+    flex: none;
+    height: 40px;
+    padding: 0 16px;
+    font-family: var(--font-pixel);
+    font-size: 20px;
+    line-height: 34px;
+    letter-spacing: 0.1em;
+    text-align: right;
+    color: #b3b6c9;
+    border-top: 2px solid #0d0b1a;
+    background:
+      /* the stick: its ball, then its shaft */
+      radial-gradient(circle at 26px 12px, #ffa040 0 5px, transparent 5.5px),
+      linear-gradient(#0d0b1a, #0d0b1a) 24px 14px / 4px 16px no-repeat,
+      /* the buttons */
+      radial-gradient(circle at 62px 18px, #ffa040 0 6px, #0d0b1a 6.5px 8px, transparent 8.5px),
+      radial-gradient(circle at 86px 18px, #46e6e1 0 6px, #0d0b1a 6.5px 8px, transparent 8.5px),
+      radial-gradient(circle at 110px 18px, #b3b6c9 0 6px, #0d0b1a 6.5px 8px, transparent 8.5px),
+      /* the deck, with the cabinet's colour under its lip */
+      linear-gradient(to bottom, #686a84 0 2px, #4b4c64 2px 32px, #0d0b1a 32px 34px, var(--cab-lit) 34px);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html.game[data-scene='arcade'] .gpanel-head::after {
+      animation: arcade-bulbs 0.6s steps(3, end) infinite;
+    }
+    html.game[data-scene='arcade'] .gpanel:has([data-status='building']) .gpanel-kicker::before {
+      animation: arcade-lamp 1s steps(2, jump-none) infinite;
+    }
+  }
+  @keyframes arcade-bulbs {
+    to {
+      background-position:
+        36px 50%,
+        0 50%,
+        0 0;
+    }
+  }
+  @keyframes arcade-lamp {
+    to {
+      background: #1a5a66;
+    }
+  }
+
+  /* The window over a cabinet the mouse points at (scene.ts puts a <template data-peek> in the
+     prop card, marked data-peek): a little program window in the cabinet's colours, its title bar
+     with the three boxes, the game's screen with scan lines, the pitch, and the click that plays. */
+  /* Over the HUD's list of what is here, too: it only shows while pointed at. */
+  html.game[data-scene='arcade'] .tip-card[data-peek] {
+    z-index: 2;
+    width: 264px;
+    max-width: 80vw;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-image: none;
+    box-shadow: none;
+  }
+  html.game[data-scene='arcade'] .peek {
+    background: #0d0b1a;
+    box-shadow:
+      0 0 0 2px #0d0b1a,
+      0 0 0 6px var(--cab, #33296b),
+      0 0 0 8px #0d0b1a,
+      0 8px 0 8px #000;
+  }
+  html.game[data-scene='arcade'] .peek-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    padding: 5px 6px 6px 8px;
+    color: var(--cab-title, #ffe24d);
+    background:
+      linear-gradient(to bottom, rgb(255 255 255 / 0.12) 0 2px, transparent 2px),
+      var(--cab-lit, #6b4f9e);
+    border-bottom: 2px solid #0d0b1a;
+  }
+  html.game[data-scene='arcade'] .peek-name {
+    font-size: 20px;
+    line-height: 1;
+    text-shadow: 2px 2px 0 #0d0b1a;
+  }
+  /* Minimise, maximise, close: a bar, a box and a cross, in pixels. */
+  html.game[data-scene='arcade'] .peek-buttons {
+    display: flex;
+    gap: 3px;
+  }
+  html.game[data-scene='arcade'] .peek-buttons i {
+    width: 12px;
+    height: 12px;
+    background: var(--cab, #33296b);
+    box-shadow:
+      inset 0 0 0 2px #0d0b1a,
+      inset 2px 2px 0 2px rgb(255 255 255 / 0.15);
+  }
+  html.game[data-scene='arcade'] .peek-buttons i:nth-child(1) {
+    background:
+      linear-gradient(var(--cab-title, #ffe24d), var(--cab-title, #ffe24d)) 3px 7px / 6px 2px no-repeat,
+      var(--cab, #33296b);
+  }
+  html.game[data-scene='arcade'] .peek-buttons i:nth-child(2) {
+    background:
+      linear-gradient(var(--cab, #33296b), var(--cab, #33296b)) 5px 5px / 2px 2px no-repeat,
+      linear-gradient(var(--cab-title, #ffe24d), var(--cab-title, #ffe24d)) 3px 3px / 6px 6px no-repeat,
+      var(--cab, #33296b);
+  }
+  html.game[data-scene='arcade'] .peek-buttons i:nth-child(3) {
+    background:
+      linear-gradient(45deg, transparent 0 calc(50% - 1px), var(--cab-title, #ffe24d) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)) 3px 3px / 6px 6px no-repeat,
+      linear-gradient(-45deg, transparent 0 calc(50% - 1px), var(--cab-title, #ffe24d) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)) 3px 3px / 6px 6px no-repeat,
+      #b8325a;
+  }
+  /* The screen: the game on black glass, scan lines over it, darker toward the edges. */
+  html.game[data-scene='arcade'] .peek-screen {
+    position: relative;
+    margin: 6px 6px 0;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    box-shadow: 0 0 0 2px #000;
+  }
+  html.game[data-scene='arcade'] .peek-screen img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  html.game[data-scene='arcade'] .peek-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.22) 2px 3px);
+    box-shadow: inset 0 0 24px rgb(0 0 0 / 0.6);
+  }
+  html.game[data-scene='arcade'] .peek-badge {
+    position: absolute;
+    z-index: 1;
+    top: 6px;
+    left: 6px;
+    padding: 2px 6px 3px;
+    font-size: 16px;
+    line-height: 1;
+    color: #0d0b1a;
+    background: #46e6e1;
+    box-shadow: 0 0 0 2px #0d0b1a;
+  }
+  html.game[data-scene='arcade'] .peek-text {
+    margin: 0;
+    padding: 8px 10px 4px;
+    font-size: 16px;
+    line-height: 1.15;
+    color: #dcd6f0;
+  }
+  html.game[data-scene='arcade'] .peek-play {
+    margin: 0;
+    padding: 2px 10px 9px;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--cab-title, #ffe24d);
+  }
+  html.game[data-scene='arcade'] .peek-play::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    background: #7cf05a;
+    box-shadow: 0 0 0 2px #0d0b1a;
+  }
+</style>

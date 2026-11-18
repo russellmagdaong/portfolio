@@ -1,0 +1,23 @@
+---
+/**
+ * The sign every scene panel wears, the same as its shop's sign on the street: the icon from that
+ * sign at 4x and the sign's word, in the place's colour on ink, in a double neon border.
+ * Styles: .t-sign in src/styles/text.css.
+ */
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  place: string;
+  word: string;
+}
+
+const { place, word } = Astro.props;
+const logos = import.meta.glob<{ default: ImageMetadata }>('../../assets/sign-logos/*.png', { eager: true });
+const logo = logos[`../../assets/sign-logos/${place}.png`]?.default;
+if (!logo) throw new Error(`src/assets/sign-logos/${place}.png is missing: run npm run art -- hub-objects`);
+---
+
+<p class="t-sign" data-sign={place}>
+  <img src={logo.src} alt="" width={logo.width * 4} height={logo.height * 4} />
+  <span>{word}</span>
+</p>

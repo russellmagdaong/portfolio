@@ -1,0 +1,36 @@
+---
+/**
+ * One block of content. In the game it opens as a panel when its thing is used
+ * (the thing's slice has opens=<id>); in the text version it is a section of
+ * the page. Its id is its address: /projects#odin.
+ */
+interface Props {
+  id: string;
+  title: string;
+  /** A short line over the title. */
+  kicker?: string;
+  /** Only part of the game (the controls), so left out of the text version. */
+  gameOnly?: boolean;
+  wide?: boolean;
+  /** In the game, keep the title for screen readers only, so the content gets the room (the mirror). */
+  quiet?: boolean;
+}
+
+const { id, title, kicker, gameOnly = false, wide = false, quiet = false } = Astro.props;
+---
+
+<section id={id} data-panel class:list={['gpanel', { 'game-only': gameOnly, 'gpanel-wide': wide, 'gpanel-quiet': quiet }]} aria-labelledby={`${id}-title`}>
+  <header class="gpanel-head">
+    <div>
+      <h2 id={`${id}-title`} class="gpanel-title" tabindex="-1" data-panel-title>{title}</h2>
+      {kicker && <p class="gpanel-kicker">{kicker}</p>}
+    </div>
+    <button type="button" class="gpanel-close" data-panel-close aria-label={`Close ${title}`}>
+      <span aria-hidden="true">Esc</span>
+      <svg viewBox="0 0 20 20" aria-hidden="true" class="size-4"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" d="M5 5l10 10M15 5L5 15"></path></svg>
+    </button>
+  </header>
+  <div class="gpanel-body">
+    <slot />
+  </div>
+</section>

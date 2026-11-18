@@ -1,6 +1,9 @@
 ---
 title: TAKO
-tagline: A math RPG that works without internet.
+tagline: A math RPG for students without reliable internet.
+status: shipped
+meta: Android game · Grades 7 to 10 · English or Filipino
+line: Offline math RPG
 gallery:
   # TODO: swap in TAKO's real logo
   - src: ../../assets/projects/tako/logo-placeholder.svg
@@ -12,6 +15,6 @@ source: https://github.com/russellmagdaong/tako-game
 order: 2
 ---
 
-TAKO is an Android game for Grades 7 to 10, aligned with the DepEd curriculum and playable in English or Filipino. It was built for students who don't have reliable internet, so everything runs from a local SQLite database and syncs to Supabase only when a connection exists.
+TAKO is an Android game for Grades 7 to 10, built around the DepEd curriculum and playable in English or Filipino. It is made for students who can't count on the internet, so everything runs from a local SQLite database and syncs to Supabase only when a connection shows up.
 
-Gemini writes the questions and the feedback, but it never grades anything. Answers are checked by ordinary code that knows `1/2`, `0.5` and `2/4` are the same number, and wrong answers are matched to known mistakes before the AI is asked to explain them. If the AI is unreachable, the game falls back to templates and keeps going.
+Gemini writes the questions and the feedback, but it never grades anything. Ordinary code checks the answers, and it knows that `1/2`, `0.5` and `2/4` are the same number. A wrong answer is matched to a known mistake before the AI is asked to explain it, and if the AI can't be reached, the game falls back to templates and keeps going.

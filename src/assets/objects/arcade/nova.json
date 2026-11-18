@@ -1,0 +1,29 @@
+{
+  "source": "art/objects/arcade/nova.aseprite",
+  "width": 26,
+  "height": 40,
+  "columns": 8,
+  "rows": 1,
+  "origin": {
+    "x": 13,
+    "y": 40
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 8,
+      "durations": [150, 150, 150, 150, 150, 150, 150, 150],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 0,
+      "y": 39,
+      "width": 26,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

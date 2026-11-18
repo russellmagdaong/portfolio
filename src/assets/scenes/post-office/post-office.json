@@ -1,0 +1,232 @@
+{
+  "source": "art/scenes/post-office.aseprite",
+  "width": 640,
+  "height": 270,
+  "layers": [
+    {
+      "name": "sky",
+      "image": "sky.png",
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 270,
+      "frames": 1,
+      "data": {
+        "speed": 0.1
+      }
+    },
+    {
+      "name": "far",
+      "image": "far.png",
+      "x": 236,
+      "y": 99,
+      "width": 257,
+      "height": 61,
+      "frames": 1,
+      "data": {
+        "speed": 0.3
+      }
+    },
+    {
+      "name": "mid",
+      "image": "mid.png",
+      "x": 316,
+      "y": 104,
+      "width": 191,
+      "height": 72,
+      "frames": 1,
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 316,
+      "y": 50,
+      "width": 158,
+      "height": 107,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "back",
+      "image": "back.png",
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 176,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "lights",
+      "image": "lights.png",
+      "x": 41,
+      "y": 69,
+      "width": 379,
+      "height": 54,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "image": "floor.png",
+      "x": 0,
+      "y": 176,
+      "width": 640,
+      "height": 94,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "props",
+      "image": "props.png",
+      "x": 150,
+      "y": 86,
+      "width": 442,
+      "height": 97,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "life",
+      "image": "life.png",
+      "x": 300,
+      "y": 58,
+      "width": 148,
+      "height": 123,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "parcels",
+      "image": "parcels.png",
+      "x": 263,
+      "y": 171,
+      "width": 52,
+      "height": 43,
+      "frames": 1,
+      "data": {
+        "sort": 204
+      }
+    },
+    {
+      "name": "front",
+      "image": "front.png",
+      "x": 109,
+      "y": 225,
+      "width": 518,
+      "height": 45,
+      "frames": 1,
+      "data": {
+        "speed": 1.2,
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "platform",
+      "x": 300,
+      "y": 190,
+      "width": 12,
+      "height": 24,
+      "data": {
+        "depth": 10
+      }
+    },
+    {
+      "name": "platform",
+      "x": 298,
+      "y": 198,
+      "width": 16,
+      "height": 16,
+      "data": {
+        "depth": 10
+      }
+    },
+    {
+      "name": "platform",
+      "x": 266,
+      "y": 182,
+      "width": 20,
+      "height": 32,
+      "data": {
+        "depth": 10
+      }
+    },
+    {
+      "name": "platform",
+      "x": 264,
+      "y": 196,
+      "width": 32,
+      "height": 18,
+      "data": {
+        "depth": 10
+      }
+    },
+    {
+      "name": "show:testimonials",
+      "x": 506,
+      "y": 104,
+      "width": 80,
+      "height": 56,
+      "data": {
+        "look": "postcard"
+      }
+    },
+    {
+      "name": "object:counter",
+      "x": 152,
+      "y": 152,
+      "width": 48,
+      "height": 30,
+      "data": {
+        "opens": "contact",
+        "prompt": "Write"
+      }
+    },
+    {
+      "name": "show:socials",
+      "x": 48,
+      "y": 114,
+      "width": 84,
+      "height": 50,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "exit",
+      "x": 0,
+      "y": 176,
+      "width": 12,
+      "height": 49,
+      "data": {
+        "to": "map"
+      }
+    },
+    {
+      "name": "spawn",
+      "x": 28,
+      "y": 196,
+      "width": 8,
+      "height": 2,
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "x": 0,
+      "y": 176,
+      "width": 640,
+      "height": 49,
+      "data": {}
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+---
+/**
+ * A chapter of the text page: one place on the street. It opens on that place's room (SceneStage:
+ * the game's own interior at 2x, its title on a plate when the title says more than the sign),
+ * with the place's panel hung over it (the "panel" slot); anything else follows in a reading column.
+ * Styles: .t-chapter, .t-stage in src/styles/text.css.
+ */
+import SceneStage from './SceneStage.astro';
+import type { StageBrief, StageFills } from '../../data/stages';
+
+interface Props {
+  id: string;
+  /** The game's place id: also its sign colour. */
+  place: string;
+  title: string;
+  /** Show the title on a plate (see SceneStage); false when it only repeats the panel's sign. */
+  plate?: boolean;
+  /** Names for the room's pointable things, by spot id. */
+  names?: Record<string, string>;
+  /** Only these spot ids become buttons in the room. */
+  only?: string[];
+  /** Briefs shown over things in the room while hovered (see SceneStage). */
+  briefs?: Record<string, StageBrief>;
+  /** What boards and screens in the room show (see SceneStage). */
+  fills?: StageFills;
+}
+
+const { id, place, title, plate, names, only, briefs, fills } = Astro.props;
+const hasColumn = Astro.slots.has('default');
+---
+
+<section id={id} class="t-chapter" data-place={place} data-sign={place} data-chapter aria-labelledby={`${id}-title`}>
+  <SceneStage place={place} title={title} titleId={`${id}-title`} plate={plate} names={names} only={only} briefs={briefs} fills={fills}>
+    <slot name="panel" />
+  </SceneStage>
+  {
+    hasColumn && (
+      <div class="t-column">
+        <slot />
+      </div>
+    )
+  }
+</section>

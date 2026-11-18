@@ -1,0 +1,204 @@
+---
+/**
+ * The front of the postcard: the game's own street (the hub's layers, its six destinations where
+ * the game puts them, two levels and stairs), with Russell standing at the street's spawn, by the
+ * jeepney he arrives on (src/game/frontride.ts), whichever page this is. Each destination is a link to its chapter. One art pixel is --s CSS pixels: 3 when
+ * the frame is wide enough for the whole street, else 2 (scrolling sideways inside the frame on a
+ * narrow screen; the page itself never does). Styles: .t-front* in src/styles/text.css.
+ */
+import type { HubConfig, Sheet } from '../../game/types';
+import Wordmark from '../Wordmark.astro';
+import Icon from '../Icon.astro';
+import { about, site } from '../../data/site';
+
+interface Props {
+  hub: HubConfig;
+  /** The place this page is for (a building id, or 'street'). */
+  here: string;
+  /** Each building's chapter: its section slug and the name the text page gives it. */
+  chapters: Record<string, { slug: string; label: string }>;
+}
+
+const { hub, here, chapters } = Astro.props;
+
+// Under the street, the one line a visitor reads before scrolling: who sent this postcard.
+const school = about.stats.find((s) => s.label === 'School')?.value;
+const caption = [site.name, school, 'Greetings from a made-up Manila'].filter(Boolean).join(' · ');
+
+const px = (n: number) => `${n}`;
+const sheetVars = (s: Sheet) =>
+  [`--sheet: url(${s.src})`, `--w: ${s.width}`, `--h: ${s.height}`, `--cols: ${s.columns}`, `--rows: ${s.rows}`].join('; ');
+// Each animation gets keyframes of its own, so every frame is held for the time Aseprite gives it
+// (a sign's flicker frame lasts 80 ms of a two-second loop, not a quarter of it).
+const keyframes: string[] = [];
+const animVars = (name: string, frames: number, durations: number[]) => {
+  if (frames <= 1) return '';
+  const times = Array.from({ length: frames }, (_, i) => durations[i] ?? durations[0] ?? 100);
+  const total = times.reduce((a, b) => a + b, 0);
+  let t = 0;
+  const stops = times.map((d, i) => {
+    const stop = `${((t / total) * 100).toFixed(4)}% { background-position-x: calc(var(--w) * var(--s) * ${-i}px); }`;
+    t += d;
+    return stop;
+  });
+  keyframes.push(`@keyframes ${name} { ${stops.join(' ')} 100% { background-position-x: calc(var(--w) * var(--s) * ${-(frames - 1)}px); } }`);
+  return `; --anim: ${name}; --dur: ${total}ms`;
+};
+
+const layerStyle = (l: HubConfig['layers'][number]) =>
+  `--x: ${px(l.x)}; --y: ${px(l.y)}; --w: ${l.width}; --h: ${l.height}; --frames: ${l.frames}; --sheet: url(${l.src})${animVars(`t-front-${l.name}`, l.frames, l.durations)}`;
+// Worked out here, not in the template: each call writes its keyframes, which must all exist
+// before the <style> below is rendered.
+const toLayer = (l: HubConfig['layers'][number]) => ({ style: layerStyle(l), anim: l.frames > 1, name: l.name });
+// In front of him, as the game decides it (inFront in src/game/layers.ts): a layer marked over, or one
+// whose sort line is below his feet (the jeepney, 230, with his feet on the sidewalk at 214-218).
+// Every spot of his trip is on the sidewalk, so one split holds for all of it.
+const spawnSlice = hub.slices.find((s) => s.name === 'spawn');
+const feetY = spawnSlice ? spawnSlice.y + spawnSlice.height : 218;
+const before = (l: HubConfig['layers'][number]) => l.over || (l.sort !== undefined && feetY < l.sort);
+const under = hub.layers.filter((l) => !before(l)).map(toLayer);
+const over = hub.layers.filter(before).map(toLayer);
+
+const buildings = hub.buildings.map((b) => {
+  const s = b.sprite;
+  const origin = s.origin ?? { x: Math.round(s.width / 2), y: s.height };
+  const ax = b.slice.x + b.slice.width / 2;
+  const ay = b.slice.y + b.slice.height;
+  const idle = s.tags.idle ?? { row: 0, frames: 1, durations: [100] };
+  const hover = s.tags.hover ?? idle;
+  return {
+    id: b.place.id,
+    frames: idle.frames,
+    title: b.place.title,
+    label: b.place.label,
+    chapter: chapters[b.place.id],
+    box: `--x: ${b.slice.x}; --y: ${b.slice.y}; --w: ${b.slice.width}; --h: ${b.slice.height}`,
+    sprite: [
+      sheetVars(s),
+      `--ox: ${ax - origin.x - b.slice.x}`,
+      `--oy: ${ay - origin.y - b.slice.y}`,
+      `--row: ${idle.row}`,
+      `--hover-row: ${hover.row}`,
+    ].join('; ') + animVars(`t-front-${b.place.id}`, idle.frames, idle.durations),
+  };
+});
+
+// Russell, idle, at the street's spawn by the jeepney, on every page: a short walk from the curb
+// when the jeepney brings him (Russell, 2026-11-18), not across the street to this page's door.
+const spot = spawnSlice;
+const player = hub.player;
+const pOrigin = player.origin ?? { x: Math.round(player.width / 2), y: player.height };
+const pIdle = player.tags.idle;
+const russell = spot
+  ? [
+      sheetVars(player),
+      `--x: ${spot.x + spot.width / 2 - pOrigin.x}`,
+      `--y: ${spot.y + spot.height - pOrigin.y}`,
+      `--row: ${pIdle.row}`,
+    ].join('; ') + animVars('t-front-russell', pIdle.frames, pIdle.durations)
+  : null;
+const at = hub.buildings.some((b) => b.place.id === here) ? here : 'street';
+
+// The way on: the game's own bobbing arrow (art/arrow.aseprite), pointing down at the letter.
+const arrowSheet = hub.arrow;
+const bob = arrowSheet.tags.bob ?? Object.values(arrowSheet.tags)[0];
+const arrowStyle = [sheetVars(arrowSheet), `--row: ${bob?.row ?? 0}`].join('; ') + (bob ? animVars('t-front-arrow', bob.frames, bob.durations) : '');
+
+// The jeepney's arrival when the page switches to text (src/game/frontride.ts): the street's floors
+// and stairs (read the way src/game/hub.ts reads them), the jeepney, his run and idle rows, and
+// where he ends up (his feet, and on which level).
+const sliceNamed = (name: string) => hub.slices.filter((s) => s.name === name);
+const floors = Object.fromEntries(
+  sliceNamed('floor').map((s) => [String(s.data.level ?? 'street'), { x0: s.x + 2, x1: s.x + s.width - 2, y0: s.y + 1, y1: s.y + s.height }]),
+);
+const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+const stairs = hub.slices
+  .filter((s) => s.name.startsWith('stairs:'))
+  .map((s) => {
+    const lower = String(s.data.lower ?? 'street');
+    const upper = String(s.data.upper ?? 'upper');
+    const upRight = s.data.up !== 'left';
+    const lo = floors[lower];
+    const hi = floors[upper];
+    return {
+      lower,
+      upper,
+      bottom: { x: upRight ? s.x : s.x + s.width, y: lo ? clampTo(s.y + s.height, lo.y0, lo.y1) : s.y + s.height },
+      top: { x: upRight ? s.x + s.width : s.x, y: hi ? clampTo(s.y, hi.y0, hi.y1) : s.y },
+    };
+  });
+const jeepSlice = sliceNamed('jeep')[0];
+const ride =
+  spot && jeepSlice
+    ? {
+        jeep: { x: jeepSlice.x, width: jeepSlice.width },
+        floors,
+        stairs,
+        origin: pOrigin,
+        size: { w: player.width, h: player.height },
+        run: player.tags.run ?? player.tags.walk ?? pIdle,
+        target: {
+          x: spot.x + spot.width / 2,
+          y: spot.y + spot.height,
+          level: String(spot.data.level ?? 'street'),
+        },
+      }
+    : null;
+---
+
+<style is:global set:html={keyframes.join('\n')}></style>
+
+<section id="sec-street" class="t-front" data-place="street" data-front aria-labelledby="t-front-title">
+  <h2 id="t-front-title" class="sr-only">The street</h2>
+  <div class="t-front-frame">
+    <div class="t-front-bar">
+      <a href="#sec-home" class="t-front-mark" data-goto="home" aria-label="Russell Magdaong: to the top of the letter"><Wordmark size={32} /></a>
+      <button type="button" class="t-btn t-btn-primary" data-change-ui>
+        <Icon name="swap" class="size-4" />
+        Change UI
+      </button>
+    </div>
+    <div class="t-front-scroll" data-front-scroll>
+      <div class="t-front-clip" style={`--sw: ${hub.width}; --sh: ${hub.height}`}>
+        <div class="t-front-stage" data-front-stage>
+        {under.map((l) => <div class="t-layer" style={l.style} data-anim={l.anim ? "" : undefined} data-layer={l.name} aria-hidden="true" />)}
+        {
+          buildings.map((b) => (
+            <a
+              href={`#sec-${b.chapter.slug}`}
+              class="t-front-place"
+              style={b.box}
+              data-goto={b.id}
+              data-spot={b.id}
+              data-sign={b.id}
+              aria-label={`${b.chapter.label}: the ${b.label.toLowerCase()}`}
+            >
+              <span class="t-front-sprite" style={b.sprite} data-anim={b.frames > 1 ? "" : undefined} data-front-sprite aria-hidden="true" />
+            </a>
+          ))
+        }
+        {russell && <span class="t-front-russell" style={russell} data-front-russell data-anim={pIdle.frames > 1 ? "" : undefined} data-at={at} aria-hidden="true" />}
+        {over.map((l) => <div class="t-layer" style={l.style} data-anim={l.anim ? "" : undefined} data-layer={l.name} aria-hidden="true" />)}
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href="#sec-home" class="t-front-down" data-scroll-down>
+    <span class="t-front-down-word">Scroll down</span>
+    <span class="t-front-arrow" style={arrowStyle} data-anim={bob && bob.frames > 1 ? '' : undefined} aria-hidden="true"></span>
+  </a>
+  {ride && <script type="application/json" data-front-ride set:html={JSON.stringify(ride)} />}
+  <p class="t-front-caption">{caption}</p>
+  <ul class="t-front-list" data-front-list>
+    {
+      buildings.map((b) => (
+        <li>
+          <a href={`#sec-${b.chapter.slug}`} data-goto={b.id} data-sign={b.id}>
+            <i class="t-sq" aria-hidden="true" />
+            {b.chapter.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</section>

@@ -1,0 +1,35 @@
+{
+  "source": "art/map-objects/home.aseprite",
+  "width": 52,
+  "height": 42,
+  "columns": 1,
+  "rows": 2,
+  "origin": {
+    "x": 26,
+    "y": 41
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    },
+    "hover": {
+      "row": 1,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 1,
+      "y": 40,
+      "width": 50,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

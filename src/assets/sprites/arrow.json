@@ -1,0 +1,29 @@
+{
+  "source": "art/arrow.aseprite",
+  "width": 11,
+  "height": 16,
+  "columns": 4,
+  "rows": 1,
+  "origin": {
+    "x": 5,
+    "y": 17
+  },
+  "tags": {
+    "bob": {
+      "row": 0,
+      "frames": 4,
+      "durations": [140, 140, 140, 140],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 5,
+      "y": 16,
+      "width": 1,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

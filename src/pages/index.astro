@@ -1,24 +1,96 @@
 ---
-import Base from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
-import About from '../components/About.astro';
-import Projects from '../components/Projects.astro';
-import Tools from '../components/Tools.astro';
-import Credentials from '../components/Credentials.astro';
-import Entry from '../components/Entry.astro';
-import Contact from '../components/Contact.astro';
-import PulseLine from '../components/PulseLine.astro';
-import Runner from '../components/Runner.astro';
+// Home: Russell's room, where the visitor starts. The poster, the PC screen and the corkboard
+// are read in the room; the props show a card; only the mirror opens.
+import type { ImageMetadata } from 'astro';
+import Mirror from '../components/Mirror.astro';
+import Game from '../layouts/Game.astro';
+import Panel from '../components/game/Panel.astro';
+import Show from '../components/game/Show.astro';
+import Tip from '../components/game/Tip.astro';
+import Tips from '../components/game/Tips.astro';
+import Controls from '../components/game/Controls.astro';
+import { certificates, dialogue, interests, site } from '../data/site';
+import { sceneConfig } from '../game/config';
+
+const photos = import.meta.glob<{ default: ImageMetadata }>('../assets/pics/*', { eager: true });
+const photo = photos[`../assets/pics/${site.photos[0]}`]?.default;
+if (!photo) throw new Error(`Photo not found: src/assets/pics/${site.photos[0]}`);
+
+// The results that go on the CTF and hackathon cards.
+const results: Record<string, string[]> = {
+  ctf: certificates.find((g) => g.folder === 'ctfs')?.items.map((i) => `${i.title}: ${i.detail}`) ?? [],
+  hackathons: certificates.find((g) => g.folder === 'hackathons')?.items.map((i) => `${i.title}: ${i.detail}`) ?? [],
+};
 ---
 
-<Base>
-  <Entry slot="overlay" />
-  <Hero />
-  <Runner />
-  <About />
-  <Projects />
-  <Tools />
-  <Credentials />
-  <PulseLine accent="acid" reverse />
-  <Contact />
-</Base>
+<Game config={sceneConfig('home')} here={[{ id: 'mirror', label: 'Mirror: de-pixelate me' }]}>
+  <Show id="poster" title={site.name}>
+    <p><strong>{site.role}</strong></p>
+    <p class="mt-[0.5em]">{site.description}</p>
+    {site.resumeUrl && <p class="mt-[0.5em]"><a href={site.resumeUrl}>Résumé</a></p>}
+  </Show>
+
+  <Show id="pc" title="C:\>russm" look="screen">
+    <ul class="pc-lines" data-typer>
+      {dialogue.map((line) => <li><span aria-hidden="true">&gt; </span>{line}</li>)}
+    </ul>
+  </Show>
+
+  <Show id="corkboard" title="How to play" look="wall">
+    <Controls compact />
+  </Show>
+
+  <Tips title="Interests">
+    {
+      interests.map((item) => (
+        <Tip id={item.id} title={item.label}>
+          <p>{item.detail}</p>
+          {results[item.id]?.length > 0 && (
+            <ul>
+              {results[item.id].slice(0, 4).map((r) => (
+                <li>{r}</li>
+              ))}
+            </ul>
+          )}
+        </Tip>
+      ))
+    }
+  </Tips>
+
+  <Panel id="mirror" title="The mirror" quiet>
+    <Mirror photo={photo} alt={`A photo of ${site.name}`} />
+  </Panel>
+</Game>
+
+<script>
+  // The PC types its lines out one at a time, over and over (all at once with reduced motion).
+  const list = document.querySelector<HTMLElement>('[data-typer]');
+  if (list && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const lines = [...list.querySelectorAll('li')].map((li) => li.textContent ?? '');
+    list.setAttribute('aria-label', lines.join(' '));
+    const items = [...list.querySelectorAll('li')];
+    items.forEach((li) => li.setAttribute('aria-hidden', 'true'));
+    let line = 0;
+    let char = 0;
+    const tick = () => {
+      items.forEach((li, i) => {
+        li.textContent = i < line ? lines[i] : i === line ? lines[i].slice(0, char) + '_' : '';
+      });
+      if (char < lines[line].length) {
+        char += 1;
+        setTimeout(tick, 45);
+      } else if (line < lines.length - 1) {
+        line += 1;
+        char = 0;
+        setTimeout(tick, 500);
+      } else {
+        setTimeout(() => {
+          line = 0;
+          char = 0;
+          tick();
+        }, 4000);
+      }
+    };
+    tick();
+  }
+</script>

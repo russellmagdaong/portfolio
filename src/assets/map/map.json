@@ -1,0 +1,323 @@
+{
+  "source": "art/map.aseprite",
+  "width": 480,
+  "height": 270,
+  "layers": [
+    {
+      "name": "ground",
+      "image": "ground.png",
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 270,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "roads",
+      "image": "roads.png",
+      "x": 1,
+      "y": 28,
+      "width": 479,
+      "height": 236,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "over",
+      "image": "over.png",
+      "x": 96,
+      "y": 86,
+      "width": 297,
+      "height": 120,
+      "frames": 1,
+      "data": {
+        "over": true
+      }
+    },
+    {
+      "name": "lights",
+      "image": "lights.png",
+      "x": 1,
+      "y": 0,
+      "width": 479,
+      "height": 270,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "over": true
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 0,
+      "y": 0,
+      "width": 475,
+      "height": 270,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "spawn",
+      "x": 111,
+      "y": 114,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "at": "home-door"
+      }
+    },
+    {
+      "name": "point:home-door",
+      "x": 111,
+      "y": 114,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "west-lane"
+      }
+    },
+    {
+      "name": "point:east-lane",
+      "x": 371,
+      "y": 198,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "south-lane,post-office-door"
+      }
+    },
+    {
+      "name": "point:store-door",
+      "x": 177,
+      "y": 222,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "store-corner"
+      }
+    },
+    {
+      "name": "point:school-door",
+      "x": 271,
+      "y": 102,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "north-lane"
+      }
+    },
+    {
+      "name": "point:north-lane",
+      "x": 211,
+      "y": 104,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "square,lane-top,school-door"
+      }
+    },
+    {
+      "name": "point:west-lane",
+      "x": 125,
+      "y": 126,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "bend-1,home-door"
+      }
+    },
+    {
+      "name": "point:bend-2",
+      "x": 303,
+      "y": 148,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "square,east,south-lane"
+      }
+    },
+    {
+      "name": "point:trophy-shop-door",
+      "x": 261,
+      "y": 222,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "trophy-shop-corner"
+      }
+    },
+    {
+      "name": "point:lane-top",
+      "x": 199,
+      "y": 58,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "north-lane"
+      }
+    },
+    {
+      "name": "point:post-office-door",
+      "x": 371,
+      "y": 192,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "east-lane"
+      }
+    },
+    {
+      "name": "point:east",
+      "x": 391,
+      "y": 130,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "bend-2,arcade-door"
+      }
+    },
+    {
+      "name": "point:bend-1",
+      "x": 139,
+      "y": 182,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "west,square,west-lane,store-corner"
+      }
+    },
+    {
+      "name": "point:square",
+      "x": 221,
+      "y": 166,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "bend-1,bend-2,north-lane"
+      }
+    },
+    {
+      "name": "point:arcade-door",
+      "x": 361,
+      "y": 114,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "east"
+      }
+    },
+    {
+      "name": "point:store-corner",
+      "x": 147,
+      "y": 222,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "store-door,bend-1"
+      }
+    },
+    {
+      "name": "point:trophy-shop-corner",
+      "x": 295,
+      "y": 222,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "trophy-shop-door,south-lane"
+      }
+    },
+    {
+      "name": "point:south-lane",
+      "x": 317,
+      "y": 198,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "bend-2,east-lane,trophy-shop-corner"
+      }
+    },
+    {
+      "name": "point:west",
+      "x": 85,
+      "y": 204,
+      "width": 2,
+      "height": 2,
+      "data": {
+        "links": "bend-1"
+      }
+    },
+    {
+      "name": "building:post-office",
+      "x": 348,
+      "y": 152,
+      "width": 48,
+      "height": 38,
+      "data": {
+        "scene": "post-office",
+        "door": "post-office-door"
+      }
+    },
+    {
+      "name": "building:trophy-shop",
+      "x": 237,
+      "y": 184,
+      "width": 50,
+      "height": 36,
+      "data": {
+        "scene": "trophy-shop",
+        "door": "trophy-shop-door"
+      }
+    },
+    {
+      "name": "building:store",
+      "x": 156,
+      "y": 190,
+      "width": 44,
+      "height": 30,
+      "data": {
+        "scene": "store",
+        "door": "store-door"
+      }
+    },
+    {
+      "name": "building:arcade",
+      "x": 334,
+      "y": 66,
+      "width": 56,
+      "height": 46,
+      "data": {
+        "scene": "arcade",
+        "door": "arcade-door"
+      }
+    },
+    {
+      "name": "building:school",
+      "x": 234,
+      "y": 48,
+      "width": 76,
+      "height": 52,
+      "data": {
+        "scene": "school",
+        "door": "school-door"
+      }
+    },
+    {
+      "name": "building:home",
+      "x": 87,
+      "y": 72,
+      "width": 50,
+      "height": 40,
+      "data": {
+        "scene": "home",
+        "door": "home-door"
+      }
+    }
+  ]
+}

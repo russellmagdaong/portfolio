@@ -1,0 +1,188 @@
+---
+/**
+ * The certificate window. A plaque marked [data-cert-category], or a frame on the trophy shop's wall
+ * that is a button, opens the window on that folder (the text page's plaques no longer do: a click
+ * there shows the folder in the case, and a click on a certificate opens it large): its grid
+ * ([data-cert-grid], which holds the folder's data-spot) moves into the window and back out on close.
+ * A certificate in the grid shows large, with back, previous and next (and the arrow keys).
+ *
+ * In the game, a certificate's button (data-cert-open: the image, data-cert-title, data-cert-detail,
+ * data-cert-group) opens it large straight away, stepping through its own list.
+ *
+ * A native modal dialog: the close button, Esc or a click outside it closes it, and focus goes back
+ * to what opened it. It takes the scene's popup theme (--ui-* in src/styles/game.css); on the text
+ * page, the trophy shop's case (.cert-dialog in src/styles/text.css).
+ */
+---
+
+<dialog data-cert-dialog data-cert-window class="cert-dialog" aria-labelledby="cert-window-title">
+  <div class="cert-box">
+    <header class="cert-head">
+      <h2 id="cert-window-title" class="cert-group" data-cert-group></h2>
+      <button type="button" class="gpanel-close" data-cert-close aria-label="Close">
+        <span aria-hidden="true">Esc</span>
+        <svg viewBox="0 0 20 20" aria-hidden="true" class="size-4"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" d="M5 5l10 10M15 5L5 15"></path></svg>
+      </button>
+    </header>
+    <div class="cert-shelf" data-cert-shelf></div>
+    <div class="cert-large" data-cert-large hidden>
+      <div class="cert-frame">
+        <img data-cert-full alt="" />
+      </div>
+      <div class="cert-plate">
+        <p class="cert-title" data-cert-caption></p>
+        <p class="cert-detail" data-cert-detail></p>
+      </div>
+      <div class="cert-steps">
+        <button type="button" class="cert-step" data-cert-back>All</button>
+        <span class="cert-step-gap"></span>
+        <button type="button" class="cert-step" data-cert-prev aria-label="Previous certificate">&#9664;&#xFE0E; Prev</button>
+        <span class="cert-count" data-cert-count></span>
+        <button type="button" class="cert-step" data-cert-next aria-label="Next certificate">Next &#9654;&#xFE0E;</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-cert-window]');
+  if (dialog) {
+    // The page's content sits in a container the game hides while no panel is open. A modal dialog
+    // in a hidden container still blocks the whole page but is never drawn, so it lives in <body>.
+    document.body.append(dialog);
+    const $ = <T extends HTMLElement>(sel: string) => dialog.querySelector<T>(sel)!;
+    const shelf = $('[data-cert-shelf]');
+    const large = $('[data-cert-large]');
+    const full = $<HTMLImageElement>('[data-cert-full]');
+    const caption = $('[data-cert-caption]');
+    const detail = $('[data-cert-detail]');
+    const group = $('[data-cert-group]');
+    const count = $('[data-cert-count]');
+    const back = $<HTMLButtonElement>('[data-cert-back]');
+    const prev = $<HTMLButtonElement>('[data-cert-prev]');
+    const next = $<HTMLButtonElement>('[data-cert-next]');
+    const inGame = () => document.documentElement.classList.contains('game');
+    const cardsIn = (root: ParentNode) => [...root.querySelectorAll<HTMLButtonElement>('[data-cert-open]')];
+
+    // The folder grid on loan from the page (and where it goes back to), what opened the window,
+    // and the certificates being stepped through.
+    let home: { grid: HTMLElement; parent: Node; next: Node | null } | null = null;
+    let opener: HTMLElement | null = null;
+    let list: HTMLButtonElement[] = [];
+    let at = 0;
+
+    function showLarge(index: number) {
+      if (!list.length) return;
+      at = (index + list.length) % list.length;
+      const card = list[at];
+      full.src = card.dataset.certOpen ?? '';
+      full.alt = `Certificate: ${card.dataset.certTitle}`;
+      caption.textContent = card.dataset.certTitle ?? '';
+      detail.textContent = card.dataset.certDetail ?? '';
+      count.textContent = `${at + 1} / ${list.length}`;
+      prev.hidden = next.hidden = count.hidden = list.length < 2;
+      back.hidden = !home;
+      shelf.hidden = true;
+      large.hidden = false;
+    }
+
+    function showShelf(focus?: HTMLElement) {
+      large.hidden = true;
+      shelf.hidden = false;
+      focus?.focus();
+    }
+
+    function openFolder(folder: string, from: HTMLElement, card?: HTMLButtonElement) {
+      const grid = document.querySelector<HTMLElement>(`[data-cert-grid="${CSS.escape(folder)}"]`);
+      if (!grid || dialog!.open) return;
+      home = { grid, parent: grid.parentNode!, next: grid.nextSibling };
+      shelf.append(grid);
+      group.textContent = grid.dataset.certLabel ?? '';
+      list = cardsIn(grid);
+      opener = from;
+      if (card) showLarge(list.indexOf(card));
+      else showShelf();
+      dialog!.showModal();
+      (card ? back : list[0])?.focus();
+    }
+
+    document.addEventListener('click', (event) => {
+      const el = event.target as Element | null;
+      if (!el?.closest) return;
+      const card = el.closest<HTMLButtonElement>('[data-cert-open]');
+      if (card) {
+        if (dialog.contains(card)) {
+          showLarge(list.indexOf(card));
+          back.focus();
+          return;
+        }
+        const grid = card.closest<HTMLElement>('[data-cert-grid]');
+        if (grid && !inGame()) return openFolder(grid.dataset.certGrid ?? '', card, card);
+        // The game's certificates: this one large, among its own list.
+        home = null;
+        opener = card;
+        list = cardsIn(card.closest('ul') ?? document);
+        group.textContent = card.dataset.certGroup ?? '';
+        showLarge(list.indexOf(card));
+        zoom.hidden = true;
+        dialog.showModal();
+        return;
+      }
+      const plaque = el.closest<HTMLElement>('[data-cert-category]');
+      if (plaque) return openFolder(plaque.dataset.certCategory ?? '', plaque);
+      const frame = el.closest<HTMLElement>('#sec-credentials .t-target[data-target^="certs-"]');
+      if (frame) openFolder((frame.dataset.target ?? '').slice('certs-'.length), frame);
+    });
+
+    back.addEventListener('click', () => showShelf(list[at]));
+    prev.addEventListener('click', () => showLarge(at - 1));
+    next.addEventListener('click', () => showLarge(at + 1));
+    dialog.addEventListener('keydown', (event) => {
+      if (large.hidden || list.length < 2) return;
+      if (event.key === 'ArrowLeft') showLarge(at - 1);
+      else if (event.key === 'ArrowRight') showLarge(at + 1);
+    });
+
+    // Pointing at a certificate in the game's room enlarges it beside the frame (for a pointer that hovers).
+    const zoom = document.createElement('img');
+    zoom.className = 'cert-zoom';
+    zoom.alt = '';
+    zoom.hidden = true;
+    if (matchMedia('(hover: hover)').matches) {
+      document.body.append(zoom);
+      document.addEventListener('pointerover', (event) => {
+        const card = (event.target as Element | null)?.closest?.<HTMLButtonElement>('.in-world [data-cert-open]');
+        if (!card || dialog.open) return;
+        zoom.src = card.dataset.certOpen ?? '';
+        const box = card.getBoundingClientRect();
+        const width = Math.min(420, innerWidth * 0.4);
+        const left = box.right + 12 + width < innerWidth ? box.right + 12 : box.left - 12 - width;
+        zoom.style.width = `${width}px`;
+        zoom.style.left = `${Math.max(8, left)}px`;
+        zoom.style.top = `${Math.max(8, Math.min(box.top, innerHeight - width * 0.8 - 8))}px`;
+        zoom.hidden = false;
+      });
+      document.addEventListener('pointerout', (event) => {
+        if ((event.target as Element | null)?.closest?.('.in-world [data-cert-open]')) zoom.hidden = true;
+      });
+    }
+
+    $('[data-cert-close]').addEventListener('click', () => dialog.close());
+    // A click outside the box lands on the dialog element itself (its backdrop).
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('close', () => {
+      if (home) {
+        home.parent.insertBefore(home.grid, home.next);
+        home = null;
+      }
+      showShelf();
+      // Back in the game, the keys go to the game again (not to the certificate's button, where
+      // Enter would open it again); on the page, back to what opened the window.
+      if (inGame()) document.querySelector<HTMLElement>('[data-stage]')?.focus({ preventScroll: true });
+      else opener?.focus({ preventScroll: true });
+      opener = null;
+    });
+  }
+</script>

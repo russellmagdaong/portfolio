@@ -1,0 +1,29 @@
+{
+  "source": "art/objects/home/camera.aseprite",
+  "width": 18,
+  "height": 31,
+  "columns": 1,
+  "rows": 1,
+  "origin": {
+    "x": 9,
+    "y": 29
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 1,
+      "y": 28,
+      "width": 16,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

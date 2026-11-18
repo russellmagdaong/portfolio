@@ -1,0 +1,29 @@
+{
+  "source": "art/objects/post-office/counter.aseprite",
+  "width": 48,
+  "height": 41,
+  "columns": 1,
+  "rows": 1,
+  "origin": {
+    "x": 24,
+    "y": 41
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 0,
+      "y": 40,
+      "width": 48,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

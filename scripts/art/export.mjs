@@ -10,6 +10,11 @@
 //   art/<name>.aseprite         -> src/assets/sprites/<name>.png + .json
 //   art/russell.aseprite        -> also src/assets/runner/ (the runner minigame)
 //   art/map.aseprite            -> src/assets/map/ (a PNG per layer + map.json)
+//   art/map-objects/<id>.aseprite -> src/assets/map-objects/<id>.png + .json (buildings etc.)
+//   art/hub.aseprite            -> src/assets/hub/ (a PNG per layer + hub.json: the front-view street)
+//   art/hub-objects/<id>.aseprite -> src/assets/hub-objects/<id>.png + .json (the six destinations on it)
+//                                    and src/assets/sign-logos/<id>.png (the icon on its sign)
+//   art/objects/<scene>/<id>.aseprite -> src/assets/objects/<scene>/<id>.png + .json (a scene's interactables)
 //   art/scenes/<name>.aseprite  -> src/assets/scenes/<name>/ (a PNG per layer + <name>.json)
 // Files in art/_work/ (git-ignored, may hold template pixels) are never exported.
 
@@ -32,13 +37,20 @@ if (!existsSync(ASEPRITE)) {
 const aseprites = (dir) =>
   existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.aseprite')).sort() : [];
 
+// A room's moving layers live in art/anim/<name>.aseprite, apart from its still art (see
+// scripts/art/stills.lua); the two are put together before the room is exported.
+const animOf = (name) => {
+  const file = join(ART, 'anim', `${name}.aseprite`);
+  return existsSync(file) ? file : undefined;
+};
+
 // Every export to run, in order.
 const jobs = [];
 for (const file of aseprites(ART)) {
   const name = file.replace(/\.aseprite$/, '');
   const source = join(ART, file);
-  if (name === 'map') {
-    jobs.push({ source, mode: 'layers', out: join(ASSETS, 'map'), name, clean: true });
+  if (name === 'map' || name === 'hub') {
+    jobs.push({ source, anim: animOf(name), mode: 'layers', out: join(ASSETS, name), name, clean: true });
     continue;
   }
   jobs.push({ source, mode: 'sprite', out: join(ASSETS, 'sprites'), name });
@@ -46,16 +58,32 @@ for (const file of aseprites(ART)) {
     jobs.push({ source, script: join(ROOT, 'scripts', 'art', 'runner.lua'), out: join(ASSETS, 'runner'), name: 'runner minigame' });
   }
 }
+for (const file of aseprites(join(ART, 'map-objects'))) {
+  const name = file.replace(/\.aseprite$/, '');
+  jobs.push({ source: join(ART, 'map-objects', file), mode: 'sprite', out: join(ASSETS, 'map-objects'), name });
+}
+for (const file of aseprites(join(ART, 'hub-objects'))) {
+  const name = file.replace(/\.aseprite$/, '');
+  jobs.push({ source: join(ART, 'hub-objects', file), mode: 'sprite', out: join(ASSETS, 'hub-objects'), name });
+}
+// The scenes' interactable objects, a folder per scene (scripts/art/objects.lua).
+const OBJECTS = join(ART, 'objects');
+for (const scene of existsSync(OBJECTS) ? readdirSync(OBJECTS).sort() : []) {
+  for (const file of aseprites(join(OBJECTS, scene))) {
+    const name = file.replace(/.aseprite$/, '');
+    jobs.push({ source: join(OBJECTS, scene, file), mode: 'sprite', out: join(ASSETS, 'objects', scene), name });
+  }
+}
 for (const file of aseprites(join(ART, 'scenes'))) {
   const name = file.replace(/\.aseprite$/, '');
-  jobs.push({ source: join(ART, 'scenes', file), mode: 'layers', out: join(ASSETS, 'scenes', name), name, clean: true });
+  jobs.push({ source: join(ART, 'scenes', file), anim: animOf(name), mode: 'layers', out: join(ASSETS, 'scenes', name), name, clean: true });
 }
 
 const filters = process.argv.slice(2).map((f) => f.replaceAll('\\', '/'));
 const chosen = jobs.filter((job) => {
   if (filters.length === 0) return true;
-  const path = relative(ART, job.source).replaceAll('\\', '/');
-  return filters.some((f) => path.includes(f));
+  const paths = [job.source, job.anim].filter(Boolean).map((p) => relative(ART, p).replaceAll('\\', '/'));
+  return filters.some((f) => paths.some((path) => path.includes(f)));
 });
 if (chosen.length === 0) {
   console.error(filters.length ? `No file in art/ matches ${filters.join(', ')}.` : 'There is nothing in art/ to export.');
@@ -65,7 +93,28 @@ if (chosen.length === 0) {
 let failed = 0;
 for (const job of chosen) {
   const label = relative(ROOT, job.source).replaceAll('\\', '/');
-  console.log(`${label} (${job.mode ?? 'runner'})`);
+  // A room with an anim file: its still and anim files are put together first, and that is exported.
+  let file = label;
+  if (job.anim) {
+    const anim = relative(ROOT, job.anim).replaceAll('\\', '/');
+    file = `art/_work/combined/${job.name}.aseprite`;
+    const combined = spawnSync(
+      ASEPRITE,
+      ['-b', '--script-param', `still=${label}`, '--script-param', `anim=${anim}`, '--script-param', `out=${file}`,
+        '--script', join(ROOT, 'scripts', 'art', 'combine-stills.lua')],
+      { cwd: ROOT, encoding: 'utf8' },
+    );
+    const said = `${combined.stdout ?? ''}${combined.stderr ?? ''}`.trim();
+    if (combined.status !== 0 || !said.includes('COMBINE-OK')) {
+      console.log(`${label} + ${anim}`);
+      for (const line of said.split(/\r?\n/).filter(Boolean)) console.log(`  ${line}`);
+      console.error('  FAILED to put the still and anim files together');
+      failed += 1;
+      continue;
+    }
+    for (const line of said.split(/\r?\n/).filter((l) => l && l !== 'COMBINE-OK')) console.log(`  ${line}`);
+  }
+  console.log(`${label}${job.anim ? ' + its anim file' : ''} (${job.mode ?? 'runner'})`);
   // A scene's folder is emptied first, so a layer that was deleted or renamed
   // does not leave its old image behind.
   if (job.clean) rmSync(job.out, { recursive: true, force: true });
@@ -76,7 +125,8 @@ for (const job of chosen) {
   const params = job.script
     ? ['--script-param', `file=${label}`, '--script-param', `out=${job.out}`]
     : [
-        '--script-param', `file=${label}`,
+        '--script-param', `file=${file}`,
+        '--script-param', `source=${label}`,
         '--script-param', `out=${job.out}`,
         '--script-param', `name=${job.name}`,
         '--script-param', `mode=${job.mode}`,
@@ -93,6 +143,24 @@ for (const job of chosen) {
   if (!ok) {
     failed += 1;
     console.error(`  FAILED${result.error ? `: ${result.error.message}` : ''}`);
+  }
+}
+
+// The shop signs' icons, cut from the shopfronts just exported (scripts/art/sign-logos.lua).
+if (chosen.some((job) => job.out === join(ASSETS, 'hub-objects'))) {
+  const out = join(ASSETS, 'sign-logos');
+  mkdirSync(out, { recursive: true });
+  const result = spawnSync(
+    ASEPRITE,
+    ['-b', '--script-param', `root=${ROOT}`, '--script-param', `out=${out}`, '--script', join(ROOT, 'scripts', 'art', 'sign-logos.lua')],
+    { cwd: ROOT, encoding: 'utf8' },
+  );
+  const said = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
+  console.log('sign logos (from art/hub-objects)');
+  if (said) for (const line of said.split(/\r?\n/)) console.log(`  ${line}`);
+  if (result.status !== 0 || said) {
+    failed += 1;
+    console.error('  FAILED to cut the sign logos');
   }
 }
 

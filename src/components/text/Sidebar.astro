@@ -1,0 +1,63 @@
+---
+/**
+ * The text page's sidebar on wide screens (1181px and up; below, the top bar in TextSite takes
+ * over). An index of the six places, each led by the icon from its shop sign, with one line on
+ * what is inside. It folds into a rail of icons; textsite.ts keeps the choice (localStorage
+ * 't-side') and marks the place being read. Sticky: it never moves the scroll.
+ * Styles: .t-side* in src/styles/text.css.
+ */
+import type { ImageMetadata } from 'astro';
+import { placeLines, signWords } from '../../data/site';
+import Icon from '../Icon.astro';
+import Wordmark from '../Wordmark.astro';
+
+interface Props {
+  /** The places in reading order, with their section slugs (#sec-<slug>). */
+  items: { place: string; slug: string }[];
+}
+
+const { items } = Astro.props;
+const logos = import.meta.glob<{ default: ImageMetadata }>('../../assets/sign-logos/*.png', { eager: true });
+const logo = (place: string) => {
+  const found = logos[`../../assets/sign-logos/${place}.png`]?.default;
+  if (!found) throw new Error(`src/assets/sign-logos/${place}.png is missing: run npm run art -- hub-objects`);
+  return found;
+};
+type PlaceId = keyof typeof placeLines;
+---
+
+<aside class="t-side" id="t-side" aria-label="Sections">
+  <a href="#sec-home" class="t-side-mark" data-goto="home" aria-label="Russell Magdaong: to the top of the letter">
+    <span class="t-side-plate"><Wordmark size={32} /></span>
+  </a>
+  <nav class="t-side-nav">
+    {
+      items.map(({ place, slug }) => {
+        const img = logo(place);
+        return (
+          <a href={`#sec-${slug}`} data-goto={place} data-sign={place}>
+            <img src={img.src} alt="" style={`--w: ${img.width}; --h: ${img.height}`} />
+            <span class="t-side-word">{signWords[place as PlaceId]}</span>
+            <span class="t-side-line">{placeLines[place as PlaceId]}</span>
+          </a>
+        );
+      })
+    }
+  </nav>
+  <div class="t-side-foot">
+    <a href="#sec-contact" class="t-side-talk" data-goto="post-office">
+      Have an internship in mind? <span>Let's talk →</span>
+    </a>
+    <div class="t-side-buttons">
+      <button type="button" class="t-btn t-btn-primary" data-change-ui>
+        <Icon name="swap" class="size-4" />
+        <span>Change UI</span>
+      </button>
+      <button type="button" class="t-btn t-btn-line t-side-fold" data-side-fold aria-controls="t-side" aria-expanded="true">
+        <span class="t-side-fold-open" aria-hidden="true">« Hide</span>
+        <span class="t-side-fold-closed" aria-hidden="true">»</span>
+        <span class="sr-only">Sidebar</span>
+      </button>
+    </div>
+  </div>
+</aside>

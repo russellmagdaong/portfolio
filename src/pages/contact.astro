@@ -1,0 +1,265 @@
+---
+// Contact: the post office. The socials are on a notice board by the door, the testimonials (none
+// yet) on a postcard pinned to the corkboard at the far end; the counter opens the form, written as
+// a letter.
+import Game from '../layouts/Game.astro';
+import Panel from '../components/game/Panel.astro';
+import Show from '../components/game/Show.astro';
+import ContactForm from '../components/ContactForm.astro';
+import Icon from '../components/Icon.astro';
+import { contact, socials } from '../data/site';
+import { sceneConfig } from '../game/config';
+// Show ids match the show:<id> slices in art/scenes/post-office.aseprite. show:testimonials has
+// look=postcard (styled below); its slice is the postcard painted on the corkboard, with a stamp
+// and a postmark in its top right corner, which the text keeps clear of.
+---
+
+<Game title="Contact" config={sceneConfig('post-office')} here={[{ id: 'contact', label: 'Write a letter' }]}>
+  <Show id="socials" title="Find me">
+    {/* Two by two: four in a column ran off the bottom of the board. */}
+    <ul class="show-links show-links-grid">
+      {
+        socials.map((social) => (
+          <li>
+            <a
+              href={social.href}
+              target={social.href.startsWith('http') ? '_blank' : undefined}
+              rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+            >
+              <Icon name={social.icon} class="show-icon" />
+              {social.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Show>
+
+  <Show id="testimonials" title="Testimonials" fit={6}>
+    <p class="show-p">Kind words from people I have worked with are still in the post.</p>
+    <p class="postmark"><span>Coming soon</span></p>
+  </Show>
+
+  <Panel id="contact" kicker="Counter" title="Send a letter">
+    <p class="glead mb-6">{contact.heading}</p>
+    <ContactForm />
+  </Panel>
+</Game>
+
+<style is:global>
+  /* ---------- Testimonials: the postcard on the corkboard ----------
+     Colours are from art/palette.gpl. Sizes are in em or art pixels (--px), so they follow the
+     fitted letter size. The top right corner of the card is the painted stamp and postmark. */
+  .show.in-world[data-look='postcard'] {
+    padding: calc(var(--px) * 4) calc(var(--px) * 5) calc(var(--px) * 3);
+    line-height: 1.1;
+    color: #2b2a3a;
+    cursor: default;
+  }
+
+  .show.in-world[data-look='postcard'] .show-heading {
+    width: max-content;
+    margin: 0 0 calc(var(--px) * 5);
+    padding-bottom: 0.08em;
+    color: #8c1c24;
+    border-bottom: calc(var(--px) * 0.5) solid #3c6198;
+  }
+
+  /* COMING SOON, rubber-stamped: a double red box. */
+  .postmark {
+    margin: 0.9em 0 0;
+  }
+
+  .postmark span {
+    display: inline-block;
+    padding: 0.05em 0.5em 0.1em;
+    font-family: var(--font-pixel);
+    font-size: 1.5em;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c8372d;
+    border: 0.1em solid currentColor;
+    outline: 0.1em solid currentColor;
+    outline-offset: 0.1em;
+  }
+
+  .show.in-world .postmark {
+    margin-top: 0.7em;
+    padding: 0.2em;
+  }
+
+  /* ---------- Popups in the post office: a letter form in an airmail envelope ----------
+     On top of the post-office block under "Scene themes" in src/styles/game.css: the same --ui-*
+     variables, set again here (with :root, so these win) for the room as it is drawn now: the
+     plaque's mail red and cream, the airmail blue, brass. */
+  html.game[data-scene='post-office']:root {
+    --ui-bg: #f6eed9;
+    --ui-head-bg: #8c1c24;
+    --ui-line: #8c1c24;
+    --ui-rule: #d8c9a6;
+    --ui-fg: #2b2a3a;
+    --ui-strong: #172146;
+    --ui-muted: #3c6198;
+    --ui-title: #b02a22;
+    --ui-title-font: var(--font-pixel);
+    --ui-title-size: 34px;
+    --ui-head-fg: #ffeebe;
+    --ui-kicker: #dcb55a;
+    --ui-accent: #c8372d;
+    --ui-close-bg: #ffeebe;
+    --ui-close-fg: #8c1c24;
+    --ui-close-line: #dcb55a;
+    --ui-field-bg: transparent;
+    --ui-field-fg: #172146;
+    --ui-field-line: #2b2a3a;
+  }
+
+  /* The title bar is the room's enamel plaque: cream letters on mail red in a brass rim, with a
+     postmark (two rings and the cancelling lines) inked beside the close button. */
+  html.game[data-scene='post-office'] .gpanel-head {
+    align-items: center;
+    padding: 10px 12px 10px 16px;
+    border-bottom: 0;
+    background:
+      radial-gradient(circle at center, transparent 0 13px, rgb(255 238 190 / 0.5) 13px 15px, transparent 15px 19px, rgb(255 238 190 / 0.5) 19px 21px, transparent 21px)
+        right 96px center / 44px 44px no-repeat,
+      repeating-linear-gradient(to bottom, transparent 0 4px, rgb(255 238 190 / 0.4) 4px 6px, transparent 6px 8px) right 142px center / 46px 26px no-repeat,
+      var(--ui-head-bg);
+    box-shadow:
+      inset 0 0 0 2px #dcb55a,
+      inset 0 0 0 4px #8c1c24,
+      inset 0 -6px 0 rgb(0 0 0 / 0.18);
+  }
+
+  html.game[data-scene='post-office'] .gpanel-kicker {
+    margin-bottom: 2px;
+  }
+
+  html.game[data-scene='post-office'] .gpanel-title {
+    line-height: 1;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0 #5a1016;
+  }
+
+  html.game[data-scene='post-office'] .gpanel-close:hover {
+    color: #fff;
+    background: #c8372d;
+    border-color: #ffeebe;
+  }
+
+  /* The letter: an AIR MAIL label in the corner, the lead as its first line. */
+  html.game[data-scene='post-office'] .gpanel-body {
+    padding-top: 20px;
+  }
+
+  html.game[data-scene='post-office'] #contact .gpanel-body::before {
+    content: 'Par avion · Air mail';
+    float: right;
+    margin: 0 0 10px 14px;
+    padding: 3px 9px 4px;
+    font-family: var(--font-pixel);
+    font-size: 20px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #f6eed9;
+    background: #3c6198;
+    box-shadow:
+      inset 0 0 0 2px #3c6198,
+      inset 0 0 0 3px #f6eed9;
+  }
+
+  /* The form's blanks: a line to write on, as on a postal form, in blue ink. */
+  html.game[data-scene='post-office'] .gpanel .field-label {
+    font-family: var(--font-pixel);
+    font-size: 20px;
+    letter-spacing: 0.1em;
+    line-height: 1;
+  }
+
+  html.game[data-scene='post-office'] .gpanel .field {
+    padding: 4px 2px 6px;
+    font-weight: 500;
+    border-width: 0 0 2px;
+    border-style: dashed;
+  }
+
+  html.game[data-scene='post-office'] .gpanel .field:focus {
+    border-bottom-style: solid;
+    background: rgb(255 255 255 / 0.5);
+  }
+
+  /* The message is written on the letter's own lines. */
+  html.game[data-scene='post-office'] .gpanel textarea.field {
+    padding: 0 8px;
+    line-height: 32px;
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 31px, rgb(60 97 152 / 0.45) 31px 32px) local,
+      #fffaf0;
+    border: 2px solid #d8c9a6;
+    border-left: 4px double #c8372d;
+  }
+
+  html.game[data-scene='post-office'] .gpanel textarea.field:focus {
+    border-color: #3c6198;
+    border-left-color: #c8372d;
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 31px, rgb(60 97 152 / 0.45) 31px 32px) local,
+      #fff;
+  }
+
+  /* Send is the rubber stamp; what the form reports back is in ink that reads on the paper. */
+  html.game[data-scene='post-office'] .gpanel .btn-solid:hover {
+    color: #8c1c24;
+    background: #ffeebe;
+  }
+
+  html.game[data-scene='post-office'] [data-contact-status] {
+    color: #3c6198;
+  }
+
+  html.game[data-scene='post-office'] [data-contact-status][data-tone='good'] {
+    color: #28783c;
+  }
+
+  html.game[data-scene='post-office'] [data-contact-status][data-tone='bad'] {
+    color: #b02a22;
+  }
+
+  html.game[data-scene='post-office'] .gpanel .keycap {
+    color: #8c1c24;
+    background: #ffeebe;
+  }
+
+  html.game[data-scene='post-office'] .controls-more {
+    border-top-style: dashed;
+  }
+
+  /* The key prompt and the Exit tag over him: the plaque again, cream on mail red. */
+  html.game[data-scene='post-office'] .prompt {
+    color: #ffeebe;
+    background: #8c1c24;
+    border-color: #dcb55a;
+    box-shadow:
+      0 0 0 2px #2c1c16,
+      0 4px 0 2px #000;
+  }
+
+  html.game[data-scene='post-office'] .prompt kbd {
+    color: #8c1c24;
+    background: #ffeebe;
+  }
+
+  html.game[data-scene='post-office'] .prompt.exit-tag:is(:hover, :focus-visible) {
+    color: #8c1c24;
+    background: #ffeebe;
+    border-color: #dcb55a;
+  }
+
+  html.game[data-scene='post-office'] .prompt.exit-tag:is(:hover, :focus-visible) kbd {
+    color: #ffeebe;
+    background: #8c1c24;
+  }
+</style>

@@ -1,0 +1,237 @@
+---
+/**
+ * Every page of the pixel town. With JavaScript, the page is the game: a scene
+ * (or the map) filling the window, with its content opening in panels. Without
+ * it, or in the text version, the same content is an ordinary page.
+ */
+import '@fontsource/press-start-2p';
+import '@fontsource-variable/ibm-plex-sans';
+import '@fontsource/jersey-10';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../styles/global.css';
+import '../styles/game.css';
+import '../styles/landing.css';
+import '../styles/text.css';
+import Icon from '../components/Icon.astro';
+import Wordmark from '../components/Wordmark.astro';
+import Panel from '../components/game/Panel.astro';
+import Controls from '../components/game/Controls.astro';
+import Landing from '../components/Landing.astro';
+import TextSite from '../components/text/TextSite.astro';
+import { hubConfig } from '../game/config';
+import { site, socials } from '../data/site';
+import { versioned } from '../lib/versioned';
+import { MAP_PATH, places } from '../game/places';
+import type { GameConfig } from '../game/types';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** The game for this page; leave out for a page that is only text (404). */
+  config?: GameConfig;
+  /** The things here, in the order of the "Here" list: panel ids (or building ids on the map) and their names. */
+  here?: { id: string; label: string }[];
+}
+
+const { title, description = site.description, config, here = [] } = Astro.props;
+// data-scene on <html> picks the scene's look for its panels and popups (src/styles/game.css,
+// "Scene themes"): the place's id, or 'hub' on the street.
+const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · I build games that teach things`;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
+const ogImage = Astro.site ? new URL(versioned('/og.png'), Astro.site) : versioned('/og.png');
+const where = config?.kind === 'scene' ? config.place.label : config?.kind === 'hub' ? 'The street' : undefined;
+const current = Astro.url.pathname.replace(/\/$/, '') || '/';
+// Inside a <script> tag, "</" must not appear as is.
+const configJson = config ? JSON.stringify(config).replace(/</g, '\\u003c') : '';
+---
+
+<!doctype html>
+<html lang="en" data-playable={config ? '' : undefined} data-scene={config?.kind === 'scene' ? config.place.id : config?.kind}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#0d0b1a" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="russm. in pixel letters over a neon sunset" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="icon" href={versioned('/favicon.ico')} sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href={versioned('/favicon.svg')} />
+    <link rel="apple-touch-icon" href={versioned('/apple-touch-icon.png')} />
+
+    <!--
+      Shows the game before the first paint, unless the visitor chose the text version. If the
+      game script has not reported in after a few seconds, the page falls back to text so that
+      nothing is left blank.
+    -->
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        if (!d.hasAttribute('data-playable')) return;
+        var mode = null;
+        try {
+          mode = localStorage.getItem('mode');
+        } catch (e) {}
+        if (mode !== 'text') d.classList.add('game');
+        // The first page of a visit asks: text or game? (src/components/Landing.astro; ?choose shows it again.)
+        var chosen = '1';
+        try {
+          chosen = sessionStorage.getItem('mode-chosen');
+        } catch (e) {}
+        if (!chosen || /[?&]choose(=|&|$)/.test(location.search)) d.classList.add('choosing');
+        setTimeout(function () {
+          if (!d.dataset.engine) {
+            d.classList.remove('game');
+            d.classList.remove('choosing');
+          }
+        }, 6000);
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="shell">
+      {
+        config && (
+          <div
+            class="stage"
+            data-stage
+            tabindex="-1"
+            role="region"
+            aria-roledescription="game"
+            aria-label={`${where}. ${config.kind === 'hub' ? 'Arrow keys or A and D run, W and S take the stairs, E goes in at a door. Click a place to go there.' : 'Arrow keys or A and D run, Shift walks, Space jumps, E opens what you are next to, Escape leaves.'} The text version has the same content.`}
+          >
+            <canvas data-canvas aria-hidden="true" />
+            {/* The page's <Show> blocks, placed over the scene by src/game/world.ts. */}
+            <div class="world" data-world />
+            <p class="prompt" data-prompt hidden aria-hidden="true" />
+            {/* In a scene, the way out shows over him while he is at the door (src/game/scene.ts). */}
+            {config.kind === 'scene' && (
+              <button type="button" class="prompt exit-tag" data-exit hidden>
+                Exit to the street
+              </button>
+            )}
+            {config.kind === 'hub' ? (
+              <button type="button" class="map-label" data-label hidden tabindex="-1" />
+            ) : (
+              <div class="tip-card" data-label hidden aria-live="polite" />
+            )}
+
+            <div class="hud hud-top">
+              <p class="hud-where">
+                <a href="/" class="hud-name" aria-label={`${site.name}, home`}><Wordmark size={16} /></a>
+                <span>{where}</span>
+              </p>
+              <div class="hud-actions">
+                {socials.map((social) => (
+                  <a
+                    href={social.href}
+                    class="hud-btn"
+                    aria-label={social.label}
+                    title={social.label}
+                    target={social.href.startsWith('http') ? '_blank' : undefined}
+                    rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    <Icon name={social.icon} />
+                  </a>
+                ))}
+                <button type="button" class="hud-btn" data-open-panel="controls" aria-label="Controls" title="Controls">
+                  ?
+                </button>
+                {/* Back to the chooser: text or game (src/game/landing.ts). */}
+                <button type="button" class="hud-btn hud-text" data-change-ui>
+                  Change UI
+                </button>
+              </div>
+            </div>
+
+            {/* On the street: the way home. */}
+            {config.kind === 'hub' && (
+              <div class="hud hud-bottom">
+                <button type="button" class="hud-btn hud-exit" data-exit aria-keyshortcuts="Escape">
+                  <Icon name="chevron" class="rotate-180" />
+                  Home
+                  <kbd class="hud-key" aria-hidden="true">Esc</kbd>
+                </button>
+              </div>
+            )}
+            {/* In a room: warp straight back out to the street, from anywhere in it (src/game/scene.ts). */}
+            {config.kind === 'scene' && (
+              <div class="hud hud-bottom">
+                <button type="button" class="hud-btn hud-exit" data-warp aria-keyshortcuts="Escape">
+                  <Icon name="chevron" class="rotate-180" />
+                  Back to street
+                  <kbd class="hud-key" aria-hidden="true">Esc</kbd>
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      <div class="dock">
+        {
+          here.length > 0 && (
+            <nav class="here" aria-label="Things here">
+              <p class="here-title">{config?.kind === 'hub' ? 'Go to' : 'Here'}</p>
+              <ul>
+                {here.map((item) => (
+                  <li>
+                    <button type="button" class="here-btn" data-go={item.id}>
+                      {item.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
+        {/* A phone held upright has no room for Change UI in the HUD: it waits here, under the scene. */}
+        {
+          config && (
+            <div class="dock-switch">
+              <button type="button" class="hud-btn hud-text-dock" data-change-ui>
+                <Icon name="swap" />
+                Change UI
+              </button>
+            </div>
+          )
+        }
+
+        <main id="content" class="panels">
+          {/* A page without a game (404) brings its own content; the others have the text page below. */}
+          <slot />
+
+          {
+            config && (
+              <Panel id="controls" title="Controls" gameOnly>
+                <Controls />
+              </Panel>
+            )
+          }
+        </main>
+      </div>
+
+      {/* The text version: the whole portfolio as one page (src/components/text/TextSite.astro). */}
+      {config && <TextSite />}
+    </div>
+
+    {/* On the street the chooser reads the street from game-config. */}
+    {config && <Landing street={config.kind === 'hub' ? undefined : hubConfig()} />}
+    {config && <script type="application/json" id="game-config" set:html={configJson} />}
+    <script>
+      import '../game/main.ts';
+    </script>
+  </body>
+</html>

@@ -12,28 +12,52 @@ export const site = {
   role: 'Student developer / DOST-SEI scholar / Philippines',
   // Used for search engines and link previews.
   description:
-    'Russell Magdaong is a student developer from the Philippines who builds games that teach things: ODIN, TAKO and Algebrawl.',
+    'Russell Magdaong is a student developer from the Philippines who builds games that teach things (ODIN, TAKO, Algebrawl) and is now building NOVA, a voice assistant.',
   email: 'russelldizonmagdaong@gmail.com',
   // Photos behind the hero's "De-pixelate" button: file names in src/assets/pics/, in the order shown.
   // List more than one and they fade from one to the next.
-  photos: ['juIYtZ3o1.jpg'],
+  photos: ['updated pic.png'],
   // Shown as the status line at the top of the hero. Leave empty to hide it.
   status: '',
   // TODO: drop a PDF in public/ and set this to '/resume.pdf' to show a résumé button.
   resumeUrl: '',
+  // The postmark on the text page's postcard (where and when it was sent).
+  postmark: 'Manila · November 2026',
 };
 
 // The hero terminal types these out one at a time.
 export const dialogue = [
   'I build games that teach things.',
   'Godot up front, plain code behind it.',
-  'Now building ODIN, a tutor in a dungeon crawler.',
+  'ODIN, my thesis, is defended.',
+  'Now building NOVA, a voice assistant.',
   'I also edit videos, play games and make music.',
 ];
+
+// The text page's sidebar: under each place's sign word, one line on what is inside.
+export const placeLines: Record<'home' | 'school' | 'arcade' | 'store' | 'trophy-shop' | 'post-office', string> = {
+  home: "Who's writing, and what I'm open to",
+  school: '4th-year CS at FEU Tech, DOST scholar',
+  arcade: 'Games that teach: ODIN, TAKO, Algebrawl',
+  store: 'Godot, C#, TypeScript and the rest',
+  'trophy-shop': "Dean's List, hackathons, CTFs",
+  'post-office': 'Write me a letter',
+};
+
+// What each place's sign says, on the street and on the text page's sidebar and panels.
+export const signWords: Record<keyof typeof placeLines, string> = {
+  home: 'HOME',
+  school: 'ABOUT ME',
+  arcade: 'PROJECTS',
+  store: 'TOOLS',
+  'trophy-shop': 'AWARDS',
+  'post-office': 'CONTACT',
+};
 
 export const socials: { label: string; icon: IconName; href: string; handle: string }[] = [
   { label: 'Email', icon: 'email', href: `mailto:${site.email}`, handle: site.email },
   { label: 'GitHub', icon: 'github', href: 'https://github.com/russellmagdaong', handle: 'github.com/russellmagdaong' },
+  { label: 'LinkedIn', icon: 'linkedin', href: 'https://www.linkedin.com/in/russell-magdaong/', handle: 'linkedin.com/in/russell-magdaong' },
   { label: 'Facebook', icon: 'facebook', href: 'https://www.facebook.com/russssm', handle: 'facebook.com/russssm' },
 ];
 
@@ -48,8 +72,9 @@ export const about = {
     { label: 'School', value: 'FEU Tech, 4th year' },
     { label: 'Based in', value: 'Philippines' },
     { label: 'Scholarship', value: 'DOST-SEI' },
-    { label: 'Now building', value: 'ODIN, my undergraduate thesis' },
-    { label: 'Open to', value: 'Software engineering internships' },
+    { label: 'Thesis', value: 'ODIN, defended' },
+    { label: 'Now building', value: 'NOVA, a voice assistant' },
+    { label: 'Open to', value: 'Software engineering and game dev internships' },
   ],
 };
 
@@ -88,8 +113,25 @@ export const tools: { group: string; items: { name: string; icon?: string }[] }[
   },
 ];
 
-// Scrolls past in the band above the contact section.
-export const interests = ['Developer', 'Video editor', 'Gamer', 'Musician', 'CTF player', 'Hackathons'];
+// The props in Russell's room. Each shows its card when pointed at or walked up to; `id` is the
+// prop's tip in art/scenes/home.aseprite (prop:<thing> with tip=<id>). The CTF and hackathon
+// cards also list the results from `certificates` below.
+export const interests: { id: string; label: string; detail: string }[] = [
+  {
+    id: 'music',
+    label: 'Musician',
+    detail:
+      "I make music. I've joined battles of the bands, and once played at iTAMNight, on the same lineup as Ben&Ben and Sean Archer.",
+  },
+  {
+    id: 'games',
+    label: 'Gamer',
+    detail: 'I started gaming very young. That is where my love for video games, and for making them, began.',
+  },
+  { id: 'video', label: 'Video editor', detail: 'I edit videos. Portfolio coming soon.' },
+  { id: 'ctf', label: 'CTF player', detail: 'I take part in capture-the-flag contests.' },
+  { id: 'hackathons', label: 'Hackathons', detail: 'I enter hackathons and present at colloquiums.' },
+];
 
 export const contact = {
   heading: "Want to talk games, code, or a project? Say hi.",
@@ -100,10 +142,19 @@ export const contact = {
   formKey: '',
 };
 
+// From the résumé (RMagdaong_Resume_FEU_v2, November 2026).
 export const achievements: { title: string; detail?: string }[] = [
+  { title: '1st Runner-Up', detail: 'GCash ImaGnation 2026' },
+  { title: '2nd Runner-Up', detail: 'ACM TechSprint 2026' },
+  { title: "Dean's Lister", detail: '2025 – 2026' },
+  { title: '6th Runner-Up', detail: 'ARTwakening 2024' },
   { title: 'DOST-SEI Scholar' },
-  { title: 'PMI Project Management Ready', detail: 'Project Management Institute' },
-  { title: 'Python developer certification' },
+];
+
+export const organizations: { role: string; group: string; years: string }[] = [
+  { role: 'Social Media Manager', group: 'iTamaraws Esports Club', years: '2024 – 2026' },
+  { role: 'External Communications', group: 'ACM Student Chapter', years: '2024 – 2025' },
+  { role: 'Member', group: 'ACM, JPCS and SAGE', years: '2023 – 2026' },
 ];
 
 // Certificates, grouped under the buttons in the "Other things" section. Each group stays closed
@@ -134,7 +185,7 @@ export const certificates: {
     ],
   },
   {
-    label: 'Hackathons and colloquiums',
+    label: 'Hackathons and Colloquiums',
     folder: 'hackathons',
     items: [
       { file: 'gcash-imagnation-2026', title: 'GCash ImaGnation 2026', detail: '1st runner-up, Top 10 Challenger Team, September 2026' },
@@ -146,7 +197,9 @@ export const certificates: {
     label: 'Academic',
     folder: 'academic',
     items: [
+      { file: 'deans-bronze-certificate-2025-2026', title: "Dean's Bronze Certificate", detail: 'FEU Institute of Technology, 2nd Term S.Y. 2025-2026' },
       { file: 'deans-silver-certificate', title: "Dean's Silver Certificate", detail: 'FEU Institute of Technology, 3rd Term S.Y. 2024-2025' },
+      { file: 'deans-bronze-certificate-2024-2025', title: "Dean's Bronze Certificate", detail: 'FEU Institute of Technology, 2nd Term S.Y. 2024-2025' },
     ],
   },
 ];

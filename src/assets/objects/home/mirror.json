@@ -1,0 +1,29 @@
+{
+  "source": "art/objects/home/mirror.aseprite",
+  "width": 38,
+  "height": 48,
+  "columns": 1,
+  "rows": 1,
+  "origin": {
+    "x": 19,
+    "y": 44
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 4,
+      "y": 43,
+      "width": 30,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

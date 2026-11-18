@@ -1,0 +1,199 @@
+{
+  "source": "art/scenes/trophy-shop.aseprite",
+  "width": 758,
+  "height": 270,
+  "layers": [
+    {
+      "name": "sky",
+      "image": "sky.png",
+      "x": 0,
+      "y": 0,
+      "width": 758,
+      "height": 270,
+      "frames": 1,
+      "data": {
+        "speed": 0.1
+      }
+    },
+    {
+      "name": "far",
+      "image": "far.png",
+      "x": 560,
+      "y": 99,
+      "width": 198,
+      "height": 61,
+      "frames": 1,
+      "data": {
+        "speed": 0.3
+      }
+    },
+    {
+      "name": "mid",
+      "image": "mid.png",
+      "x": 600,
+      "y": 134,
+      "width": 158,
+      "height": 36,
+      "frames": 1,
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "rain",
+      "image": "rain.png",
+      "x": 560,
+      "y": 50,
+      "width": 186,
+      "height": 100,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {
+        "speed": 0.6
+      }
+    },
+    {
+      "name": "back",
+      "image": "back.png",
+      "x": 0,
+      "y": 0,
+      "width": 758,
+      "height": 176,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "lights",
+      "image": "lights.png",
+      "x": 365,
+      "y": 63,
+      "width": 37,
+      "height": 9,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "image": "floor.png",
+      "x": 0,
+      "y": 176,
+      "width": 758,
+      "height": 94,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "props",
+      "image": "props.png",
+      "x": 178,
+      "y": 138,
+      "width": 561,
+      "height": 44,
+      "frames": 1,
+      "data": {}
+    },
+    {
+      "name": "glints",
+      "image": "glints.png",
+      "x": 180,
+      "y": 143,
+      "width": 425,
+      "height": 3,
+      "frames": 12,
+      "durations": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+      "data": {}
+    },
+    {
+      "name": "front",
+      "image": "front.png",
+      "x": 56,
+      "y": 232,
+      "width": 569,
+      "height": 38,
+      "frames": 1,
+      "data": {
+        "speed": 1.2,
+        "over": true
+      }
+    }
+  ],
+  "slices": [
+    {
+      "name": "show:certs-academic",
+      "x": 614,
+      "y": 104,
+      "width": 64,
+      "height": 60,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "show:certs-hackathons",
+      "x": 478,
+      "y": 94,
+      "width": 116,
+      "height": 70,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "show:certs-ctfs",
+      "x": 308,
+      "y": 80,
+      "width": 150,
+      "height": 84,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "show:certs-certifications",
+      "x": 192,
+      "y": 100,
+      "width": 96,
+      "height": 64,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "show:achievements",
+      "x": 48,
+      "y": 68,
+      "width": 124,
+      "height": 96,
+      "data": {
+        "look": "paper"
+      }
+    },
+    {
+      "name": "exit",
+      "x": 0,
+      "y": 176,
+      "width": 12,
+      "height": 49,
+      "data": {
+        "to": "map"
+      }
+    },
+    {
+      "name": "spawn",
+      "x": 28,
+      "y": 196,
+      "width": 8,
+      "height": 2,
+      "data": {}
+    },
+    {
+      "name": "floor",
+      "x": 0,
+      "y": 176,
+      "width": 758,
+      "height": 49,
+      "data": {}
+    }
+  ]
+}

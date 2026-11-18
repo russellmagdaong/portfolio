@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sign lettering</title>
+    <style>
+      @font-face {
+        font-family: "Russm Sign";
+        src: url("../../src/assets/fonts/russm-sign.woff2") format("woff2");
+      }
+      body {
+        margin: 0;
+        padding: 40px 48px;
+        width: 1200px;
+        background: #0d0b1a;
+        color: #ffcd78;
+        font: 16px/1.5 system-ui, sans-serif;
+      }
+      .s {
+        font-family: "Russm Sign";
+        margin: 0 0 28px;
+        line-height: 1.25;
+      }
+      .note {
+        margin: 0 0 8px;
+        color: #8c8fa8;
+      }
+      .mark {
+        color: #fff;
+      }
+      .pair {
+        display: flex;
+        gap: 64px;
+        align-items: flex-end;
+      }
+      .icon {
+        display: grid;
+        justify-items: center;
+        gap: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="note">64 px</p>
+    <p class="s" style="font-size: 64px">ABCDEFGHIJKLM<br />NOPQRSTUVWXYZ<br />0123456789</p>
+    <p class="note">32 px</p>
+    <p class="s" style="font-size: 32px">.,'’:;-–!?&amp;/·()" &nbsp; GREETINGS FROM A MADE-UP MANILA</p>
+    <p class="s" style="font-size: 32px">Hi, I'm Russell Magdaong &nbsp; ODIN · TAKO · ALGEBRAWL · NOVA</p>
+    <p class="note">The wordmark at 64 px</p>
+    <div class="pair">
+      <p class="s mark" style="font-size: 64px">RUSSM</p>
+    </div>
+  </body>
+</html>

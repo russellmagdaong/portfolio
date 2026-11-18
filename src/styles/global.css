@@ -1,9 +1,25 @@
 @import "tailwindcss";
 
+/* The sign lettering (art/font.aseprite, built by npm run font). Crisp at 16, 24, 32, 48 and 64 px only. */
+@font-face {
+  font-family: "Russm Sign";
+  src: url("../assets/fonts/russm-sign.woff2") format("woff2");
+  font-display: swap;
+}
+
 /* `static` keeps every token in the output, since most are used through var() below. */
 @theme static {
-  /* Pixel lettering for names and titles, a plain sans for reading, a mono for labels and read-outs. */
+  /*
+   * Each font has one job:
+   *   display  Press Start 2P, for big titles only, and only at 16, 24 or 32 px (its 8 px grid;
+   *            any other size blurs it)
+   *   pixel    Jersey 10, for everything you click or scan: the HUD, buttons, key prompts,
+   *            labels, kickers, the headings painted on boards
+   *   sans     IBM Plex Sans, for reading
+   *   mono     IBM Plex Mono, for read-outs only (the PC screen, counters)
+   */
   --font-display: "Press Start 2P", ui-monospace, monospace;
+  --font-pixel: "Jersey 10", ui-sans-serif, sans-serif;
   --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
@@ -23,57 +39,45 @@
   --color-acid: #ffe91f;
   --color-violet: #a58bff;
 
-  --animate-blink: blink 1s steps(1, end) infinite;
-  --animate-flicker: flicker 4s linear infinite;
-  --animate-scan: scan 5s linear infinite;
-  --animate-floor: floor 1.4s linear infinite;
-  --animate-bob: bob 3.2s ease-in-out infinite;
+  /*
+   * The brand, from the game's own art (art/palette.gpl). Each place owns the colour of its shop
+   * sign, in the game and on the text page alike; set data-sign="<place id>" on an element and
+   * everything inside reads it as --sign. On the dark grounds below each one is also readable as
+   * coloured text.
+   */
+  --color-sign-home: #46e6e1; /* neon cyan */
+  --color-sign-school: #be6eff; /* neon violet */
+  --color-sign-arcade: #ff4f9a; /* neon pink */
+  --color-sign-store: #7cf05a; /* neon green */
+  --color-sign-trophy-shop: #ffe24d; /* neon yellow */
+  --color-sign-post-office: #ff463c; /* neon red */
 
-  @keyframes blink {
-    50% {
-      opacity: 0;
-    }
-  }
+  /* The text page's night-edition postcard. No glows, blurs or text shadows go with these. */
+  --color-ground: #0d0b1a; /* ink: the page */
+  --color-card: #171433; /* night: the postcard's back, cards */
+  --color-rule: #35354c; /* concrete 3 */
+  --color-text: #b3b6c9; /* concrete 7: reading */
+  --color-heading: #ffffff;
+  --color-soft: #8c8fa8; /* concrete 6: captions, meta */
 
-  @keyframes flicker {
-    0%,
-    18%,
-    22%,
-    62%,
-    64%,
-    100% {
-      opacity: 1;
-    }
-    20%,
-    63% {
-      opacity: 0.35;
-    }
-  }
+  /* The game's HUD and panels: steel signage plates off the street's concrete ramp, sodium-lit labels. */
+  --color-plate: #1a1926; /* concrete 1 */
+  --color-plate-line: #4b4c64; /* concrete 4 */
+  --color-plate-edge: #686a84; /* concrete 5: the lit top edge */
+  --color-plate-label: #ffcd78; /* sodium 4 */
 
-  @keyframes scan {
-    from {
-      translate: 0 -10%;
-    }
-    to {
-      translate: 0 1100%;
-    }
-  }
+  /* Titles and the wordmark: the sign lettering (art/font.aseprite) once Russell approves it; until then Jersey 10. */
+  --font-title: "Jersey 10", sans-serif;
 
-  @keyframes floor {
-    to {
-      translate: 0 44px;
-    }
-  }
-
-  @keyframes bob {
-    50% {
-      translate: 0 -6px;
-    }
-  }
 }
 
 @layer base {
   html {
+    /* On a phone: no grey flash over a tapped control (each has its own press or picked state),
+       and no font inflation when the phone turns on its side. */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     color-scheme: dark;
     scroll-behavior: smooth;
     scroll-padding-top: 5.5rem;
@@ -118,6 +122,26 @@
   }
 }
 
+/* A place's sign colour, for everything inside. */
+[data-sign="home"] {
+  --sign: var(--color-sign-home);
+}
+[data-sign="school"] {
+  --sign: var(--color-sign-school);
+}
+[data-sign="arcade"] {
+  --sign: var(--color-sign-arcade);
+}
+[data-sign="store"] {
+  --sign: var(--color-sign-store);
+}
+[data-sign="trophy-shop"] {
+  --sign: var(--color-sign-trophy-shop);
+}
+[data-sign="post-office"] {
+  --sign: var(--color-sign-post-office);
+}
+
 /* Set on any element to recolour everything inside it. */
 [data-accent="cyan"] {
   --accent: var(--color-cyan);
@@ -142,17 +166,6 @@
 
 @utility pixelated {
   image-rendering: pixelated;
-}
-
-/* CRT lines over a frame. The element needs `relative`. */
-@utility scanlines {
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.3) 2px 4px);
-  }
 }
 
 /*
@@ -191,11 +204,6 @@
   margin: var(--bw, 2px);
 }
 
-/* Diagonal stripes, as on the read-outs of an instrument panel. */
-@utility hatch {
-  background: repeating-linear-gradient(-45deg, var(--accent, var(--color-cyan)) 0 2px, transparent 2px 6px);
-}
-
 /* A small bracket in each corner, like the frame of a viewfinder. */
 @utility brackets {
   --c: var(--accent, var(--color-cyan));
@@ -225,7 +233,7 @@
     @apply pixel-corners;
     position: relative;
     isolation: isolate;
-    background: var(--line, color-mix(in oklab, var(--accent, var(--color-cyan)) 48%, var(--color-void)));
+    background: var(--line, var(--color-plate-line));
   }
 
   .panel::before {
@@ -237,39 +245,9 @@
     background: var(--fill, var(--color-deck));
   }
 
-  /*
-   * Add data-spotlight and the panel's phosphor dots light up under the pointer (effects.ts sets
-   * --mx / --my). The top layer is the fill with a dot punched out of every cell; the light
-   * behind it only shows through those holes.
-   */
-  .panel[data-spotlight]::before {
-    background:
-      radial-gradient(circle, transparent 1px, var(--fill, var(--color-deck)) 1.6px) 0 0 / 8px 8px,
-      radial-gradient(
-        18rem circle at var(--mx, -50rem) var(--my, -50rem),
-        color-mix(in oklab, var(--accent, var(--color-cyan)) 70%, transparent),
-        transparent 72%
-      ),
-      var(--fill, var(--color-deck));
-  }
-
-  /* Add .panel-run for two dashes of light that chase along the top and bottom edges. They sit
-     between the border and the fill, so they only ever show in the border itself. */
-  .panel-run::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    pointer-events: none;
-    background:
-      linear-gradient(#fff 0 0) 0 0 / 16% var(--bw, 2px) no-repeat,
-      linear-gradient(#fff 0 0) 100% 100% / 16% var(--bw, 2px) no-repeat;
-    animation: edge-run 5.5s linear infinite;
-  }
-
   .btn {
     --px: 3px;
-    @apply inline-flex h-12 items-center justify-center gap-2.5 px-5 font-display text-xs whitespace-nowrap uppercase transition-colors duration-150;
+    @apply inline-flex h-12 items-center justify-center gap-2.5 px-5 font-pixel text-[20px] font-normal tracking-[0.04em] whitespace-nowrap uppercase transition-colors duration-150;
   }
 
   /* The hover looks below are only for a pointer that can hover. On a touch screen "hover"
@@ -333,7 +311,7 @@
 
   /* A small label in viewfinder brackets. */
   .chip {
-    @apply brackets inline-block px-2.5 py-1 font-mono text-xs tracking-wide text-fg;
+    @apply brackets inline-block px-2.5 py-1 font-pixel text-[20px] leading-none font-normal tracking-wide text-fg;
   }
 
   /* A box to type in on the contact form, and the label over it. */
@@ -355,120 +333,6 @@
     box-shadow: 0 2px 0 color-mix(in oklab, currentColor 45%, transparent);
   }
 
-  /* Three arrowheads that blink in turn: the marker in front of a label. Holds three <i>. */
-  .arrows {
-    display: inline-flex;
-    gap: 2px;
-  }
-
-  .arrows > i {
-    width: 5px;
-    height: 8px;
-    background: currentColor;
-    clip-path: polygon(0 0, 100% 50%, 0 100%);
-    animation: arrows 1.5s steps(1, end) infinite;
-  }
-
-  .arrows > i:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-
-  .arrows > i:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-
-  /*
-   * Section titles: pixel lettering in three flat bands, lightest on top, like the chrome logos
-   * on old title screens. The font draws on a grid of eight rows to the em, and in a line 1.3em
-   * tall its capitals fill the rows from 0.15em to 1.025em; the bands change on row edges, so
-   * they never cut a pixel in half. They are one line tall and repeat, so a title that wraps is
-   * banded on every line. While effects.ts is scrambling a title it is plain white, because
-   * the letters are then separate boxes that the bands would not line up across.
-   */
-  .title-chrome {
-    @apply font-display uppercase;
-    line-height: 1.3;
-    color: #fff;
-  }
-
-  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    .title-chrome:not([data-scrambling]) {
-      background: linear-gradient(
-          #fff 0 0.525em,
-          color-mix(in oklab, var(--accent, var(--color-cyan)) 45%, #fff) 0.525em 0.65em,
-          var(--accent, var(--color-cyan)) 0.65em
-        )
-        0 0 / 100% 1.3em;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-  }
-
-  /* A word that briefly tears into cyan and magenta slices. Needs data-text="same text". */
-  .glitch {
-    position: relative;
-    text-shadow:
-      0.03em 0 0 color-mix(in oklab, var(--color-magenta) 85%, transparent),
-      -0.03em 0 0 color-mix(in oklab, var(--color-cyan) 85%, transparent);
-  }
-
-  .glitch::before,
-  .glitch::after {
-    /* The empty alt text keeps screen readers from reading the word three times. */
-    content: attr(data-text) / "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    text-shadow: none;
-    clip-path: inset(100% 0 0 0);
-  }
-
-  .glitch::before {
-    color: var(--color-cyan);
-    animation: glitch-a 6s steps(1, end) infinite;
-  }
-
-  .glitch::after {
-    color: var(--color-magenta);
-    animation: glitch-b 6s steps(1, end) infinite;
-  }
-
-  /*
-   * The moving floor under the hero: a flat grid hinged at the bottom edge and tipped away
-   * from the viewer. The eye line sits at the top of the box, so the grid recedes up towards it.
-   */
-  .horizon {
-    position: absolute;
-    inset-inline: 0;
-    bottom: 0;
-    height: 42%;
-    overflow: hidden;
-    pointer-events: none;
-    perspective: 300px;
-    perspective-origin: 50% 0;
-    mask-image: linear-gradient(to bottom, transparent 4%, #000 60%, #000 78%, transparent);
-  }
-
-  /* Much wider and taller than the box: perspective shrinks the far end to about a third. */
-  .horizon > div {
-    position: absolute;
-    inset: auto -130% 0;
-    height: 260%;
-    transform: rotateX(65deg);
-    transform-origin: bottom center;
-  }
-
-  .horizon > div > div {
-    --grid: color-mix(in oklab, var(--color-cyan) 38%, transparent);
-    position: absolute;
-    inset: -44px 0 0;
-    background:
-      linear-gradient(var(--grid) 2px, transparent 2px) 0 0 / 44px 44px,
-      linear-gradient(90deg, var(--grid) 2px, transparent 2px) 0 0 / 44px 44px;
-    animation: var(--animate-floor);
-  }
-
   /* The inside of a hologram frame: a light cone over a fine grid. */
   .holo {
     --grid: color-mix(in oklab, var(--color-cyan) 10%, transparent);
@@ -479,54 +343,11 @@
       var(--color-void);
   }
 
-  /* The projector's beam: a column of light from the top of the frame down to the disc he stands on. */
-  .holo-beam {
-    position: absolute;
-    inset: 0 24% 4.5rem;
-    pointer-events: none;
-    background: linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--color-cyan) 30%, transparent),
-      color-mix(in oklab, var(--color-cyan) 8%, transparent)
-    );
-    mask-image: linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent);
-  }
-
   /* A hard 2px outline, so the sprite's dark hair and trousers read on a dark frame, plus the hologram's glow. */
   .holo-sprite {
     filter: drop-shadow(2px 0 0 var(--color-cyan)) drop-shadow(-2px 0 0 var(--color-cyan))
       drop-shadow(0 2px 0 var(--color-cyan)) drop-shadow(0 -2px 0 var(--color-cyan))
       drop-shadow(0 0 14px color-mix(in oklab, var(--color-cyan) 60%, transparent));
-  }
-
-  /* The burst of static when the portrait switches between sprite and photo. */
-  .is-switching [data-avatar-stage] {
-    animation: holo-switch 0.42s steps(1, end);
-  }
-
-  /*
-   * A hairline divider with a pulse of light running along it. The line fades out towards the
-   * screen edges, and is clipped sideways only so the glow can spill above and below.
-   */
-  .pulse-line {
-    height: 1px;
-    overflow-x: clip;
-    background: linear-gradient(90deg, transparent, var(--color-line) 15%, var(--color-line) 85%, transparent);
-  }
-
-  /* The pulse is a quarter of the line wide and starts and ends fully outside it. */
-  .pulse-line::after {
-    content: "";
-    display: block;
-    width: 25%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, var(--accent, var(--color-cyan)), transparent);
-    filter: drop-shadow(0 0 6px var(--accent, var(--color-cyan)));
-    animation: pulse-line 6s linear infinite;
-  }
-
-  .pulse-line[data-reverse]::after {
-    animation-direction: reverse;
   }
 
   /* Gallery thumbnails. */
@@ -537,211 +358,6 @@
   .thumb[aria-current="true"] {
     opacity: 1;
     border-color: var(--accent, var(--color-cyan));
-  }
-
-  /*
-   * The project deck, laid out like a character-select screen: one card up front, and its
-   * neighbours at either side as flat blocks of their own colour. Projects.astro gives each
-   * card a data-pos (0 front, -1 left, 1 right, none = out of sight) and sets data-deck="on"
-   * once its script is running. Until then the cards are a plain list down the page.
-   */
-  .deck-track {
-    @apply space-y-10;
-  }
-
-  [data-deck="on"] .deck-track {
-    @apply grid touch-pan-y space-y-0;
-  }
-
-  /* Every card shares the one grid cell, so the deck is as tall as its tallest card. */
-  [data-deck="on"] .deck-track > li {
-    @apply grid w-full justify-self-center lg:w-[88%];
-    position: relative;
-    grid-area: 1 / 1;
-    margin: 0;
-    scale: 0.8;
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
-      scale 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
-      opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
-      visibility 0.6s;
-  }
-
-  [data-deck="on"] .deck-track > li[data-pos] {
-    visibility: visible;
-    opacity: 1;
-  }
-
-  [data-deck="on"] .deck-track > li[data-pos="0"] {
-    z-index: 2;
-    scale: 1;
-  }
-
-  /* The previews: smaller, and shifted far enough to show past the front card's edge. */
-  [data-deck="on"] .deck-track > li:is([data-pos="-1"], [data-pos="1"]) {
-    z-index: 1;
-    scale: 0.88;
-    cursor: pointer;
-  }
-
-  [data-deck="on"] .deck-track > li[data-pos="-1"] {
-    translate: -19% 0;
-  }
-
-  [data-deck="on"] .deck-track > li[data-pos="1"] {
-    translate: 19% 0;
-  }
-
-  /* Pointing at a preview slides it out a little further. */
-  [data-deck="on"] .deck-track > li[data-pos="-1"]:hover {
-    translate: -20.5% 0;
-  }
-
-  [data-deck="on"] .deck-track > li[data-pos="1"]:hover {
-    translate: 20.5% 0;
-  }
-
-  /*
-   * The flat colour that covers a card while it waits at the side. It fades away as the card
-   * comes forward. On a wide screen, where enough of the card shows, the project's name
-   * (data-title) is written down the edge.
-   */
-  [data-deck="on"] .deck-track > li::after {
-    @apply pixel-corners font-display text-sm uppercase;
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 1.5rem 1.1rem;
-    /* Printed in halftone, so that a wall of one colour has some grain to it. */
-    background:
-      radial-gradient(circle, rgb(0 0 0 / 0.16) 1.5px, transparent 2px) 0 0 / 10px 10px,
-      var(--accent, var(--color-cyan));
-    color: var(--color-void);
-    writing-mode: vertical-rl;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  [data-deck="on"] .deck-track > li:is([data-pos="-1"], [data-pos="1"])::after {
-    opacity: 1;
-  }
-
-  /* The left-hand preview shows its left edge, so its name goes there. */
-  [data-deck="on"] .deck-track > li[data-pos="-1"]::after {
-    writing-mode: vertical-lr;
-  }
-
-  @media (width >= 64rem) {
-    [data-deck="on"] .deck-track > li::after {
-      content: attr(data-title);
-    }
-  }
-
-  .deck-controls {
-    @apply mb-4 hidden items-center gap-4;
-  }
-
-  [data-deck="on"] .deck-controls {
-    display: flex;
-  }
-
-  .deck-tab {
-    @apply relative cursor-pointer py-2 font-mono text-xs tracking-[0.2em] text-fg uppercase transition-colors duration-200 hover:text-white sm:text-sm;
-  }
-
-  .deck-tab::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 0;
-    height: 3px;
-    background: var(--accent, var(--color-cyan));
-    scale: 0 1;
-    transform-origin: left;
-    transition: scale 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  .deck-tab[aria-current="true"] {
-    color: var(--accent, var(--color-cyan));
-  }
-
-  .deck-tab[aria-current="true"]::after {
-    scale: 1 1;
-  }
-
-  .deck-arrow {
-    @apply text-accent grid size-10 cursor-pointer place-items-center border-2 border-current bg-void transition-colors duration-150;
-  }
-
-  .deck-arrow:hover {
-    background: var(--accent, var(--color-cyan));
-    border-color: var(--accent, var(--color-cyan));
-    color: var(--color-void);
-  }
-
-  .deck-rail {
-    @apply mb-6 hidden h-0.5 bg-line;
-    /* Clipped at the ends, so the segment can leave past one of them. */
-    overflow-x: clip;
-  }
-
-  [data-deck="on"] .deck-rail {
-    display: block;
-  }
-
-  /*
-   * One card's share of the rail, placed by --at (which card it sits under, set by Projects.astro).
-   * A copy of it rides one whole rail-length to either side. When the deck wraps round, --at runs
-   * one step past the end, so the segment leaves through one end as a copy comes in at the other.
-   */
-  .deck-rail > div {
-    position: relative;
-    width: calc(100% / var(--n, 1));
-    height: 4px;
-    margin-top: -1px;
-    background: var(--accent, var(--color-cyan));
-    translate: calc(var(--at, 0) * 100%) 0;
-    transition: translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  .deck-rail > div::before,
-  .deck-rail > div::after {
-    content: "";
-    position: absolute;
-    inset-block: 0;
-    width: 100%;
-    background: inherit;
-  }
-
-  .deck-rail > div::before {
-    right: calc(var(--n, 1) * 100%);
-  }
-
-  .deck-rail > div::after {
-    left: calc(var(--n, 1) * 100%);
-  }
-
-  /* The bar that slides under whichever nav link matches the section on screen. */
-  .nav-indicator {
-    position: absolute;
-    bottom: -0.6rem;
-    left: 0;
-    height: 3px;
-    width: 0;
-    opacity: 0;
-    background: var(--color-cyan);
-    transition:
-      translate 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
-      width 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
-      opacity 0.2s;
-  }
-
-  /* Tool logos swell one after another, like a signal passing down the row. */
-  .icon-wave {
-    animation: icon-wave 4.2s ease-in-out infinite;
-    animation-delay: calc(var(--i, 0) * 0.16s);
   }
 
   /* Rendered Markdown inside a project card. */
@@ -767,26 +383,6 @@
     & ul {
       @apply list-disc space-y-1.5 pl-5;
     }
-  }
-}
-
-@keyframes edge-run {
-  from {
-    translate: -100% 0;
-  }
-  to {
-    translate: 100% 0;
-  }
-}
-
-@keyframes arrows {
-  0%,
-  45%,
-  100% {
-    opacity: 1;
-  }
-  15% {
-    opacity: 0.25;
   }
 }
 
@@ -816,457 +412,17 @@
   }
 }
 
-@keyframes pulse-line {
-  from {
-    translate: -100% 0;
-  }
-  to {
-    translate: 400% 0;
-  }
-}
-
-@keyframes icon-wave {
-  0%,
-  24%,
-  100% {
-    scale: 1;
-  }
-  12% {
-    scale: 1.28;
-  }
-}
-
-@keyframes holo-switch {
-  0% {
-    clip-path: inset(12% 0 55% 0);
-    translate: -10px 0;
-    filter: hue-rotate(90deg) brightness(1.7);
-  }
-  18% {
-    clip-path: inset(60% 0 8% 0);
-    translate: 12px 0;
-    filter: none;
-  }
-  36% {
-    clip-path: inset(30% 0 30% 0);
-    translate: -6px 0;
-    filter: hue-rotate(-60deg) brightness(1.9);
-  }
-  54% {
-    clip-path: inset(5% 0 70% 0);
-    translate: 8px 0;
-    filter: none;
-  }
-  72% {
-    clip-path: inset(45% 0 25% 0);
-    translate: -3px 0;
-  }
-  88%,
-  100% {
-    clip-path: inset(0);
-    translate: 0 0;
-    filter: none;
-  }
-}
-
-@keyframes glitch-a {
-  0%,
-  86%,
-  93%,
-  96%,
-  100% {
-    clip-path: inset(100% 0 0 0);
-    translate: 0 0;
-  }
-  87% {
-    clip-path: inset(10% 0 64% 0);
-    translate: -0.06em 0;
-  }
-  89% {
-    clip-path: inset(56% 0 20% 0);
-    translate: 0.05em 0;
-  }
-  91% {
-    clip-path: inset(30% 0 46% 0);
-    translate: -0.04em 0;
-  }
-  95% {
-    clip-path: inset(72% 0 6% 0);
-    translate: 0.06em 0;
-  }
-}
-
-@keyframes glitch-b {
-  0%,
-  86%,
-  92%,
-  97%,
-  100% {
-    clip-path: inset(100% 0 0 0);
-    translate: 0 0;
-  }
-  87% {
-    clip-path: inset(48% 0 30% 0);
-    translate: 0.06em 0;
-  }
-  89% {
-    clip-path: inset(6% 0 76% 0);
-    translate: -0.05em 0;
-  }
-  91% {
-    clip-path: inset(66% 0 12% 0);
-    translate: 0.04em 0;
-  }
-  95% {
-    clip-path: inset(22% 0 58% 0);
-    translate: -0.06em 0;
-  }
-}
-
-/*
- * The hero's entrance. Pure CSS, so the first screen never waits on a script to appear.
- * --i sets the order.
- */
-.rise {
-  animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: calc(var(--i, 0) * 110ms + 80ms);
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    translate: 0 22px;
-  }
-}
-
-/*
- * Scroll-in animations. effects.ts adds .is-in when a block enters the viewport and .is-done
- * once it has settled. Everything here is scoped to :not(.is-done) so that afterwards the
- * element's own transitions and hover styles work as normal, and to .js so that nothing
- * stays hidden when scripts do not run.
- *
- * data-reveal            the element itself fades up ("left" / "right" slide in from a side)
- * data-stagger           its children fade up one after another
- * --i                    position in the queue; each step waits a little longer
- */
-.js [data-reveal]:not(.is-done) {
-  transition:
-    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
-    translate 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
-  transition-delay: calc(var(--i, 0) * 90ms);
-}
-
-.js [data-reveal]:not(.is-in) {
-  opacity: 0;
-  translate: 0 24px;
-}
-
-.js [data-reveal="left"]:not(.is-in) {
-  translate: -32px 0;
-}
-
-.js [data-reveal="right"]:not(.is-in) {
-  translate: 32px 0;
-}
-
-.js [data-stagger]:not(.is-done) > * {
-  transition:
-    opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
-    translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-  transition-delay: calc(var(--i, 0) * 75ms);
-}
-
-.js [data-stagger]:not(.is-in) > * {
-  opacity: 0;
-  translate: 0 16px;
-}
-
 /*
  * While a game is being played on the minigame (Runner.astro puts .is-playing on the root),
- * everything else on the page that moves by itself holds still. Most of the cost is the
- * floor under the hero: it is redrawn across the full width of the window on every frame,
- * and in a big window that leaves too little time for the game, which then stutters. The
- * rest are small, but together they are the difference between an even picture and a
- * slightly uneven one. They all carry on from where they stopped as soon as the game is over
- * or scrolled out of view.
+ * everything else on the page that moves by itself holds still, so the game gets every frame.
+ * It all carries on from where it stopped as soon as the game is over or scrolled out of view.
  *
  * The things that move are named one by one rather than caught with `*`: a rule that could
  * match every element makes the browser look at every element again when the game starts,
  * which is a hitch on the very first frame. Something new that animates forever belongs here.
  */
-.is-playing .horizon > div > div,
-.is-playing .panel-run::after,
-.is-playing .btn-solid::after,
-.is-playing .pulse-line::after,
-.is-playing .glitch::before,
-.is-playing .glitch::after,
-.is-playing .arrows > i,
-.is-playing .icon-wave,
-.is-playing .animate-scan,
-.is-playing .animate-bob,
-.is-playing .animate-blink,
-.is-playing .animate-flicker {
+.is-playing .btn-solid::after {
   animation-play-state: paused;
-}
-
-/* The striped bar beside a section heading draws itself in from the left. */
-.rule-draw {
-  transform-origin: left;
-  transition: scale 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.25s;
-}
-
-.js [data-reveal]:not(.is-in) .rule-draw {
-  scale: 0 1;
-}
-
-/*
- * Arrivals (effects.ts): each section after the hero comes into view with a change of picture
- * of its own, rather than just sliding up into the window. The page itself scrolls as any
- * page does. The script marks a section with the change it gets (data-arrive), adds
- * .is-arriving while that plays, and keeps .has-arrived on it until it is right out of view
- * again. None of the changes moves or resizes anything: they only decide which parts of the
- * section can be seen.
- *
- * --vt and --vb, from the script, mark the windowful of the section that comes into view
- * first, as distances from its top edge, and --vc the middle of what is in view; the changes
- * are drawn across those. data-way says which way the page was going: "down" when the
- * section came up from below, "up" when it came down from above. The cuts reach 100vw past
- * the section's sides, so that anything hanging out of it, like the project cards, is not
- * cropped while a change plays.
- */
-[data-arrive] {
-  position: relative;
-  --vt: 0px;
-  --vb: 100%;
-  --vc: 50%;
-}
-
-[data-arrive]:not(.has-arrived) {
-  opacity: 0;
-}
-
-/* --arrive-cut is how much of each cell of a pattern is still to be filled in. */
-@property --arrive-cut {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 100%;
-}
-
-@keyframes arrive-cut {
-  from {
-    --arrive-cut: 100%;
-  }
-  to {
-    --arrive-cut: 0%;
-  }
-}
-
-/* Scan: a bright line travels across the section, drawing it in the way the page is going. */
-[data-arrive="scan"].is-arriving {
-  animation: arrive-scan 0.5s cubic-bezier(0.5, 0, 0.5, 1) both;
-}
-
-[data-arrive="scan"][data-way="up"].is-arriving {
-  animation-name: arrive-scan-up;
-}
-
-/* The line sits just inside the part that has been drawn, or the cut would hide it. */
-[data-arrive="scan"].is-arriving::after {
-  content: "";
-  position: absolute;
-  inset: calc(var(--vt) - 3px) -100vw auto;
-  z-index: 10;
-  height: 3px;
-  background: #dffcff;
-  box-shadow: 0 0 18px 3px var(--color-cyan);
-  pointer-events: none;
-  animation: arrive-scan-line 0.5s cubic-bezier(0.5, 0, 0.5, 1) both;
-}
-
-[data-arrive="scan"][data-way="up"].is-arriving::after {
-  top: var(--vt);
-  animation-direction: reverse;
-}
-
-@keyframes arrive-scan {
-  from {
-    clip-path: inset(0 -100vw calc(100% - var(--vt)) -100vw);
-  }
-  to {
-    clip-path: inset(0 -100vw calc(100% - var(--vb)) -100vw);
-  }
-}
-
-@keyframes arrive-scan-up {
-  from {
-    clip-path: inset(var(--vb) -100vw 0 -100vw);
-  }
-  to {
-    clip-path: inset(var(--vt) -100vw 0 -100vw);
-  }
-}
-
-@keyframes arrive-scan-line {
-  to {
-    translate: 0 calc(var(--vb) - var(--vt));
-  }
-}
-
-/* Iris: the section opens out of a point in the middle of what is in view. */
-[data-arrive="iris"].is-arriving {
-  animation: arrive-iris 0.5s cubic-bezier(0.1, 0.5, 0.3, 1) both;
-}
-
-@keyframes arrive-iris {
-  from {
-    clip-path: circle(0 at 50% var(--vc));
-  }
-  to {
-    clip-path: circle(72vmax at 50% var(--vc));
-  }
-}
-
-/* Pixels: the section fills in around a grid of squares that shrink away, in a few coarse steps. */
-[data-arrive="pixels"].is-arriving {
-  --half: calc(var(--arrive-cut) / 2);
-  mask-image:
-    linear-gradient(90deg, #000 calc(50% - var(--half)), transparent 0 calc(50% + var(--half)), #000 0),
-    linear-gradient(#000 calc(50% - var(--half)), transparent 0 calc(50% + var(--half)), #000 0);
-  mask-size: 36px 36px;
-  mask-clip: no-clip;
-  animation: arrive-cut 0.55s steps(9) both;
-}
-
-/* Blinds: the section comes up line by line, like an interlaced signal. */
-[data-arrive="blinds"].is-arriving {
-  mask-image: linear-gradient(transparent var(--arrive-cut), #000 0);
-  mask-size: 100% 14px;
-  mask-clip: no-clip;
-  animation: arrive-cut 0.5s steps(7) both;
-}
-
-/* Glitch: the signal tears. The section shows as a few jumping strips of itself, then settles. */
-[data-arrive="glitch"].is-arriving {
-  --h: calc(var(--vb) - var(--vt));
-  animation: arrive-glitch 0.4s steps(1, end) both;
-}
-
-@keyframes arrive-glitch {
-  0% {
-    clip-path: inset(50% -100vw 50% -100vw);
-    translate: 0 0;
-    filter: none;
-  }
-  12% {
-    clip-path: inset(calc(var(--vt) + var(--h) * 0.66) -100vw calc(100% - var(--vt) - var(--h) * 0.74) -100vw);
-    translate: -4px 0;
-  }
-  28% {
-    clip-path: inset(calc(var(--vt) + var(--h) * 0.04) -100vw calc(100% - var(--vt) - var(--h) * 0.2) -100vw);
-    translate: 10px 0;
-    filter: none;
-  }
-  44% {
-    clip-path: inset(calc(var(--vt) + var(--h) * 0.28) -100vw calc(100% - var(--vt) - var(--h) * 0.5) -100vw);
-    translate: -8px 0;
-    filter: hue-rotate(-60deg) brightness(1.8);
-  }
-  60% {
-    clip-path: inset(calc(var(--vt) + var(--h) * 0.58) -100vw calc(100% - var(--vt) - var(--h) * 0.94) -100vw);
-    translate: 16px 0;
-    filter: none;
-  }
-  76% {
-    clip-path: inset(calc(var(--vt) + var(--h) * 0.1) -100vw calc(100% - var(--vt) - var(--h) * 0.52) -100vw);
-    translate: -14px 0;
-    filter: hue-rotate(90deg) brightness(1.6);
-  }
-  92%,
-  100% {
-    clip-path: inset(var(--vt) -100vw calc(100% - var(--vb)) -100vw);
-    translate: 0 0;
-    filter: none;
-  }
-}
-
-/*
- * The entry screen (Entry.astro): a modal <dialog> laid over the whole page until the visitor
- * presses start. No display is set here on purpose, so that a dialog nothing has opened
- * stays hidden. Its backdrop is the same tube face as the page's, a little brighter.
- */
-.entry {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  color: var(--color-fg);
-  background:
-    radial-gradient(ellipse 90% 80% at 50% 45%, transparent 45%, rgb(0 0 0 / 0.8)),
-    radial-gradient(circle, color-mix(in oklab, var(--color-cyan) 26%, transparent) 1px, transparent 1.5px) 0 0 / 12px
-      12px,
-    var(--color-void);
-}
-
-/* Clear, so that the page shows through as the screen shrinks away. */
-.entry::backdrop {
-  background: transparent;
-}
-
-/*
- * On the root for as long as the entry screen is up. It stops the page scrolling underneath,
- * and holds the hero's entrance at its first frame so that it plays as the screen clears.
- */
-.gated {
-  overflow: hidden;
-}
-
-.gated .rise {
-  animation-play-state: paused;
-}
-
-/* Pressing start switches the screen off like an old CRT: it flattens into a bright line, then the line closes up. */
-.entry.is-leaving {
-  pointer-events: none;
-  animation: entry-off 0.55s both;
-}
-
-.entry.is-leaving::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: #dffcff;
-  animation: entry-flash 0.55s both;
-}
-
-@keyframes entry-off {
-  0% {
-    scale: 1 1;
-    animation-timing-function: cubic-bezier(0.7, 0, 0.9, 0.5);
-  }
-  45% {
-    scale: 1 0.004;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.7, 1);
-  }
-  100% {
-    scale: 0 0.004;
-  }
-}
-
-@keyframes entry-flash {
-  0% {
-    opacity: 0;
-    animation-timing-function: cubic-bezier(0.85, 0, 1, 0.45);
-  }
-  45%,
-  100% {
-    opacity: 1;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

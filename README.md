@@ -37,7 +37,7 @@ cropped to the frame from the top and resized at build time.
 
 ### Minigame character
 
-The runner under the hero is a pixel sprite of me. The artwork lives in `art/russell.aseprite`: one tag per move,
+The runner, a cabinet in the arcade (`/projects#runner`), is a pixel sprite of me. The artwork lives in `art/russell.aseprite`: one tag per move,
 and three slices (`feet` for where he stands, `body` and `slide` for the game's two hit boxes). The game animates
 from a sheet exported from that file, `src/assets/runner/russell.png`, with a row each for idle, run, jump, slide
 and death, and reads the frame size, speeds and hit boxes from `russell.json` beside it.

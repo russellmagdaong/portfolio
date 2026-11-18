@@ -1,0 +1,29 @@
+{
+  "source": "art/objects/home/guitar.aseprite",
+  "width": 31,
+  "height": 39,
+  "columns": 1,
+  "rows": 1,
+  "origin": {
+    "x": 7,
+    "y": 38
+  },
+  "tags": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "durations": [100],
+      "direction": "forward"
+    }
+  },
+  "slices": [
+    {
+      "name": "base",
+      "x": 0,
+      "y": 37,
+      "width": 14,
+      "height": 1,
+      "data": {}
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+---
+/**
+ * The back of the postcard, hung in Russell's room: a corkboard over the PC and shelves holding his
+ * letter (who he is, what he builds), what he is open to and where to reach him, the P.S. of what he
+ * does off the clock (one line each; the results are in Credentials) and his photo. It is the Home
+ * section: the room's poster, PC, mirror and props (data-spot) all live here, so switching from the
+ * game while standing at one of them lands on it. Styles: .t-panel[data-material="cork"] in text.css.
+ */
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import { about, dialogue, interests, signWords, site, socials } from '../../data/site';
+import Icon from '../Icon.astro';
+import SceneStage from './SceneStage.astro';
+import ScenePanel from './ScenePanel.astro';
+
+const pics = import.meta.glob<{ default: ImageMetadata }>('../../assets/pics/*', { eager: true });
+const photo = pics[`../../assets/pics/${site.photos[0]}`]?.default;
+const openTo = about.stats.find((s) => s.label === 'Open to')?.value;
+const external = (href: string) => (href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {});
+
+const items = [
+  { key: 'letter', label: 'Letter' },
+  { key: 'open-to', label: 'Reach me' },
+  { key: 'off-the-clock', label: 'Hobbies' },
+  ...(photo ? [{ key: 'photo', label: 'Photo' }] : []),
+];
+// The room's things that stand for something on the board (the corkboard itself is the game's
+// How to play, which the text page has no need of).
+const names: Record<string, string> = {
+  poster: 'Letter',
+  pc: 'Letter',
+  mirror: 'Photo',
+  ...Object.fromEntries(interests.map((i) => [i.id, i.label])),
+};
+// The poster and the PC carry what the game paints on them (src/pages/index.astro's <Show>s), so
+// the room is never left with blank boards where the panel does not cover them (a phone, a wide screen).
+const boards = {
+  // Its bottom 12 art pixels are the ledge the room's books and box stand on.
+  poster: { board: { heading: site.name, text: [site.role, site.description], clear: 12 } },
+  pc: { board: { heading: 'C:\\>russm', lines: dialogue } },
+};
+---
+
+<section id="sec-home" class="t-back" data-place="home" data-sign="home" aria-labelledby="t-back-title">
+  <SceneStage place="home" only={Object.keys(names)} names={names} fills={boards}>
+    <ScenePanel place="home" word={signWords.home} material="cork" items={items}>
+      <div slot="letter">
+        <div data-spot="poster">
+          <h1 id="t-back-title" class="t-title">Hi, I'm Russell Magdaong</h1>
+        </div>
+        <div class="t-letter-body" data-spot="pc">
+          <p>{about.paragraphs[0]}</p>
+          <p>{dialogue[2]} {dialogue[3]}</p>
+          {/* The two facts a recruiter came for, on the first thing they read. */}
+          <p class="t-letter-sign">
+            {openTo && <><strong>Open to:</strong> {openTo.charAt(0).toLowerCase() + openTo.slice(1)}.<br /></>}
+            <strong>Write to:</strong> <a href={`mailto:${site.email}`}>{site.email}</a>
+          </p>
+        </div>
+      </div>
+      <dl slot="open-to" class="t-lines">
+        {
+          socials.map((social) => (
+            <div>
+              <dt>{social.label}</dt>
+              <dd>
+                <a href={social.href} {...external(social.href)}>
+                  <Icon name={social.icon} class="size-4" />
+                  {/* On a phone the handle is too long for the ruled line: the link says its name (text.css). */}
+                  <span class="t-lines-handle">{social.handle}</span>
+                  <span class="t-lines-name">{social.label}</span>
+                </a>
+              </dd>
+            </div>
+          ))
+        }
+        {
+          site.resumeUrl && (
+            <div>
+              <dt>Résumé</dt>
+              <dd>
+                <a href={site.resumeUrl}>Download the PDF</a>
+              </dd>
+            </div>
+          )
+        }
+      </dl>
+      <div slot="off-the-clock" class="t-ps" data-ps>
+        <h2 class="t-ps-title">P.S. Off the clock</h2>
+        <ul>
+          {
+            interests.map((item) => (
+              <li data-spot={item.id}>
+                <strong>{item.label}</strong>
+                <span>{item.detail}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      {
+        photo && (
+          <figure slot="photo" class="t-stamp" data-spot="mirror">
+            <Image src={photo} width={240} alt={`A photo of ${site.name}`} loading="eager" />
+            <figcaption class="t-postmark" data-postmark>
+              {site.postmark}
+            </figcaption>
+          </figure>
+        )
+      }
+    </ScenePanel>
+  </SceneStage>
+</section>

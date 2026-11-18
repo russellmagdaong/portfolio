@@ -1,0 +1,218 @@
+---
+/**
+ * A place's room on the text page: the scene's own layers and objects from the game, flat (no
+ * parallax), at 2x, exactly as tall as the art. Over it: a button for each thing the game lets you
+ * point at (its object:, show: and prop: slices, named by the spot id they stand for), the arrows
+ * and board labels from src/data/stages.ts, the section's title, and the panel (the slot).
+ *
+ * The panel's sign is the chapter's name. The title shows on a plate only when it is a sentence of
+ * its own ("Things I've built"); a title that only repeats the sign ("About me") is kept for screen
+ * readers and not shown (plate=false).
+ *
+ * Wider than its stage, the room is cropped at its focus; narrower, it sits centred on ink. Only the
+ * loop named in stages.ts moves (frame by frame); the rest shows its first frame. Styles: .t-stage*
+ * in src/styles/text.css.
+ */
+import { sceneConfig } from '../../game/config';
+import { stages, targetsOf, type StageBrief, type StageFills } from '../../data/stages';
+
+interface Props {
+  place: string;
+  /** The section's title, on a plate over the room; leave out for none. */
+  title?: string;
+  /** The id for the title (the section's aria-labelledby). */
+  titleId?: string;
+  /** Show the title on a plate over the room; false keeps it for screen readers only. */
+  plate?: boolean;
+  /** Names for the pointable things, by spot id (their button's accessible name). */
+  names?: Record<string, string>;
+  /** Only these spot ids become buttons; leave out for every one the room has. */
+  only?: string[];
+  /** A short brief per spot id, shown over its thing while it is hovered or focused (it previews
+   *  only: the panel changes on a click). */
+  briefs?: Record<string, StageBrief>;
+  /** What a board or screen shows, by spot id: a row of logos, or a picture. Decoration only (the
+   *  panel lists the same things), so it is not a button. */
+  fills?: StageFills;
+}
+
+const { place, title, titleId, plate = true, names = {}, only, briefs = {}, fills = {} } = Astro.props;
+const cfg = sceneConfig(place);
+const plan = stages[place];
+if (!plan) throw new Error(`src/data/stages.ts has no stage for ${place}`);
+
+const S = 2;
+const px = (n: number) => `${n * S}px`;
+const box = (r: { x: number; y: number; width: number; height: number }) =>
+  `left: ${px(r.x)}; top: ${px(r.y)}; width: ${px(r.width)}; height: ${px(r.height)}`;
+
+// Moved where the panel would cover them (wide screens only; see StagePlan.shift).
+const shifted = (slice: string) => plan.shift?.slices.includes(slice) ?? false;
+
+// Each object or prop sprite stands on its slice: its origin on the middle of the slice's bottom edge.
+const objects = cfg.objects.flatMap((o) => {
+  const slice = cfg.slices.find((s) => s.name === o.slice);
+  if (!slice) return [];
+  const sp = o.sprite;
+  const row = (sp.tags.idle ?? Object.values(sp.tags)[0])?.row ?? 0;
+  const left = slice.x + slice.width / 2 - sp.origin.x;
+  const top = slice.y + slice.height - sp.origin.y;
+  return [
+    {
+      src: sp.src,
+      box: box({ x: left, y: top, width: sp.width, height: sp.height }),
+      sheetW: sp.width * sp.columns,
+      sheetH: sp.height * sp.rows,
+      row: row * sp.height,
+      shifted: shifted(o.slice),
+      slice: o.slice,
+    },
+  ];
+});
+
+const humanize = (id: string) => id.replace(/[-_]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+const allTargets = targetsOf(cfg.slices);
+const targets = allTargets.filter((t) => !only || only.includes(t.id));
+// A thing drawn as its own sprite lights its own outline, not a box (textpanels.ts marks it).
+const spriteOf = (slice: string) => objects.find((o) => o.slice === slice);
+const targetOf = (slice: string) => targets.find((t) => t.slice === slice);
+const filled = Object.entries(fills).flatMap(([id, fill]) => {
+  const t = allTargets.find((x) => x.id === id);
+  return t ? [{ id, fill, box: box(t), look: t.look }] : [];
+});
+const arrow = cfg.arrow;
+const titleSide = plan.panel === 'left' ? 'right' : 'left';
+// A focus picked inside the room (not its left end, not END) stays cropped however wide the screen:
+// that crop is what keeps the panel's edge off the frames (the trophy shop's). The rest show whole.
+const crop = plan.focus > 0 && plan.focus < cfg.width ? plan.focus : 0;
+---
+
+<div
+  class="t-stage"
+  data-stage
+  data-panel-side={plan.panel}
+  data-crop={crop ? '' : undefined}
+  style={`--art-w: ${px(cfg.width)}; --view-w: ${px(cfg.width - crop)}; --crop: ${px(crop)}; --focus: ${plan.focus}; --panel-w: ${plan.panelWidth}px${plan.shift ? `; --dx: ${px(plan.shift.dx)}; --dy: ${px(plan.shift.dy)}` : ''}`}
+>
+  <!-- On a phone the room scrolls sideways in this frame; wider, it is not there (display: contents). -->
+  <div class="t-stage-frame">
+    <div class="t-stage-art">
+      {
+        cfg.layers.map((l) => (
+          <div class="t-layer" style={box(l)} data-loop={l.frames > 1 && l.name === plan.loop ? '' : undefined}>
+            <img
+              src={l.src}
+              alt=""
+              width={l.width * l.frames * S}
+              height={l.height * S}
+              style={`--frames: ${l.frames}; --fw: ${l.width * S}; --dur: ${l.durations.reduce((a, b) => a + b, 0) || l.frames * 100}ms`}
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        ))
+      }
+      {
+        objects.map((o) => (
+          <div class="t-layer t-obj" style={o.box} data-shifted={o.shifted ? '' : undefined} data-for={targetOf(o.slice)?.id}>
+            <img src={o.src} alt="" width={o.sheetW * S} height={o.sheetH * S} style={`translate: 0 ${-o.row * S}px`} loading="lazy" decoding="async" />
+          </div>
+        ))
+      }
+      {
+        filled.map(({ id, fill, box: b, look }) => (
+          <div class="t-fill" style={fill.board?.clear ? `${b}; --clear: ${px(fill.board.clear)}` : b} data-look={look} data-fill={id} data-board={fill.board ? '' : undefined} aria-hidden="true">
+            {fill.board && (
+              <div class="t-board" data-board-text>
+                <p class="t-board-head">
+                  <span>{fill.board.heading}</span>
+                  {fill.board.note && <span class="t-board-note">{fill.board.note}</span>}
+                </p>
+                {fill.board.text?.map((p, i) => <p class:list={['t-board-p', { 't-board-lead': i === 0 && (fill.board?.text?.length ?? 0) > 1 }]}>{p}</p>)}
+                {fill.board.lines && (
+                  <ul class="t-board-lines">
+                    {fill.board.lines.map((line) => <li>&gt; {line}</li>)}
+                  </ul>
+                )}
+                {fill.board.facts && (
+                  <dl class="t-board-facts">
+                    {fill.board.facts.map((f) => (
+                      <div>
+                        <dt>{f.term}</dt>
+                        <dd>{f.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+            )}
+            {fill.image && <img src={fill.image} alt="" loading="lazy" decoding="async" />}
+            {fill.icons && (
+              <span class="t-fill-icons">
+                {fill.icons.map((icon) =>
+                  icon.src ? (
+                    <img src={icon.src} alt="" width="22" height="22" title={icon.label} />
+                  ) : (
+                    <span class="t-fill-initials">{icon.label.replace(/[^A-Za-z]/g, '').slice(0, 2)}</span>
+                  ),
+                )}
+              </span>
+            )}
+          </div>
+        ))
+      }
+      {
+        targets.map((t) => {
+          const brief = briefs[t.id];
+          return (
+            <button
+              type="button"
+              class="t-target"
+              data-target={t.id}
+              data-look={t.look}
+              data-shifted={shifted(t.slice) ? '' : undefined}
+              data-sprite={spriteOf(t.slice) ? '' : undefined}
+              style={box(t)}
+              aria-label={names[t.id] ?? humanize(t.id)}
+            >
+              {plan.labels[t.id] && <span class="t-board-label" aria-hidden="true">{plan.labels[t.id]}</span>}
+              {brief && (
+                <span class="t-brief" aria-hidden="true">
+                  <span class="t-brief-title">{brief.title}</span>
+                  {brief.line && <span class="t-brief-line">{brief.line}</span>}
+                  {brief.tagline && <span class="t-brief-tagline">{brief.tagline}</span>}
+                </span>
+              )}
+            </button>
+          );
+        })
+      }
+      {
+        plan.arrows.map((a) => (
+          <div class="t-arrow" style={`left: ${px(a.x)}; top: ${px(a.y)}`} aria-hidden="true">
+            <span class="t-arrow-label" data-input="pointer">{a.label}</span>
+            <span class="t-arrow-label" data-input="touch">{a.touch}</span>
+            <span class="t-arrow-sprite" style={`width: ${px(arrow.width)}; height: ${px(arrow.height)}`}>
+              <img src={arrow.src} alt="" width={arrow.width * arrow.columns * S} height={arrow.height * arrow.rows * S} />
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+  {
+    title &&
+      (plate ? (
+        <div class="t-stage-title" data-side={titleSide}>
+          <h2 id={titleId} class="t-title">
+            <span>{title}</span>
+          </h2>
+        </div>
+      ) : (
+        <h2 id={titleId} class="sr-only">
+          {title}
+        </h2>
+      ))
+  }
+  <slot />
+</div>

@@ -1,0 +1,20 @@
+---
+// A group of <Tip>s. In the game it is hidden (each tip shows over its prop); in the text
+// version it is a section with a heading.
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<section class="tips gpanel" aria-label={title}>
+  <header class="gpanel-head">
+    <h2 class="gpanel-title">{title}</h2>
+  </header>
+  <div class="gpanel-body">
+    <ul class="glist">
+      <slot />
+    </ul>
+  </div>
+</section>
