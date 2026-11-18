@@ -30,11 +30,12 @@ const upright = () => matchMedia('(orientation: portrait) and (max-width: 820px)
  * reading down the page. As many columns as cover the side at its widest, each starting on a
  * different panel and running at its own speed, so the side reads as a wall of pages. Copied from the page itself, so it always shows what the page says; only
  * the panels, not the rooms, so nothing heavy loads for a visitor about to pick the game. Inert and
- * hidden from screen readers. Not on a phone held upright (the side is a short strip there).
+ * hidden from screen readers. On a phone held upright the side is the top half, the full width:
+ * the columns are smaller there (landing.css) and enough of them to cross it.
  */
 function buildReel(el: HTMLElement) {
   const side = el.querySelector<HTMLElement>('[data-side="text"]');
-  if (!side || side.querySelector('.landing-reel') || upright()) return;
+  if (!side || side.querySelector('.landing-reel')) return;
   const panels = [...document.querySelectorAll<HTMLElement>('[data-text-site] [data-panel]')];
   if (!panels.length) return;
   const reel = document.createElement('div');
@@ -43,7 +44,10 @@ function buildReel(el: HTMLElement) {
   reel.inert = true;
   // A column is 448px at 70% plus a 24px gutter; the side is at most 56% of the screen (leaning
   // towards text), plus the bleed past its slanted edge.
-  const columns = Math.max(1, Math.ceil((innerWidth * 0.56 + 120) / 472));
+  // Upright, a column is 320px at 50% plus a 16px gutter, across the whole width.
+  const columns = upright()
+    ? Math.max(1, Math.ceil((innerWidth + 80) / 336))
+    : Math.max(1, Math.ceil((innerWidth * 0.56 + 120) / 472));
   for (let col = 0; col < columns; col++) {
     const track = document.createElement('div');
     track.className = 'landing-reel-track';
@@ -83,7 +87,21 @@ export function runLanding(setMode: (game: boolean) => void, { reopened = false 
     root.classList.remove('choosing');
     return;
   }
-  buildReel(el);
+  // On a phone held upright the reel's copied pages would load before the street and hold it up:
+  // there it waits until the street is drawn (or three seconds, whichever comes first).
+  const streetCanvas = el.querySelector<HTMLCanvasElement>('[data-landing-street]');
+  if (upright() && streetCanvas && !streetCanvas.classList.contains('is-ready')) {
+    let built = false;
+    const build = () => {
+      if (built) return;
+      built = true;
+      watch.disconnect();
+      buildReel(el);
+    };
+    const watch = new MutationObserver(() => streetCanvas.classList.contains('is-ready') && build());
+    watch.observe(streetCanvas, { attributes: true, attributeFilter: ['class'] });
+    setTimeout(build, 3000);
+  } else buildReel(el);
   const buttons: Record<Side, HTMLButtonElement | null> = {
     text: el.querySelector('[data-choose="text"]'),
     game: el.querySelector('[data-choose="game"]'),
