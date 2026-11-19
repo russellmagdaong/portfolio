@@ -141,9 +141,11 @@ export function runLanding(setMode: (game: boolean) => void, { reopened = false 
     } catch {}
     window.removeEventListener('keydown', onKey, true);
     const open = () => {
-      setMode(side === 'game');
-      // The game starts drawing behind the chooser as it fades.
+      // The game starts drawing behind the chooser as it fades. Off before setMode: its
+      // game-mode event is what moves the boards into the room (world.ts), and gameOn()
+      // is false while html.choosing is still set.
       root.classList.remove('choosing');
+      setMode(side === 'game');
       el.classList.add('is-leaving');
       setTimeout(() => {
         el.hidden = true;
